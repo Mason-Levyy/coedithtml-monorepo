@@ -92,8 +92,9 @@ to the task group above it belongs to.
         `website/` scaffolded, each buildable, nothing functional yet
   - [x] `02-wrangler-bindings` — `wrangler.jsonc` with R2 + KV bindings, local
         `wrangler dev` end to end
-  - [ ] `03-two-origins` — app origin vs. sandbox origin as separate
-        Wrangler/Pages targets, verified separate
+  - [~] `03-two-origins` — app origin vs. sandbox origin as separate
+        Wrangler targets, enforced in config and code. Production DNS/routes
+        still unprovisioned — needs `wrangler login`
   - [ ] `04-ci-pipeline` — GitHub Actions: install, typecheck, lint, test on
         every push
 - [ ] **Storage and serving**
