@@ -6,6 +6,10 @@ out/
 pnpm-lock.yaml
 worker/worker-configuration.d.ts
 
+# Prettier drops comments when reformatting .jsonc, and the wrangler config is
+# where the origin-isolation and binding rationale has to live.
+*.jsonc
+
 # Pre-existing hand-formatted content, not touched by the workspace scaffold.
 CLAUDE.md
 planning/
