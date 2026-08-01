@@ -38,7 +38,7 @@
       // The app lives on its own subdomain, and www only exists to bounce
       // visitors to the apex.
       "vars": {
-        "APP_HOST": "home.coedithtml.com",
+        "APP_HOST": "app.coedithtml.com",
         "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev",
         "REDIRECT_HOSTS": "www.coedithtml.com",
         "REDIRECT_TARGET": "coedithtml.com"
@@ -49,7 +49,7 @@
       "workers_dev": true,
       "routes": [
         {
-          "pattern": "home.coedithtml.com",
+          "pattern": "app.coedithtml.com",
           "custom_domain": true
         },
         {
