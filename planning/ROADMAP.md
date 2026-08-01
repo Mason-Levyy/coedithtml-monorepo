@@ -26,9 +26,9 @@ question.
 
 ### Storage and serving
 
-- [ ] Upload endpoint: single `.html` only, size cap, content sniffing, reject
+- [x] Upload endpoint: single `.html` only, size cap, content sniffing, reject
       anything that is not a complete HTML document
-- [ ] Artifact stored in R2 byte-for-byte, metadata in KV
+- [~] Artifact stored in R2 byte-for-byte; metadata in KV still to come
 - [ ] Serve handler appends exactly one script tag **after `</html>`** — a pure
       append, never a search-and-replace — and changes nothing else, verified by
       a byte-diff test
@@ -100,10 +100,10 @@ to the task group above it belongs to.
   - [x] `05-domain-layout` — app on app.coedithtml.com, apex freed for the
         marketing site, www 301s to the apex
 - [ ] **Storage and serving**
-  - [ ] `06-upload-endpoint` — Zod-validated upload route, single `.html`
-        only, size cap, content sniffing
-  - [ ] `07-r2-kv-storage` — artifact bytes to R2, metadata to KV, storage-key
-        helpers in `worker/lib/`
+  - [x] `06-upload-endpoint` — Zod-validated upload route, single `.html`
+        only, size cap, content sniffing, stored to R2 byte-for-byte
+  - [ ] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
+        write and storage-key helpers landed with 06
   - [ ] `08-serve-append-handler` — append-after-`</html>` serve handler,
         byte-diff test
   - [ ] `09-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
