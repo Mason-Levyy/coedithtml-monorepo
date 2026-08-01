@@ -22,7 +22,7 @@ question.
 - [x] pnpm workspace with `app/`, `worker/`, `runtime/`, `website/`
 - [x] Wrangler config with R2 and KV bindings, local dev running end to end
 - [ ] Two origins configured and verified separate in production
-- [ ] CI running typecheck, lint, and tests on every push
+- [x] CI running typecheck, lint, and tests on every push
 
 ### Storage and serving
 
@@ -95,7 +95,7 @@ to the task group above it belongs to.
   - [~] `03-two-origins` — app origin vs. sandbox origin as separate
         Wrangler targets, enforced in config and code. Production DNS/routes
         still unprovisioned — needs `wrangler login`
-  - [ ] `04-ci-pipeline` — GitHub Actions: install, typecheck, lint, test on
+  - [x] `04-ci-pipeline` — GitHub Actions: install, typecheck, lint, test on
         every push
 - [ ] **Storage and serving**
   - [ ] `05-upload-endpoint` — Zod-validated upload route, single `.html`
