@@ -19,7 +19,7 @@ question.
 
 ### Foundation
 
-- [ ] pnpm workspace with `app/`, `worker/`, `runtime/`, `website/`
+- [x] pnpm workspace with `app/`, `worker/`, `runtime/`, `website/`
 - [ ] Wrangler config with R2 and KV bindings, local dev running end to end
 - [ ] Two origins configured and verified separate in production
 - [ ] CI running typecheck, lint, and tests on every push
@@ -88,7 +88,7 @@ to exceed ~1000 lines (flagged inline if one does once built). Each maps back
 to the task group above it belongs to.
 
 - [ ] **Foundation**
-  - [ ] `01-workspace-scaffold` — pnpm workspace; `app/`, `worker/`, `runtime/`,
+  - [x] `01-workspace-scaffold` — pnpm workspace; `app/`, `worker/`, `runtime/`,
         `website/` scaffolded, each buildable, nothing functional yet
   - [ ] `02-wrangler-bindings` — `wrangler.toml` with R2 + KV bindings, local
         `wrangler dev` end to end
