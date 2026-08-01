@@ -6,4 +6,27 @@
   "observability": {
     "enabled": true,
   },
+
+  // Artifact bytes, stored and returned unmodified. Never a database row:
+  // R2 is the only store here that does not normalize what it is given.
+  "r2_buckets": [
+    {
+      "binding": "ARTIFACT_STORE",
+      "bucket_name": "coedit-artifacts",
+      "preview_bucket_name": "coedit-artifacts-preview",
+    },
+  ],
+
+  // Artifact metadata only — never the HTML itself, which would hit KV's
+  // 25MB value ceiling and lose byte fidelity.
+  //
+  // `id` is a placeholder until the namespace is provisioned against a real
+  // Cloudflare account. `wrangler dev` simulates KV locally and ignores it;
+  // `wrangler deploy` will not, and is not wired up until branch 03.
+  "kv_namespaces": [
+    {
+      "binding": "ARTIFACT_METADATA",
+      "id": "placeholder_provisioned_in_branch_03",
+    },
+  ],
 }
