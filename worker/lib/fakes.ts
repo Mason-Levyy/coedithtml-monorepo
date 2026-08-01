@@ -1,7 +1,3 @@
-// Deliberately untyped as R2Bucket / KVNamespace. These stand in for bindings
-// at the validation boundary, where the input is `unknown` by definition —
-// typing them as the real interface would assert the very thing under test.
-
 export function fakeArtifactStore(): Record<string, unknown> {
   return {
     get: () => Promise.resolve(null),

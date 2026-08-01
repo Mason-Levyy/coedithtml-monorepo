@@ -4,8 +4,6 @@ export default {
   async fetch(_request, env): Promise<Response> {
     const parsed = parseWorkerEnv(env);
     if (!parsed.ok) {
-      // Which binding is misconfigured is deployment detail, not something a
-      // caller may learn.
       console.error(
         `Worker misconfigured, invalid bindings: ${parsed.invalidBindings.join(", ")}`,
       );
