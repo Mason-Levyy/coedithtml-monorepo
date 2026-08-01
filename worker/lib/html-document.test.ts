@@ -50,14 +50,10 @@ export default function Deck() {
     expect(reasonFor("")).toBe("not-html");
   });
 
-  // <html-ish> substrings inside prose or scripts must not be mistaken for the
-  // element itself, or a document that merely talks about HTML gets rejected.
   it("does not treat the word html in text as a tag", () => {
     expect(reasonFor("<p>we love html files</p>")).toBe("not-html");
   });
 
-  // Capitalized custom elements are legal HTML, but they are also the strongest
-  // JSX signal. Documented here so the tradeoff is a decision, not a surprise.
   it("treats capitalized elements as needing a build step", () => {
     expect(reasonFor("<html><body><MyWidget /></body></html>")).toBe(
       "needs-build-step",
