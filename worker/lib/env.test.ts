@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { parseWorkerEnv } from "./env";
 import {
   FAKE_APP_HOST,
+  FAKE_SANDBOX_HOST,
   fakeArtifactMetadata,
   fakeArtifactStore,
   fakeWorkerEnv,
@@ -33,6 +34,8 @@ describe("parseWorkerEnv", () => {
       "ARTIFACT_METADATA",
       "APP_HOST",
       "SANDBOX_HOST",
+      "REDIRECT_HOSTS",
+      "REDIRECT_TARGET",
     ]);
   });
 
@@ -97,6 +100,17 @@ describe("parseWorkerEnv", () => {
     });
 
     expect(invalidBindingsOf(result)).toEqual(["SANDBOX_HOST"]);
+  });
+
+  // A redirect is answered before origin routing, so listing the sandbox here
+  // would bounce every artifact request away instead of serving it.
+  it("refuses to start when a redirect host shadows the sandbox origin", () => {
+    const result = parseWorkerEnv({
+      ...fakeWorkerEnv(),
+      REDIRECT_HOSTS: `www.test:8787,${FAKE_SANDBOX_HOST}`,
+    });
+
+    expect(invalidBindingsOf(result)).toEqual(["REDIRECT_HOSTS"]);
   });
 
   it("rejects a host given as a full URL", () => {

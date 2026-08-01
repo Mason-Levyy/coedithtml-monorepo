@@ -11,7 +11,9 @@
   // genuinely distinct origins reachable from one local `wrangler dev` port.
   "vars": {
     "APP_HOST": "app.localhost:8787",
-    "SANDBOX_HOST": "sandbox.localhost:8787"
+    "SANDBOX_HOST": "sandbox.localhost:8787",
+    "REDIRECT_HOSTS": "www.localhost:8787",
+    "REDIRECT_TARGET": "app.localhost:8787"
   },
 
   "r2_buckets": [
@@ -32,9 +34,14 @@
   "env": {
     "production": {
       "name": "coedit",
+      // The apex is deliberately absent: it belongs to the marketing site.
+      // The app lives on its own subdomain, and www only exists to bounce
+      // visitors to the apex.
       "vars": {
-        "APP_HOST": "coedithtml.com",
-        "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev"
+        "APP_HOST": "home.coedithtml.com",
+        "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev",
+        "REDIRECT_HOSTS": "www.coedithtml.com",
+        "REDIRECT_TARGET": "coedithtml.com"
       },
 
       // The sandbox origin IS the workers.dev hostname, so this stays on.
@@ -42,7 +49,11 @@
       "workers_dev": true,
       "routes": [
         {
-          "pattern": "coedithtml.com",
+          "pattern": "home.coedithtml.com",
+          "custom_domain": true
+        },
+        {
+          "pattern": "www.coedithtml.com",
           "custom_domain": true
         }
       ],
