@@ -1,0 +1,56 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/typecheck-and-lint.js",
+            "timeout": 120,
+            "statusMessage": "Typechecking and linting touched file..."
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/runtime-size-budget.js",
+            "timeout": 120,
+            "statusMessage": "Checking runtime/ bundle size budget..."
+          },
+          {
+            "type": "agent",
+            "prompt": "A file was just edited or written. Hook input: $ARGUMENTS\n\nParse that JSON. Get the file path from tool_input.file_path (fall back to tool_response.filePath if absent). If there is no file path, the file doesn't exist, or it isn't a source code file (e.g. it's markdown, JSON, YAML, a lockfile, or a binary/image), produce no output and stop.\n\nRead the file. Find every comment in it (//, /* */, #, <!-- -->, docstrings — whatever the language uses). If the file has no comments, produce no output and stop.\n\nJudge each comment against this project's comment policy (from CLAUDE.md):\n- A comment must carry RATIONALE, not narration. If it only restates what the next line or block already does, it fails — the fix is a better name or a split, not the comment.\n- A comment is warranted only when the reason is invisible from the code itself: a browser/runtime quirk, a spec requirement, a deliberately non-obvious approach, or a constraint that would look like a mistake to the next reader.\n- Commented-out code, changelog-style comments (\"added for X\", \"fixes #123\", \"used by the Y flow\"), section-banner comments, and multi-line/docstring comment blocks always fail — one short line, only when the why is non-obvious, is the ceiling.\n\nIf every comment already satisfies this (or there are none), produce no output and stop — do not praise or summarize, just stay silent.\n\nIf one or more comments fail, respond with exactly one line of JSON and nothing else — no code fences, no prose before or after it:\n{\"decision\":\"block\",\"reason\":\"<one bullet per flagged comment: file:line, the comment text, why it fails, and what to do instead>\"}",
+            "timeout": 60,
+            "statusMessage": "Re-checking whether comments in the touched file are still necessary..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/block-npm-yarn.js",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/block-env-reads.js",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/block-env-reads.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
