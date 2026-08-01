@@ -1,0 +1,9 @@
+packages:
+  - app
+  - worker
+  - runtime
+  - website
+allowBuilds:
+  esbuild: true
+  sharp: true
+  workerd: true

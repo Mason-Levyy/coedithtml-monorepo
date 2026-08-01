@@ -1,0 +1,11 @@
+dist/
+build/
+.next/
+out/
+.wrangler/
+pnpm-lock.yaml
+
+# Pre-existing hand-formatted content, not touched by the workspace scaffold.
+CLAUDE.md
+planning/
+.claude/

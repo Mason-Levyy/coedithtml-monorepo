@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+.wrangler/
+.turbo/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+coverage/
+*.tsbuildinfo
