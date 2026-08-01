@@ -72,8 +72,6 @@ describe("parseWorkerEnv", () => {
     expect(invalidBindingsOf(result)).toEqual(["ARTIFACT_STORE"]);
   });
 
-  // Artifacts run untrusted scripts. Sharing an origin with the app would make
-  // every upload stored XSS against signed in users, so this must not boot.
   it("refuses to start when both origins are the same host", () => {
     const result = parseWorkerEnv({
       ...fakeWorkerEnv(),
