@@ -7,6 +7,30 @@
     "enabled": true,
   },
 
+  // Two origins, always. The app origin holds the session; the sandbox origin
+  // serves untrusted artifact HTML with scripts enabled and must never share
+  // an origin with authenticated pages. The Worker refuses to boot if these
+  // two match — see hostsAreDistinct in lib/origins.ts.
+  //
+  // `.localhost` subdomains all resolve to 127.0.0.1, which is what makes two
+  // genuinely distinct origins reachable from one local `wrangler dev` port.
+  "vars": {
+    "APP_HOST": "app.localhost:8787",
+    "SANDBOX_HOST": "sandbox.localhost:8787",
+  },
+
+  "env": {
+    // Routes and DNS still need provisioning against a real Cloudflare
+    // account; these hosts are the intended production pair, not a deployed
+    // one. Deploying is blocked until `wrangler login` has been run.
+    "production": {
+      "vars": {
+        "APP_HOST": "coedithtml.com",
+        "SANDBOX_HOST": "artifact-sandbox.net",
+      },
+    },
+  },
+
   // Artifact bytes, stored and returned unmodified. Never a database row:
   // R2 is the only store here that does not normalize what it is given.
   "r2_buckets": [
