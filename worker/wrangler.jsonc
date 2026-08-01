@@ -14,8 +14,6 @@
     "SANDBOX_HOST": "sandbox.localhost:8787"
   },
 
-  // Artifact bytes, stored and returned unmodified. R2 is the only store here
-  // that does not normalize what it is given.
   "r2_buckets": [
     {
       "binding": "ARTIFACT_STORE",
@@ -24,8 +22,6 @@
     }
   ],
 
-  // Artifact metadata only — never the HTML itself, which would hit KV's 25MB
-  // value ceiling and lose byte fidelity.
   "kv_namespaces": [
     {
       "binding": "ARTIFACT_METADATA",
@@ -34,15 +30,14 @@
   ],
 
   "env": {
-    // Named environments inherit nothing: every binding has to be restated
-    // here or it is simply absent at runtime and parseWorkerEnv 503s.
-    //
-    // These hosts are the intended production pair; routes and DNS are not
-    // provisioned yet, so nothing is deployed against them.
     "production": {
+      "name": "coedit",
+      // workers.dev is on the Public Suffix List, so this is a different site
+      // from coedithtml.com, not just a different origin — cookies and
+      // SameSite cannot cross between them.
       "vars": {
         "APP_HOST": "coedithtml.com",
-        "SANDBOX_HOST": "artifact-sandbox.net"
+        "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev"
       },
       "r2_buckets": [
         {
