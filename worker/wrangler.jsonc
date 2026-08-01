@@ -23,11 +23,25 @@
     // Routes and DNS still need provisioning against a real Cloudflare
     // account; these hosts are the intended production pair, not a deployed
     // one. Deploying is blocked until `wrangler login` has been run.
+    // Named environments inherit nothing: every binding has to be restated
+    // here or it is simply absent at runtime, and parseWorkerEnv 503s.
     "production": {
       "vars": {
         "APP_HOST": "coedithtml.com",
         "SANDBOX_HOST": "artifact-sandbox.net",
       },
+      "r2_buckets": [
+        {
+          "binding": "ARTIFACT_STORE",
+          "bucket_name": "coedit-artifacts",
+        },
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "ARTIFACT_METADATA",
+          "id": "placeholder_provisioned_in_branch_03",
+        },
+      ],
     },
   },
 

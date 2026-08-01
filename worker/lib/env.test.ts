@@ -92,6 +92,15 @@ describe("parseWorkerEnv", () => {
     expect(invalidBindingsOf(result)).toEqual(["SANDBOX_HOST"]);
   });
 
+  it("treats hosts differing only by a trailing dot as the same origin", () => {
+    const result = parseWorkerEnv({
+      ...fakeWorkerEnv(),
+      SANDBOX_HOST: "app.test.:8787",
+    });
+
+    expect(invalidBindingsOf(result)).toEqual(["SANDBOX_HOST"]);
+  });
+
   it("rejects a host given as a full URL", () => {
     const result = parseWorkerEnv({
       ...fakeWorkerEnv(),
