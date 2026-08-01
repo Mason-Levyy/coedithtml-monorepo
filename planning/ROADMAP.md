@@ -97,34 +97,36 @@ to the task group above it belongs to.
         separate in production
   - [x] `04-ci-pipeline` — GitHub Actions: install, typecheck, lint, test on
         every push
+  - [x] `05-domain-layout` — app on app.coedithtml.com, apex freed for the
+        marketing site, www 301s to the apex
 - [ ] **Storage and serving**
-  - [ ] `05-upload-endpoint` — Zod-validated upload route, single `.html`
+  - [ ] `06-upload-endpoint` — Zod-validated upload route, single `.html`
         only, size cap, content sniffing
-  - [ ] `06-r2-kv-storage` — artifact bytes to R2, metadata to KV, storage-key
+  - [ ] `07-r2-kv-storage` — artifact bytes to R2, metadata to KV, storage-key
         helpers in `worker/lib/`
-  - [ ] `07-serve-append-handler` — append-after-`</html>` serve handler,
+  - [ ] `08-serve-append-handler` — append-after-`</html>` serve handler,
         byte-diff test
-  - [ ] `08-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
+  - [ ] `09-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
         tokens, password gate, rate limits
 - [ ] **Segmentation engine**
-  - [ ] `09-segmentation-load-wait` — wait for `load` + mutation-quiet period
-  - [ ] `10-segmentation-strategies-markers-semantic` — explicit markers, then
+  - [ ] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
+  - [ ] `11-segmentation-strategies-markers-semantic` — explicit markers, then
         `<hr>`/heading-grouping
-  - [ ] `11-segmentation-layout-fallback` — fixed-900px virtual-height
+  - [ ] `12-segmentation-layout-fallback` — fixed-900px virtual-height
         accumulation, single-slide fallback, index-range output + labels
-  - [ ] `12-segmentation-fixtures-tests` — 20+ fixture corpus, snapshot tests,
+  - [ ] `13-segmentation-fixtures-tests` — 20+ fixture corpus, snapshot tests,
         `MutationObserver` re-segmentation, reading-profile control
 - [ ] **Viewer — filmstrip**
-  - [ ] `13-viewer-iframe-bridge` — sandboxed cross-origin iframe, versioned
+  - [ ] `14-viewer-iframe-bridge` — sandboxed cross-origin iframe, versioned
         origin-checked `postMessage` bridge
-  - [ ] `14-viewer-flow-stage` — Flow scroll-spy, Stage mode with sticky/fixed
+  - [ ] `15-viewer-flow-stage` — Flow scroll-spy, Stage mode with sticky/fixed
         warning, thumbnails from live ranges
-  - [ ] `15-viewer-keyboard-mobile` — keyboard nav + focus ring, mobile swipe
+  - [ ] `16-viewer-keyboard-mobile` — keyboard nav + focus ring, mobile swipe
         strip
-  - [ ] `16-viewer-fail-open-budget` — fail-open test, runtime-size-budget
+  - [ ] `17-viewer-fail-open-budget` — fail-open test, runtime-size-budget
         hook wired into CI
 - [ ] **Ship**
-  - [ ] `17-landing-upload-flow` — landing page, upload→link flow, no account
+  - [ ] `18-landing-upload-flow` — landing page, upload→link flow, no account
   - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
 
 ---
