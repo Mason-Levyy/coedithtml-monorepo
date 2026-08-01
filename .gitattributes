@@ -1,0 +1,6 @@
+# Prettier writes and checks LF. Without this, a Windows checkout under
+# core.autocrlf=true gets CRLF working-tree files and `pnpm lint` fails on
+# every file in the repo.
+* text=auto eol=lf
+
+pnpm-lock.yaml linguist-generated=true -diff
