@@ -102,8 +102,6 @@ describe("parseWorkerEnv", () => {
     expect(invalidBindingsOf(result)).toEqual(["SANDBOX_HOST"]);
   });
 
-  // A redirect is answered before origin routing, so listing the sandbox here
-  // would bounce every artifact request away instead of serving it.
   it("refuses to start when a redirect host shadows the sandbox origin", () => {
     const result = parseWorkerEnv({
       ...fakeWorkerEnv(),

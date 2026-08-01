@@ -70,7 +70,6 @@ describe("redirectTargetFor", () => {
     );
   });
 
-  // A shared link to a deep page should land on that page, not the home page.
   it("keeps the path and query", () => {
     expect(target(`http://${FAKE_REDIRECT_HOST}/pricing?ref=x`)).toBe(
       `https://${FAKE_REDIRECT_TARGET}/pricing?ref=x`,
