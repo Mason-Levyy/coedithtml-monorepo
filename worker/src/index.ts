@@ -16,7 +16,6 @@ export default {
         return new Response("Artifact sandbox origin", { status: 200 });
       case "app":
         return new Response("Coedit app origin", { status: 200 });
-      // An unrecognized host gets no acknowledgement that it reached us.
       case "unknown":
         return new Response("Not found", { status: 404 });
     }
