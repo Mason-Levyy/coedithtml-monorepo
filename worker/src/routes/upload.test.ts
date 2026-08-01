@@ -50,7 +50,6 @@ describe("handleUpload", () => {
     expect(body.artifactId).toMatch(/^[0-9a-f]{32}$/);
   });
 
-  // The one guarantee the whole product rests on.
   it("stores the uploaded bytes unmodified", async () => {
     const { store, body } = await upload([
       { name: "deck.html", body: VALID_HTML },
@@ -147,7 +146,6 @@ describe("handleUpload", () => {
     expect(response.status).toBe(400);
   });
 
-  // Storage failures must not surface R2 internals to the uploader.
   it("reports a storage failure without leaking the cause", async () => {
     const store = recordingArtifactStore(() => {
       throw new Error("R2 connection reset at internal-host-9");

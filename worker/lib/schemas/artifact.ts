@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-// Single-file artifacts with inline CSS and JS. Large enough for an inlined
-// font or a base64 image, small enough that a runaway upload cannot fill R2.
 export const MAX_ARTIFACT_BYTES = 5 * 1024 * 1024;
 
 export const uploadFieldName = "file";

@@ -4,9 +4,6 @@ export type HtmlDocumentRejection =
 export type HtmlDocumentCheck =
   { ok: true } | { ok: false; reason: HtmlDocumentRejection };
 
-// Source that has to be compiled before a browser can run it. Checked first so
-// an uploaded .jsx is told what is actually wrong with it rather than being
-// reported as malformed HTML.
 const BUILD_STEP_MARKERS = [
   /^\s*import\s[\s\S]*?\sfrom\s+['"]/m,
   /^\s*export\s+default\s/m,
@@ -17,8 +14,6 @@ const BUILD_STEP_MARKERS = [
 
 const OPENING_HTML_TAG = /<html[\s>]/i;
 
-// The serve handler appends the runtime after this tag, and segmentation walks
-// a real document tree. A fragment satisfies neither.
 const CLOSING_HTML_TAG = /<\/html\s*>/i;
 
 export function checkHtmlDocument(source: string): HtmlDocumentCheck {

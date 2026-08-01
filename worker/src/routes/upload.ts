@@ -16,7 +16,6 @@ async function readFiles(request: Request): Promise<File[] | null> {
     const form = await request.formData();
     return form.getAll(uploadFieldName).filter((part) => part instanceof File);
   } catch {
-    // A malformed or truncated multipart body is a client error, not ours.
     return null;
   }
 }

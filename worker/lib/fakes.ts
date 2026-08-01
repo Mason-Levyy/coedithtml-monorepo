@@ -12,8 +12,6 @@ export type RecordingBucket = {
   bucket: R2Bucket;
 };
 
-// Keeps the exact bytes handed to R2 so tests can assert the stored artifact is
-// identical to what was uploaded.
 export function recordingArtifactStore(
   onPut?: () => never | void,
 ): RecordingBucket {
