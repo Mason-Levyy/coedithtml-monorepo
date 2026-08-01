@@ -2,7 +2,9 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types"]
+    // Generated from wrangler.jsonc by the typecheck script, so binding types
+    // can never drift from the deployed config. Not committed — it is 500KB+.
+    "types": ["./worker-configuration.d.ts"]
   },
   "include": ["src"]
 }
