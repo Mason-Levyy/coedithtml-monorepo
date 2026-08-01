@@ -4,6 +4,7 @@ build/
 out/
 .wrangler/
 pnpm-lock.yaml
+worker/worker-configuration.d.ts
 
 # Pre-existing hand-formatted content, not touched by the workspace scaffold.
 CLAUDE.md

@@ -21,6 +21,12 @@ function isFile(p) {
   }
 }
 
+function isInsideRepo(root, file) {
+  const rel = path.relative(root, file);
+  if (rel === '' || path.isAbsolute(rel)) return false;
+  return rel !== '..' && !rel.startsWith('..' + path.sep);
+}
+
 function hasEslintConfig(root) {
   const candidates = [
     'eslint.config.js',
@@ -43,8 +49,12 @@ function shQuote(arg) {
   return '"' + String(arg).replace(/"/g, '""') + '"';
 }
 
+// The command name must stay unquoted: cmd.exe sets %0 to the literal token it
+// was given, so `"pnpm"` leaves %~dp0 with no directory part and the shim
+// expands it against the cwd, resolving pnpm.mjs under the project instead of
+// its install dir. Only the arguments get quoted.
 function run(args, cwd) {
-  const command = ['pnpm', ...args].map(shQuote).join(' ');
+  const command = ['pnpm', ...args.map(shQuote)].join(' ');
   try {
     execSync(command, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
     return null;
@@ -60,6 +70,8 @@ function main() {
   if (!/\.(ts|tsx|js|jsx|mjs|cjs)$/i.test(file)) return;
 
   const root = process.cwd();
+  if (!isInsideRepo(root, file)) return;
+
   const pkgPath = path.join(root, 'package.json');
   if (!isFile(pkgPath)) return; // workspace not scaffolded yet
 

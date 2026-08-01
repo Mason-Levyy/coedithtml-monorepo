@@ -22,10 +22,14 @@ function main() {
   const file = input?.tool_input?.file_path || input?.tool_response?.filePath;
   if (!file) return;
 
-  const normalized = file.replace(/\\/g, '/');
-  if (!/(^|\/)runtime\//.test(normalized)) return;
-
   const root = process.cwd();
+  // Match on the path relative to the repo so an edit outside it never starts a
+  // build here — a scratch file under some other .../runtime/ would otherwise
+  // trigger one.
+  const rel = path.relative(root, file);
+  if (rel === '' || path.isAbsolute(rel) || rel.startsWith('..' + path.sep)) return;
+  if (!rel.replace(/\\/g, '/').startsWith('runtime/')) return;
+
   const runtimeDir = path.join(root, 'runtime');
   const runtimePkgPath = path.join(runtimeDir, 'package.json');
   if (!fs.existsSync(runtimePkgPath)) return; // runtime/ not scaffolded yet
@@ -39,8 +43,9 @@ function main() {
   if (!runtimePkg.scripts || !runtimePkg.scripts.build) return;
 
   // pnpm resolves to a .CMD shim on Windows, which Node can only launch via a
-  // shell — quote manually rather than execFileSync's array+shell:true
-  // (which concatenates unescaped and is unsafe/deprecated).
+  // shell. `pnpm` must stay unquoted: cmd.exe sets %0 to the literal token, so
+  // a quoted name leaves %~dp0 with no directory part and the shim resolves
+  // pnpm.mjs against the cwd instead of its install dir.
   try {
     execSync('pnpm --filter runtime build', {
       cwd: root,
