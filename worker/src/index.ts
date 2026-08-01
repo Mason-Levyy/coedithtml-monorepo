@@ -1,7 +1,8 @@
 import { parseWorkerEnv } from "@/lib/env";
+import { classifyRequestOrigin } from "@/lib/origins";
 
 export default {
-  async fetch(_request, env): Promise<Response> {
+  async fetch(request, env): Promise<Response> {
     const parsed = parseWorkerEnv(env);
     if (!parsed.ok) {
       console.error(
@@ -10,6 +11,14 @@ export default {
       return new Response("Service unavailable", { status: 503 });
     }
 
-    return new Response("Coedit worker placeholder", { status: 200 });
+    switch (classifyRequestOrigin(request, parsed.env)) {
+      case "sandbox":
+        return new Response("Artifact sandbox origin", { status: 200 });
+      case "app":
+        return new Response("Coedit app origin", { status: 200 });
+      // An unrecognized host gets no acknowledgement that it reached us.
+      case "unknown":
+        return new Response("Not found", { status: 404 });
+    }
   },
 } satisfies ExportedHandler<Env>;
