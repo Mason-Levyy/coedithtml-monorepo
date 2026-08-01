@@ -40,8 +40,6 @@ describe("parseWorkerEnv", () => {
     expect(result).toEqual({ ok: false, invalidBindings: ["ARTIFACT_STORE"] });
   });
 
-  // The bindings differ only by method surface, so a swap is the mistake most
-  // likely to survive review: both names are plausible in either slot.
   it("rejects a KV namespace bound where the R2 bucket belongs", () => {
     const result = parseWorkerEnv({
       ARTIFACT_STORE: fakeArtifactMetadata(),
