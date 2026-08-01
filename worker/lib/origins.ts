@@ -59,7 +59,6 @@ export function redirectTargetFor(
   if (!config.REDIRECT_HOSTS.includes(normalizeHost(url.host))) {
     return null;
   }
-  // Path and query ride along so a shared deep link survives the bounce.
   url.host = config.REDIRECT_TARGET;
   url.protocol = "https:";
   return url;
