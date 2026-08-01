@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { hostsAreDistinct, originConfigShape } from "./origins";
 
-// Bindings arrive as opaque runtime objects, so there is nothing to parse in
-// the usual sense — only their presence and shape can be checked. A binding
-// missing from wrangler.jsonc is `undefined` at runtime despite being typed,
-// which would otherwise surface as a TypeError on first storage call.
 function exposes(value: unknown, methods: readonly string[]): boolean {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -30,8 +26,6 @@ export const workerEnvSchema = z
     ...originConfigShape,
   })
   .refine(hostsAreDistinct, {
-    // Serving artifacts from the app origin is stored XSS against every signed
-    // in user, so a config collapsing the two hosts must not boot at all.
     message: "APP_HOST and SANDBOX_HOST must be different hosts",
     path: ["SANDBOX_HOST"],
   });

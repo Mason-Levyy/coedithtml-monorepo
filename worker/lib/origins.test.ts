@@ -44,4 +44,11 @@ describe("classifyRequestOrigin", () => {
   it("reports an unrelated host as unknown", () => {
     expect(classify("http://example.com/")).toBe("unknown");
   });
+
+  // The fully qualified form reaches the same server and carries the same
+  // cookies, so it has to resolve to the same origin rather than to unknown.
+  it("treats a trailing root-label dot as the same host", () => {
+    expect(classify("http://app.test.:8787/")).toBe("app");
+    expect(classify("http://sandbox.test.:8787/")).toBe("sandbox");
+  });
 });
