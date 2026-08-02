@@ -18,18 +18,50 @@ const hostSchema = z
     message: "host must be a bare host[:port], not a URL",
   });
 
+const hostListSchema = z.string().transform((value) =>
+  value
+    .split(",")
+    .map(normalizeHost)
+    .filter((host) => host.length > 0),
+);
+
 export const originConfigShape = {
   APP_HOST: hostSchema,
   SANDBOX_HOST: hostSchema,
+  REDIRECT_HOSTS: hostListSchema,
+  REDIRECT_TARGET: hostSchema,
 };
 
 export type OriginConfig = {
   APP_HOST: string;
   SANDBOX_HOST: string;
+  REDIRECT_HOSTS: string[];
+  REDIRECT_TARGET: string;
 };
 
 export function hostsAreDistinct(config: OriginConfig): boolean {
   return config.APP_HOST !== config.SANDBOX_HOST;
+}
+
+// A redirect host is answered with a 301 before anything else looks at it, so
+// listing an origin here would bounce that origin's own traffic away.
+export function redirectHostsAreDisjoint(config: OriginConfig): boolean {
+  return !config.REDIRECT_HOSTS.some(
+    (host) => host === config.APP_HOST || host === config.SANDBOX_HOST,
+  );
+}
+
+export function redirectTargetFor(
+  request: Request,
+  config: OriginConfig,
+): URL | null {
+  const url = new URL(request.url);
+  if (!config.REDIRECT_HOSTS.includes(normalizeHost(url.host))) {
+    return null;
+  }
+  url.host = config.REDIRECT_TARGET;
+  url.protocol = "https:";
+  return url;
 }
 
 export type RequestOrigin = "app" | "sandbox" | "unknown";

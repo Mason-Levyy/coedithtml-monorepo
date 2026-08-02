@@ -1,5 +1,5 @@
 import { parseWorkerEnv } from "@/lib/env";
-import { classifyRequestOrigin } from "@/lib/origins";
+import { classifyRequestOrigin, redirectTargetFor } from "@/lib/origins";
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -9,6 +9,11 @@ export default {
         `Worker misconfigured, invalid bindings: ${parsed.invalidBindings.join(", ")}`,
       );
       return new Response("Service unavailable", { status: 503 });
+    }
+
+    const redirect = redirectTargetFor(request, parsed.env);
+    if (redirect) {
+      return Response.redirect(redirect.toString(), 301);
     }
 
     switch (classifyRequestOrigin(request, parsed.env)) {
