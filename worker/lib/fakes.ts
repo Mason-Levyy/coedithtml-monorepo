@@ -7,6 +7,28 @@ export function fakeArtifactStore(): Record<string, unknown> {
   };
 }
 
+export type RecordingBucket = {
+  puts: { key: string; bytes: ArrayBuffer }[];
+  bucket: R2Bucket;
+};
+
+export function recordingArtifactStore(
+  onPut?: () => never | void,
+): RecordingBucket {
+  const puts: { key: string; bytes: ArrayBuffer }[] = [];
+  const bucket = {
+    put: (key: string, bytes: ArrayBuffer) => {
+      onPut?.();
+      puts.push({ key, bytes });
+      return Promise.resolve(undefined);
+    },
+    get: () => Promise.resolve(null),
+    head: () => Promise.resolve(null),
+    delete: () => Promise.resolve(undefined),
+  } as unknown as R2Bucket;
+  return { puts, bucket };
+}
+
 export function fakeArtifactMetadata(): Record<string, unknown> {
   return {
     get: () => Promise.resolve(null),
