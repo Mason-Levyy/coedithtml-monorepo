@@ -29,7 +29,7 @@ question.
 - [x] Upload endpoint: single `.html` only, size cap, content sniffing, reject
       anything that is not a complete HTML document
 - [x] Artifact stored in R2 byte-for-byte, metadata in KV with a read path
-- [ ] Serve handler appends exactly one script tag **after `</html>`** — a pure
+- [x] Serve handler appends exactly one script tag **after `</html>`** — a pure
       append, never a search-and-replace — and changes nothing else, verified by
       a byte-diff test
 - [ ] Detect artifacts shipping their own restrictive CSP meta tag and show an
@@ -104,7 +104,7 @@ to the task group above it belongs to.
         only, size cap, content sniffing, stored to R2 byte-for-byte
   - [x] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
         write and storage-key helpers landed with 06
-  - [ ] `08-serve-append-handler` — append-after-`</html>` serve handler,
+  - [x] `08-serve-append-handler` — append-after-`</html>` serve handler,
         byte-diff test
   - [ ] `09-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
         tokens, password gate, rate limits
