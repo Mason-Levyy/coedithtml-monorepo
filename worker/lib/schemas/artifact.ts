@@ -21,3 +21,5 @@ export const uploadedArtifactSchema = z.object({
 });
 
 export type UploadedArtifact = z.infer<typeof uploadedArtifactSchema>;
+
+export const artifactIdSchema = z.string().regex(/^[0-9a-f]{32}$/);
