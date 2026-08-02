@@ -1,4 +1,4 @@
-import { artifactMetadataKey } from "./storage-keys";
+import { artifactMetadataKey, artifactObjectKey } from "./storage-keys";
 
 export function fakeArtifactStore(): Record<string, unknown> {
   return {
@@ -7,6 +7,29 @@ export function fakeArtifactStore(): Record<string, unknown> {
     head: () => Promise.resolve(null),
     delete: () => Promise.resolve(undefined),
   };
+}
+
+export function stubArtifactStore(
+  stored: { artifactId: string; bytes: ArrayBuffer }[],
+): R2Bucket {
+  const entries = new Map(
+    stored.map(({ artifactId, bytes }) => [
+      artifactObjectKey(artifactId),
+      bytes,
+    ]),
+  );
+  return {
+    get: (key: string) => {
+      const bytes = entries.get(key);
+      if (bytes === undefined) return Promise.resolve(null);
+      return Promise.resolve({
+        arrayBuffer: () => Promise.resolve(bytes),
+      } as unknown as R2ObjectBody);
+    },
+    put: () => Promise.resolve(undefined),
+    head: () => Promise.resolve(null),
+    delete: () => Promise.resolve(undefined),
+  } as unknown as R2Bucket;
 }
 
 export type RecordingBucket = {
