@@ -44,7 +44,7 @@ question.
 
 The core of the phase. Budget more time here than feels reasonable.
 
-- [ ] Runtime waits for `load` plus a mutation-quiet period before segmenting
+- [x] Runtime waits for `load` plus a mutation-quiet period before segmenting
 - [ ] Strategy 1: explicit `[data-slide]` and top-level `<section>` detection
 - [ ] Strategy 2: `<hr>` and heading-level grouping
 - [ ] Strategy 3: accumulation over container children at a **fixed 900px
@@ -109,7 +109,7 @@ to the task group above it belongs to.
   - [ ] `09-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
         tokens, password gate, rate limits
 - [ ] **Segmentation engine**
-  - [ ] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
+  - [x] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
   - [ ] `11-segmentation-strategies-markers-semantic` — explicit markers, then
         `<hr>`/heading-grouping
   - [ ] `12-segmentation-layout-fallback` — fixed-900px virtual-height
