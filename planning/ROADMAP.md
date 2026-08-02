@@ -20,7 +20,7 @@ question.
 ### Foundation
 
 - [x] pnpm workspace with `app/`, `worker/`, `runtime/`, `website/`
-- [ ] Wrangler config with R2 and KV bindings, local dev running end to end
+- [x] Wrangler config with R2 and KV bindings, local dev running end to end
 - [ ] Two origins configured and verified separate in production
 - [ ] CI running typecheck, lint, and tests on every push
 
@@ -90,7 +90,7 @@ to the task group above it belongs to.
 - [ ] **Foundation**
   - [x] `01-workspace-scaffold` — pnpm workspace; `app/`, `worker/`, `runtime/`,
         `website/` scaffolded, each buildable, nothing functional yet
-  - [ ] `02-wrangler-bindings` — `wrangler.toml` with R2 + KV bindings, local
+  - [x] `02-wrangler-bindings` — `wrangler.jsonc` with R2 + KV bindings, local
         `wrangler dev` end to end
   - [ ] `03-two-origins` — app origin vs. sandbox origin as separate
         Wrangler/Pages targets, verified separate
