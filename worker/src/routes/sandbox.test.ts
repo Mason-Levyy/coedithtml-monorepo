@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { RUNTIME_SCRIPT_PATH } from "@/lib/artifact-render";
 import type { WorkerEnv } from "@/lib/env";
 import {
+  fakeAssets,
   FAKE_APP_HOST,
   liveKv,
   mergeKv,
   stubAccessTokens,
   stubArtifactMetadata,
   stubArtifactStore,
+  stubAssets,
 } from "@/lib/fakes";
 import { hashArtifactPassword } from "@/lib/password";
 import { accessTokenKey, artifactMetadataKey } from "@/lib/storage-keys";
@@ -22,10 +24,15 @@ const METADATA = {
   uploadedAt: "2026-08-01T00:00:00.000Z",
 };
 
-function envWith(store: R2Bucket, kv: KVNamespace): WorkerEnv {
+function envWith(
+  store: R2Bucket,
+  kv: KVNamespace,
+  assets: Fetcher = fakeAssets() as unknown as Fetcher,
+): WorkerEnv {
   return {
     ARTIFACT_STORE: store,
     ARTIFACT_METADATA: kv,
+    ASSETS: assets,
     APP_HOST: FAKE_APP_HOST,
   } as unknown as WorkerEnv;
 }
@@ -99,7 +106,48 @@ describe("handleSandboxRequest", () => {
     expect(response.status).toBe(404);
   });
 
-  it("returns 404 for the runtime script path", async () => {
+  it("serves the runtime script with the app origin injected", async () => {
+    const assets = stubAssets([
+      {
+        path: "/runtime.js",
+        body: "console.log(1);",
+        contentType: "text/javascript",
+      },
+    ]);
+    const response = await handleSandboxRequest(
+      request(RUNTIME_SCRIPT_PATH),
+      envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([])), assets),
+    );
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body.startsWith('"use strict";\nwindow.__coedit_config__=')).toBe(
+      true,
+    );
+    expect(body).toContain(`"appOrigin":"https://${FAKE_APP_HOST}"`);
+    expect(body).toContain("console.log(1);");
+    expect(response.headers.get("content-type")).toBe("text/javascript");
+  });
+
+  it("keeps the runtime bundle's own strict-mode directive effective", async () => {
+    const assets = stubAssets([
+      {
+        path: "/runtime.js",
+        body: '"use strict";\nconsole.log(1);',
+        contentType: "text/javascript",
+      },
+    ]);
+    const response = await handleSandboxRequest(
+      request(RUNTIME_SCRIPT_PATH),
+      envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([])), assets),
+    );
+    const body = await response.text();
+    const directivePrologue = body.slice(0, body.indexOf("window."));
+
+    expect(directivePrologue.trim()).toBe('"use strict";');
+  });
+
+  it("returns 404 for the runtime script path when no bundle asset exists", async () => {
     const response = await handleSandboxRequest(
       request(RUNTIME_SCRIPT_PATH),
       envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([]))),

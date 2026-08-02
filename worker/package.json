@@ -10,6 +10,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
+    "@coedithtml/runtime": "workspace:*",
     "wrangler": "^4.112.0"
   },
   "dependencies": {

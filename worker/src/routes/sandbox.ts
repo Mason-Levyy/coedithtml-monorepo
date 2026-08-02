@@ -23,6 +23,29 @@ function sandboxResponse(
   return new Response(body, { status, headers });
 }
 
+// Runs before the IIFE in the same script, so __coedit_config__ is already set when it reads it.
+async function serveRuntimeScript(
+  request: Request,
+  env: WorkerEnv,
+  csp: string,
+): Promise<Response> {
+  const assetResponse = await env.ASSETS.fetch(
+    new Request(new URL("/runtime.js", request.url)),
+  );
+  if (!assetResponse.ok) {
+    return sandboxResponse("Not found", 404, csp);
+  }
+
+  const appOrigin = `${new URL(request.url).protocol}//${env.APP_HOST}`;
+  const body = await assetResponse.text();
+  // Own "use strict" first, or prepending anything drops the bundle's own directive and the script runs sloppy-mode.
+  const configured = `"use strict";\nwindow.__coedit_config__=${JSON.stringify({ appOrigin })};\n${body}`;
+
+  const headers = new Headers(assetResponse.headers);
+  headers.set("content-security-policy", csp);
+  return new Response(configured, { status: 200, headers });
+}
+
 export async function handleSandboxRequest(
   request: Request,
   env: WorkerEnv,
@@ -35,7 +58,7 @@ export async function handleSandboxRequest(
 
   const { pathname } = new URL(request.url);
   if (pathname === RUNTIME_SCRIPT_PATH) {
-    return sandboxResponse("Not found", 404, csp);
+    return serveRuntimeScript(request, env, csp);
   }
 
   const parsedToken = accessTokenSchema.safeParse(pathname.slice(1));

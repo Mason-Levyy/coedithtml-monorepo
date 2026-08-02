@@ -161,6 +161,32 @@ export function mergeKv(...stores: KVNamespace[]): KVNamespace {
   } as unknown as KVNamespace;
 }
 
+export function fakeAssets(): Record<string, unknown> {
+  return {
+    fetch: () => Promise.resolve(new Response("", { status: 404 })),
+  };
+}
+
+export function stubAssets(
+  files: { path: string; body: string; contentType?: string }[],
+): Fetcher {
+  const entries = new Map(files.map((file) => [file.path, file]));
+  return {
+    fetch: (input: RequestInfo) => {
+      const url = typeof input === "string" ? input : (input as Request).url;
+      const file = entries.get(new URL(url).pathname);
+      if (!file) {
+        return Promise.resolve(new Response("Not found", { status: 404 }));
+      }
+      const headers = new Headers();
+      if (file.contentType) {
+        headers.set("content-type", file.contentType);
+      }
+      return Promise.resolve(new Response(file.body, { status: 200, headers }));
+    },
+  } as unknown as Fetcher;
+}
+
 export const FAKE_APP_HOST = "app.test:8787";
 export const FAKE_SANDBOX_HOST = "sandbox.test:8787";
 export const FAKE_REDIRECT_HOST = "www.test:8787";
@@ -170,6 +196,7 @@ export function fakeWorkerEnv(): Record<string, unknown> {
   return {
     ARTIFACT_STORE: fakeArtifactStore(),
     ARTIFACT_METADATA: fakeArtifactMetadata(),
+    ASSETS: fakeAssets(),
     APP_HOST: FAKE_APP_HOST,
     SANDBOX_HOST: FAKE_SANDBOX_HOST,
     REDIRECT_HOSTS: FAKE_REDIRECT_HOST,
