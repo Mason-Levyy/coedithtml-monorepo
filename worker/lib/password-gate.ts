@@ -1,5 +1,6 @@
 import { verifyArtifactPassword } from "./password";
 import { checkRateLimit } from "./rate-limit";
+import { clientIpOf } from "./request-ip";
 
 const ATTEMPT_LIMIT = 10;
 const ATTEMPT_WINDOW_SECONDS = 600;
@@ -28,10 +29,9 @@ export async function checkPasswordGate(
     return { ok: true };
   }
 
-  const clientIp = request.headers.get("cf-connecting-ip") ?? "unknown";
   const rateLimit = await checkRateLimit(
     kv,
-    `password-attempts:${artifactId}:${clientIp}`,
+    `password-attempts:${artifactId}:${clientIpOf(request)}`,
     ATTEMPT_LIMIT,
     ATTEMPT_WINDOW_SECONDS,
   );

@@ -4,6 +4,8 @@ import { putArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
 import { checkHtmlDocument, describeRejection } from "@/lib/html-document";
 import { hashArtifactPassword } from "@/lib/password";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { clientIpOf } from "@/lib/request-ip";
 import { jsonError, jsonResponse } from "@/lib/responses";
 import {
   MAX_ARTIFACT_BYTES,
@@ -13,6 +15,8 @@ import {
 import { newArtifactId, newToken } from "@/lib/storage-keys";
 
 const BAD_FORM = "Upload a single .html file as form data.";
+const UPLOAD_LIMIT = 20;
+const UPLOAD_WINDOW_SECONDS = 3600;
 
 type ParsedForm = { files: File[]; password: string | null };
 
@@ -40,6 +44,20 @@ export async function handleUpload(
   const declaredBytes = Number(request.headers.get("content-length"));
   if (Number.isFinite(declaredBytes) && declaredBytes > MAX_ARTIFACT_BYTES) {
     return jsonError("The file is larger than 5MB.", 413);
+  }
+
+  const rateLimit = await checkRateLimit(
+    env.ARTIFACT_METADATA,
+    `upload-attempts:${clientIpOf(request)}`,
+    UPLOAD_LIMIT,
+    UPLOAD_WINDOW_SECONDS,
+  );
+  if (!rateLimit.ok) {
+    console.error("Failed to check the upload rate limit", rateLimit.cause);
+    return jsonError("Could not save the file. Try again.", 500);
+  }
+  if (!rateLimit.allowed) {
+    return jsonError("Too many uploads. Try again later.", 429);
   }
 
   const form = await readForm(request);
