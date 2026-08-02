@@ -28,7 +28,7 @@ question.
 
 - [x] Upload endpoint: single `.html` only, size cap, content sniffing, reject
       anything that is not a complete HTML document
-- [~] Artifact stored in R2 byte-for-byte; metadata in KV still to come
+- [x] Artifact stored in R2 byte-for-byte, metadata in KV with a read path
 - [ ] Serve handler appends exactly one script tag **after `</html>`** — a pure
       append, never a search-and-replace — and changes nothing else, verified by
       a byte-diff test
@@ -102,7 +102,7 @@ to the task group above it belongs to.
 - [ ] **Storage and serving**
   - [x] `06-upload-endpoint` — Zod-validated upload route, single `.html`
         only, size cap, content sniffing, stored to R2 byte-for-byte
-  - [ ] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
+  - [x] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
         write and storage-key helpers landed with 06
   - [ ] `08-serve-append-handler` — append-after-`</html>` serve handler,
         byte-diff test

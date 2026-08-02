@@ -1,3 +1,4 @@
+import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { putArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
 import { checkHtmlDocument, describeRejection } from "@/lib/html-document";
@@ -65,6 +66,20 @@ export async function handleUpload(
   const stored = await putArtifact(env.ARTIFACT_STORE, artifactId, bytes);
   if (!stored.ok) {
     console.error("Failed to store artifact", stored.cause);
+    return jsonError("Could not save the file. Try again.", 500);
+  }
+
+  const storedMetadata = await putArtifactMetadata(
+    env.ARTIFACT_METADATA,
+    artifactId,
+    {
+      fileName: file.name,
+      size: bytes.byteLength,
+      uploadedAt: new Date().toISOString(),
+    },
+  );
+  if (!storedMetadata.ok) {
+    console.error("Failed to store artifact metadata", storedMetadata.cause);
     return jsonError("Could not save the file. Try again.", 500);
   }
 

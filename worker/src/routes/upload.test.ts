@@ -1,14 +1,24 @@
 import { describe, expect, it } from "vitest";
 import type { WorkerEnv } from "@/lib/env";
-import { recordingArtifactStore } from "@/lib/fakes";
+import {
+  fakeArtifactMetadata,
+  recordingArtifactMetadata,
+  recordingArtifactStore,
+} from "@/lib/fakes";
 import { MAX_ARTIFACT_BYTES } from "@/lib/schemas/artifact";
 import { handleUpload } from "./upload";
 
 const VALID_HTML = `<!doctype html>
 <html lang="en"><body><section><h1>Q3</h1></section></body></html>`;
 
-function envWith(store: R2Bucket): WorkerEnv {
-  return { ARTIFACT_STORE: store } as unknown as WorkerEnv;
+function envWith(
+  store: R2Bucket,
+  metadata: KVNamespace = fakeArtifactMetadata() as unknown as KVNamespace,
+): WorkerEnv {
+  return {
+    ARTIFACT_STORE: store,
+    ARTIFACT_METADATA: metadata,
+  } as unknown as WorkerEnv;
 }
 
 function uploadRequest(files: { name: string; body: string }[]): Request {
@@ -59,6 +69,41 @@ describe("handleUpload", () => {
     const [put] = store.puts;
     expect(put && new TextDecoder().decode(put.bytes)).toBe(VALID_HTML);
     expect(put?.key).toBe(`artifacts/${body.artifactId}.html`);
+  });
+
+  it("stores metadata in KV alongside the R2 object", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as { artifactId: string };
+
+    expect(metadata.puts).toHaveLength(1);
+    const [put] = metadata.puts;
+    expect(put?.key).toBe(`artifacts/${body.artifactId}`);
+    expect(put && JSON.parse(put.value)).toMatchObject({
+      fileName: "deck.html",
+      size: VALID_HTML.length,
+    });
+  });
+
+  it("reports a metadata write failure without leaking the cause", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata(() => {
+      throw new Error("KV connection reset at internal-host-9");
+    });
+
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe("Could not save the file. Try again.");
+    expect(JSON.stringify(body)).not.toMatch(/internal-host-9/);
   });
 
   it("gives each upload a distinct id", async () => {
