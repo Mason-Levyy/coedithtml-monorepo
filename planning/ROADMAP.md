@@ -67,9 +67,13 @@ The core of the phase. Budget more time here than feels reasonable.
 
 ### Viewer — filmstrip
 
-- [ ] Chrome on app origin, artifact in cross-origin iframe with correct sandbox
+- [x] Chrome on app origin, artifact in cross-origin iframe with correct sandbox
       attributes and no top-navigation or popups
-- [ ] `postMessage` bridge: versioned schema, origin checked both directions
+- [~] `postMessage` bridge: versioned schema, origin checked both directions
+      for the traffic that exists today (runtime → app: ready/resegmented,
+      checked on send via a resolved target origin and on receipt via a
+      strict `event.origin` check). No app → runtime messages exist yet —
+      lands in 15 with the first real navigation command
 - [ ] Flow mode: natural scroll, filmstrip as scroll-spy and jump navigation
 - [ ] Stage mode: one slide visible, opt-in, warned when sticky or fixed
       positioning is detected
@@ -128,8 +132,16 @@ to the task group above it belongs to.
         `segmentWithProfile()` reading-profile auto-detection. UI control and
         server-side persistence of the chosen profile are stack C/D
 - [ ] **Viewer — filmstrip**
-  - [ ] `14-viewer-iframe-bridge` — sandboxed cross-origin iframe, versioned
-        origin-checked `postMessage` bridge
+  - [x] `14-viewer-iframe-bridge` — `ArtifactFrame` (exact
+        `sandbox="allow-scripts allow-same-origin"`, locked in by a test) +
+        `useArtifactBridge` hook on the app side; `runtime/src/transport/`
+        (origin resolution, versioned message builders, send) on the runtime
+        side, wired into a real `runtime/src/index.ts` entry point (wait →
+        segment → report ready → watch → report resegmented). Runtime bundle
+        is 3.9KB minified, well inside the 20KB budget. Deployment-agnostic
+        by design (no baked-in env vars) since how `app/`'s build output
+        itself gets served in production is still an open question — flagged
+        for the end-of-phase audit, not solved here
   - [ ] `15-viewer-flow-stage` — Flow scroll-spy, Stage mode with sticky/fixed
         warning, thumbnails from live ranges
   - [ ] `16-viewer-keyboard-mobile` — keyboard nav + focus ring, mobile swipe
