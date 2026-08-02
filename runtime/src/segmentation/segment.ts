@@ -2,13 +2,27 @@ import { segmentAsSingleSlide } from "./strategies/fallback";
 import { segmentByLayout } from "./strategies/layout";
 import { segmentByMarkers } from "./strategies/markers";
 import { segmentBySemanticBreaks } from "./strategies/semantic";
-import type { Slide } from "./types";
+import type { SegmentResult, Slide } from "./types";
+
+export function segmentWithProfile(container: Element): SegmentResult {
+  const markers = segmentByMarkers(container);
+  if (markers) {
+    return { slides: markers, profile: "slides" };
+  }
+
+  const semantic = segmentBySemanticBreaks(container);
+  if (semantic) {
+    return { slides: semantic, profile: "slides" };
+  }
+
+  const layout = segmentByLayout(container);
+  if (layout) {
+    return { slides: layout, profile: "pages" };
+  }
+
+  return { slides: segmentAsSingleSlide(container), profile: "app" };
+}
 
 export function segment(container: Element): Slide[] {
-  return (
-    segmentByMarkers(container) ??
-    segmentBySemanticBreaks(container) ??
-    segmentByLayout(container) ??
-    segmentAsSingleSlide(container)
-  );
+  return segmentWithProfile(container).slides;
 }

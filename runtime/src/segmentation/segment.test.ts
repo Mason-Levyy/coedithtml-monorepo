@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { segment } from "./segment";
+import { segment, segmentWithProfile } from "./segment";
 
 function containerFromHtml(html: string): Element {
   const container = document.createElement("div");
@@ -57,5 +57,39 @@ describe("segment", () => {
     const container = document.createElement("div");
 
     expect(segment(container)).toEqual([]);
+  });
+});
+
+describe("segmentWithProfile", () => {
+  it("labels a marker-driven result as slides", () => {
+    const container = containerFromHtml(
+      "<section><h1>A</h1></section><section><h1>B</h1></section>",
+    );
+
+    expect(segmentWithProfile(container).profile).toBe("slides");
+  });
+
+  it("labels a semantic-break result as slides", () => {
+    const container = containerFromHtml("<h1>A</h1><hr><h1>B</h1>");
+
+    expect(segmentWithProfile(container).profile).toBe("slides");
+  });
+
+  it("labels a layout-driven result as pages", () => {
+    const container = containerFromHtml("<p>A</p><p>B</p><p>C</p><p>D</p>");
+    [...container.children].forEach((child) => {
+      child.getBoundingClientRect = () =>
+        ({ height: 400 }) as unknown as DOMRect;
+    });
+
+    expect(segmentWithProfile(container).profile).toBe("pages");
+  });
+
+  it("labels a single-slide result as app", () => {
+    const container = containerFromHtml(
+      "<canvas></canvas><button>Play</button>",
+    );
+
+    expect(segmentWithProfile(container).profile).toBe("app");
   });
 });

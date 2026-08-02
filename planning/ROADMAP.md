@@ -54,13 +54,16 @@ The core of the phase. Budget more time here than feels reasonable.
       exist yet to surface anything in)
 - [x] Slides emitted as index ranges — no DOM restructuring anywhere in the path
 - [x] Slide labels derived from the first heading or first text in the range
-- [ ] Debounced `MutationObserver` triggers re-segmentation on structural change
-      only, preserving reader position
-- [ ] Reading profiles — Slides, Pages, App — auto-detected, surfaced as a
-      `Reading as ▾` control, stored on the link rather than per viewer
-- [ ] Corpus of 20+ real artifacts checked into `fixtures/`, spanning documents,
+- [~] Debounced `MutationObserver` triggers re-segmentation on structural
+      change only (built and tested); "preserving reader position" is a
+      viewer-side concern (map old slide to new by content, not raw index)
+      that has nothing to attach to until stack C
+- [~] Reading profiles — Slides, Pages, App — auto-detection is built and
+      tested (`segmentWithProfile`); the `Reading as ▾` control and storing
+      the choice on the link are stack C/D work
+- [x] Corpus of 20+ real artifacts checked into `fixtures/`, spanning documents,
       dashboards, games, and long-scroll pages
-- [ ] Snapshot test asserting expected slide counts across the whole corpus
+- [x] Snapshot test asserting expected slide counts across the whole corpus
 
 ### Viewer — filmstrip
 
@@ -110,7 +113,7 @@ to the task group above it belongs to.
         byte-diff test
   - [ ] `09-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
         tokens, password gate, rate limits
-- [ ] **Segmentation engine**
+- [x] **Segmentation engine**
   - [x] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
   - [x] `11-segmentation-strategies-markers-semantic` — explicit markers, then
         `<hr>`/heading-grouping; also lands the shared `Slide` range type and
@@ -119,8 +122,11 @@ to the task group above it belongs to.
         accumulation, single-slide fallback, index-range output + labels;
         also lands `segment()`, the cascade wiring all four strategies
         together in priority order
-  - [ ] `13-segmentation-fixtures-tests` — 20+ fixture corpus, snapshot tests,
-        `MutationObserver` re-segmentation, reading-profile control
+  - [x] `13-segmentation-fixtures-tests` — 20+ fixture corpus (5 per strategy:
+        markers, semantic, layout, app), snapshot tests against hand-computed
+        expected counts, debounced `MutationObserver` re-segmentation,
+        `segmentWithProfile()` reading-profile auto-detection. UI control and
+        server-side persistence of the chosen profile are stack C/D
 - [ ] **Viewer — filmstrip**
   - [ ] `14-viewer-iframe-bridge` — sandboxed cross-origin iframe, versioned
         origin-checked `postMessage` bridge

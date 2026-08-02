@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Calculator</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+      }
+      .calculator {
+        width: 240px;
+      }
+      .display {
+        font-size: 2rem;
+        text-align: right;
+        padding: 0.5rem;
+        background: #222;
+        color: white;
+      }
+      .pad {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
+        margin-top: 4px;
+      }
+      button {
+        padding: 1rem;
+        font-size: 1.1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="calculator">
+      <div class="display" id="display">0</div>
+      <div class="pad">
+        <button>7</button><button>8</button><button>9</button><button>÷</button>
+        <button>4</button><button>5</button><button>6</button><button>×</button>
+        <button>1</button><button>2</button><button>3</button><button>−</button>
+        <button>0</button><button>.</button><button>=</button><button>+</button>
+      </div>
+    </div>
+    <script>
+      document.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => {
+          const display = document.getElementById("display");
+          if (display) display.textContent = button.textContent;
+        });
+      });
+    </script>
+  </body>
+</html>
