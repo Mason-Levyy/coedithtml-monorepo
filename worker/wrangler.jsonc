@@ -31,6 +31,13 @@
     }
   ],
 
+  // Points straight at runtime/'s own build output rather than a copy of it.
+  "assets": {
+    "directory": "../runtime/dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+
   "env": {
     "production": {
       "name": "coedit",
@@ -68,7 +75,12 @@
           "binding": "ARTIFACT_METADATA",
           "id": "c2a45fd936ac4d798f9c3251e813020f"
         }
-      ]
+      ],
+      "assets": {
+        "directory": "../runtime/dist",
+        "binding": "ASSETS",
+        "run_worker_first": true
+      }
     }
   }
 }

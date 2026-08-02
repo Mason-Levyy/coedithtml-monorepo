@@ -124,6 +124,18 @@ to the task group above it belongs to.
           history and any access logs
     - [x] `09c-upload-rate-limits` — general upload abuse ceiling, reusing
           09b's rate-limit primitive
+    - [x] `09d-serve-runtime-bundle` — replaces the `/__coedit/runtime.js`
+          404 placeholder with the real esbuild output, served via Cloudflare
+          Workers Static Assets (`assets.directory` pointed straight at
+          `runtime/dist`, `run_worker_first: true` so origin classification
+          and CSP still apply to it). Injects `window.__coedit_config__ =
+          {appOrigin}` ahead of the bundle so the not-yet-built postMessage
+          bridge (stack C) has a safe `postMessage` target origin, since the
+          runtime can't otherwise read the parent's origin from inside a
+          cross-origin iframe. Added as its own branch once it became clear
+          branch 14 (viewer, rooted on the segmentation stack off `main`)
+          has no ancestry containing this worker code and can't touch it
+          directly — this stays on stack A instead
 - [ ] **Segmentation engine**
   - [ ] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
   - [ ] `11-segmentation-strategies-markers-semantic` — explicit markers, then
