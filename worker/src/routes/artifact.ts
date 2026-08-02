@@ -1,20 +1,33 @@
+import { resolveAccessToken } from "@/lib/access-tokens";
 import { getArtifactMetadata } from "@/lib/artifact-metadata";
 import type { WorkerEnv } from "@/lib/env";
 import { jsonError, jsonResponse } from "@/lib/responses";
-import { artifactIdSchema } from "@/lib/schemas/artifact";
+import { accessTokenSchema } from "@/lib/schemas/artifact";
 
 export async function handleGetArtifact(
-  artifactId: string,
+  token: string,
   env: WorkerEnv,
 ): Promise<Response> {
-  const parsedId = artifactIdSchema.safeParse(artifactId);
-  if (!parsedId.success) {
+  const parsedToken = accessTokenSchema.safeParse(token);
+  if (!parsedToken.success) {
+    return jsonError("Not found.", 404);
+  }
+
+  const resolved = await resolveAccessToken(
+    env.ARTIFACT_METADATA,
+    parsedToken.data,
+  );
+  if (!resolved.ok) {
+    console.error("Failed to resolve access token", resolved.cause);
+    return jsonError("Could not load the file. Try again.", 500);
+  }
+  if (resolved.record === null) {
     return jsonError("Not found.", 404);
   }
 
   const lookup = await getArtifactMetadata(
     env.ARTIFACT_METADATA,
-    parsedId.data,
+    resolved.record.artifactId,
   );
   if (!lookup.ok) {
     console.error("Failed to read artifact metadata", lookup.cause);
@@ -24,5 +37,8 @@ export async function handleGetArtifact(
     return jsonError("Not found.", 404);
   }
 
-  return jsonResponse({ artifactId: parsedId.data, ...lookup.metadata }, 200);
+  return jsonResponse(
+    { artifactId: resolved.record.artifactId, ...lookup.metadata },
+    200,
+  );
 }

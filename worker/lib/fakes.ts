@@ -1,4 +1,9 @@
-import { artifactMetadataKey, artifactObjectKey } from "./storage-keys";
+import type { TokenRecord } from "./access-tokens";
+import {
+  accessTokenKey,
+  artifactMetadataKey,
+  artifactObjectKey,
+} from "./storage-keys";
 
 export function fakeArtifactStore(): Record<string, unknown> {
   return {
@@ -96,6 +101,40 @@ export function stubArtifactMetadata(
   );
   return {
     get: (key: string) => Promise.resolve(entries.get(key) ?? null),
+    put: () => Promise.resolve(undefined),
+    list: () => Promise.resolve({ keys: [] }),
+    delete: () => Promise.resolve(undefined),
+  } as unknown as KVNamespace;
+}
+
+export function stubAccessTokens(
+  stored: { token: string; record: TokenRecord }[],
+): KVNamespace {
+  const entries = new Map(
+    stored.map(({ token, record }) => [
+      accessTokenKey(token),
+      JSON.stringify(record),
+    ]),
+  );
+  return {
+    get: (key: string) => Promise.resolve(entries.get(key) ?? null),
+    put: () => Promise.resolve(undefined),
+    list: () => Promise.resolve({ keys: [] }),
+    delete: () => Promise.resolve(undefined),
+  } as unknown as KVNamespace;
+}
+
+export function mergeKv(...stores: KVNamespace[]): KVNamespace {
+  return {
+    get: async (key: string) => {
+      for (const store of stores) {
+        const value = await store.get(key);
+        if (value !== null) {
+          return value;
+        }
+      }
+      return null;
+    },
     put: () => Promise.resolve(undefined),
     list: () => Promise.resolve({ keys: [] }),
     delete: () => Promise.resolve(undefined),

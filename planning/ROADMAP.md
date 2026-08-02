@@ -32,11 +32,11 @@ question.
 - [x] Serve handler appends exactly one script tag **after `</html>`** — a pure
       append, never a search-and-replace — and changes nothing else, verified by
       a byte-diff test
-- [ ] Detect artifacts shipping their own restrictive CSP meta tag and show an
+- [x] Detect artifacts shipping their own restrictive CSP meta tag and show an
       honest error rather than a silently dead viewer
-- [ ] CSP on artifact responses: external resources allowed, credentialed
+- [x] CSP on artifact responses: external resources allowed, credentialed
       same-origin requests blocked
-- [ ] View and edit tokens, unguessable, independently revocable
+- [x] View and edit tokens, unguessable, independently revocable
 - [ ] Optional password gate on a link
 - [ ] Rate limits and abuse ceiling on upload
 
@@ -106,8 +106,19 @@ to the task group above it belongs to.
         write and storage-key helpers landed with 06
   - [x] `08-serve-append-handler` — append-after-`</html>` serve handler,
         byte-diff test
-  - [ ] `09-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
-        tokens, password gate, rate limits
+  - [x] `09-csp-tokens` — CSP meta-tag detection/error, CSP response headers
+        (`frame-ancestors` locked to the app origin), view/edit tokens minted
+        on upload and required by both read routes. Split into three branches
+        rather than one (password gate and rate limits are separable
+        concerns, and bundled would have pushed well past the ~1000-line
+        guideline) — numbering kept as 09/09b/09c so 10-18 didn't need to
+        shift:
+    - [x] `09-csp-tokens` — this entry
+    - [ ] `09b-password-gate` — optional password gate backend (hash + verify
+          + password-attempt rate limiting); no prompt UI yet, since the
+          viewer page it belongs on doesn't exist until stack C
+    - [ ] `09c-upload-rate-limits` — general upload abuse ceiling, reusing
+          09b's rate-limit primitive
 - [ ] **Segmentation engine**
   - [ ] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
   - [ ] `11-segmentation-strategies-markers-semantic` — explicit markers, then
