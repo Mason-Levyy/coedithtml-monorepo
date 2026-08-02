@@ -16,9 +16,20 @@ export function fakeArtifactMetadata(): Record<string, unknown> {
   };
 }
 
+export const FAKE_APP_HOST = "app.test:8787";
+export const FAKE_SANDBOX_HOST = "sandbox.test:8787";
+
 export function fakeWorkerEnv(): Record<string, unknown> {
   return {
     ARTIFACT_STORE: fakeArtifactStore(),
     ARTIFACT_METADATA: fakeArtifactMetadata(),
+    APP_HOST: FAKE_APP_HOST,
+    SANDBOX_HOST: FAKE_SANDBOX_HOST,
   };
+}
+
+export function fakeWorkerEnvWithout(key: string): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(fakeWorkerEnv()).filter(([name]) => name !== key),
+  );
 }

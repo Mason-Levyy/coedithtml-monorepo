@@ -1,9 +1,6 @@
 import { z } from "zod";
+import { hostsAreDistinct, originConfigShape } from "./origins";
 
-// Bindings arrive as opaque runtime objects, so there is nothing to parse in
-// the usual sense — only their presence and shape can be checked. A binding
-// missing from wrangler.jsonc is `undefined` at runtime despite being typed,
-// which would otherwise surface as a TypeError on first storage call.
 function exposes(value: unknown, methods: readonly string[]): boolean {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -22,10 +19,16 @@ const artifactMetadataSchema = z.custom<KVNamespace>(
   { message: "ARTIFACT_METADATA is not bound to a KV namespace" },
 );
 
-export const workerEnvSchema = z.object({
-  ARTIFACT_STORE: artifactStoreSchema,
-  ARTIFACT_METADATA: artifactMetadataSchema,
-});
+export const workerEnvSchema = z
+  .object({
+    ARTIFACT_STORE: artifactStoreSchema,
+    ARTIFACT_METADATA: artifactMetadataSchema,
+    ...originConfigShape,
+  })
+  .refine(hostsAreDistinct, {
+    message: "APP_HOST and SANDBOX_HOST must be different hosts",
+    path: ["SANDBOX_HOST"],
+  });
 
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
 
