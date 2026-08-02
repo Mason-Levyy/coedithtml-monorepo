@@ -45,13 +45,13 @@ question.
 The core of the phase. Budget more time here than feels reasonable.
 
 - [x] Runtime waits for `load` plus a mutation-quiet period before segmenting
-- [ ] Strategy 1: explicit `[data-slide]` and top-level `<section>` detection
-- [ ] Strategy 2: `<hr>` and heading-level grouping
+- [x] Strategy 1: explicit `[data-slide]` and top-level `<section>` detection
+- [x] Strategy 2: `<hr>` and heading-level grouping
 - [ ] Strategy 3: accumulation over container children at a **fixed 900px
       virtual height**, never the real viewport
 - [ ] Strategy 4: single-slide fallback, surfaced honestly in the UI
-- [ ] Slides emitted as index ranges — no DOM restructuring anywhere in the path
-- [ ] Slide labels derived from the first heading or first text in the range
+- [x] Slides emitted as index ranges — no DOM restructuring anywhere in the path
+- [x] Slide labels derived from the first heading or first text in the range
 - [ ] Debounced `MutationObserver` triggers re-segmentation on structural change
       only, preserving reader position
 - [ ] Reading profiles — Slides, Pages, App — auto-detected, surfaced as a
@@ -110,8 +110,9 @@ to the task group above it belongs to.
         tokens, password gate, rate limits
 - [ ] **Segmentation engine**
   - [x] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
-  - [ ] `11-segmentation-strategies-markers-semantic` — explicit markers, then
-        `<hr>`/heading-grouping
+  - [x] `11-segmentation-strategies-markers-semantic` — explicit markers, then
+        `<hr>`/heading-grouping; also lands the shared `Slide` range type and
+        label derivation both strategies (and the ones after them) build on
   - [ ] `12-segmentation-layout-fallback` — fixed-900px virtual-height
         accumulation, single-slide fallback, index-range output + labels
   - [ ] `13-segmentation-fixtures-tests` — 20+ fixture corpus, snapshot tests,
