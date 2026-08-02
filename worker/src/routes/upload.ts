@@ -1,3 +1,4 @@
+import { putAccessToken } from "@/lib/access-tokens";
 import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { putArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
@@ -8,7 +9,7 @@ import {
   uploadFieldName,
   uploadedArtifactSchema,
 } from "@/lib/schemas/artifact";
-import { newArtifactId } from "@/lib/storage-keys";
+import { newArtifactId, newToken } from "@/lib/storage-keys";
 
 const BAD_FORM = "Upload a single .html file as form data.";
 
@@ -83,5 +84,23 @@ export async function handleUpload(
     return jsonError("Could not save the file. Try again.", 500);
   }
 
-  return jsonResponse({ artifactId }, 201);
+  const viewToken = newToken();
+  const editToken = newToken();
+  const tokenResults = await Promise.all([
+    putAccessToken(env.ARTIFACT_METADATA, viewToken, {
+      artifactId,
+      kind: "view",
+    }),
+    putAccessToken(env.ARTIFACT_METADATA, editToken, {
+      artifactId,
+      kind: "edit",
+    }),
+  ]);
+  const failedToken = tokenResults.find((result) => !result.ok);
+  if (failedToken && !failedToken.ok) {
+    console.error("Failed to store access tokens", failedToken.cause);
+    return jsonError("Could not save the file. Try again.", 500);
+  }
+
+  return jsonResponse({ artifactId, viewToken, editToken }, 201);
 }

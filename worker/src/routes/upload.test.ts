@@ -45,6 +45,8 @@ async function upload(
   );
   const body = (await response.json()) as {
     artifactId?: string;
+    viewToken?: string;
+    editToken?: string;
     error?: string;
   };
   return { response, body, store };
@@ -80,13 +82,70 @@ describe("handleUpload", () => {
     );
     const body = (await response.json()) as { artifactId: string };
 
-    expect(metadata.puts).toHaveLength(1);
-    const [put] = metadata.puts;
-    expect(put?.key).toBe(`artifacts/${body.artifactId}`);
-    expect(put && JSON.parse(put.value)).toMatchObject({
+    const metadataPut = metadata.puts.find(
+      (put) => put.key === `artifacts/${body.artifactId}`,
+    );
+    expect(metadataPut && JSON.parse(metadataPut.value)).toMatchObject({
       fileName: "deck.html",
       size: VALID_HTML.length,
     });
+  });
+
+  it("mints distinct view and edit tokens", async () => {
+    const { response, body } = await upload([
+      { name: "deck.html", body: VALID_HTML },
+    ]);
+
+    expect(response.status).toBe(201);
+    expect(body.viewToken).toMatch(/^[0-9a-f]{32}$/);
+    expect(body.editToken).toMatch(/^[0-9a-f]{32}$/);
+    expect(body.viewToken).not.toBe(body.editToken);
+  });
+
+  it("stores both tokens in KV, each scoped to the artifact", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as {
+      artifactId: string;
+      viewToken: string;
+      editToken: string;
+    };
+
+    const tokenPuts = metadata.puts.filter((put) =>
+      put.key.startsWith("tokens/"),
+    );
+    expect(tokenPuts).toHaveLength(2);
+
+    const viewPut = tokenPuts.find(
+      (put) => put.key === `tokens/${body.viewToken}`,
+    );
+    const editPut = tokenPuts.find(
+      (put) => put.key === `tokens/${body.editToken}`,
+    );
+    expect(viewPut && JSON.parse(viewPut.value)).toEqual({
+      artifactId: body.artifactId,
+      kind: "view",
+    });
+    expect(editPut && JSON.parse(editPut.value)).toEqual({
+      artifactId: body.artifactId,
+      kind: "edit",
+    });
+  });
+
+  it("rejects a file that ships its own CSP meta tag", async () => {
+    const { response, body } = await upload([
+      {
+        name: "deck.html",
+        body: `<html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'"></head><body>hi</body></html>`,
+      },
+    ]);
+
+    expect(response.status).toBe(415);
+    expect(body.error).toMatch(/Content-Security-Policy/i);
   });
 
   it("reports a metadata write failure without leaking the cause", async () => {

@@ -22,4 +22,8 @@ export const uploadedArtifactSchema = z.object({
 
 export type UploadedArtifact = z.infer<typeof uploadedArtifactSchema>;
 
-export const artifactIdSchema = z.string().regex(/^[0-9a-f]{32}$/);
+const RANDOM_ID_PATTERN = /^[0-9a-f]{32}$/;
+
+export const artifactIdSchema = z.string().regex(RANDOM_ID_PATTERN);
+
+export const accessTokenSchema = z.string().regex(RANDOM_ID_PATTERN);
