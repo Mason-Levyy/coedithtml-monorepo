@@ -5,6 +5,7 @@ import {
   recordingArtifactMetadata,
   recordingArtifactStore,
 } from "@/lib/fakes";
+import { verifyArtifactPassword } from "@/lib/password";
 import { MAX_ARTIFACT_BYTES } from "@/lib/schemas/artifact";
 import { handleUpload } from "./upload";
 
@@ -21,13 +22,19 @@ function envWith(
   } as unknown as WorkerEnv;
 }
 
-function uploadRequest(files: { name: string; body: string }[]): Request {
+function uploadRequest(
+  files: { name: string; body: string }[],
+  password?: string,
+): Request {
   const form = new FormData();
   for (const file of files) {
     form.append(
       "file",
       new File([file.body], file.name, { type: "text/html" }),
     );
+  }
+  if (password !== undefined) {
+    form.append("password", password);
   }
   return new Request("https://app.test/api/artifacts", {
     method: "POST",
@@ -134,6 +141,45 @@ describe("handleUpload", () => {
       artifactId: body.artifactId,
       kind: "edit",
     });
+  });
+
+  it("omits passwordHash when no password is given", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as { artifactId: string };
+
+    const metadataPut = metadata.puts.find(
+      (put) => put.key === `artifacts/${body.artifactId}`,
+    );
+    expect(
+      metadataPut && JSON.parse(metadataPut.value).passwordHash,
+    ).toBeUndefined();
+  });
+
+  it("hashes and stores an optional password", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }], "hunter2"),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as { artifactId: string };
+
+    const metadataPut = metadata.puts.find(
+      (put) => put.key === `artifacts/${body.artifactId}`,
+    );
+    const storedHash =
+      metadataPut && JSON.parse(metadataPut.value).passwordHash;
+
+    expect(typeof storedHash).toBe("string");
+    expect(storedHash).not.toBe("hunter2");
+    expect(
+      await verifyArtifactPassword(body.artifactId, "hunter2", storedHash),
+    ).toBe(true);
   });
 
   it("rejects a file that ships its own CSP meta tag", async () => {

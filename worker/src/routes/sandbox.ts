@@ -3,8 +3,10 @@ import {
   appendRuntimeScript,
   RUNTIME_SCRIPT_PATH,
 } from "@/lib/artifact-render";
+import { getArtifactMetadata } from "@/lib/artifact-metadata";
 import { getArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
+import { checkPasswordGate } from "@/lib/password-gate";
 import { sandboxContentSecurityPolicy } from "@/lib/sandbox-headers";
 import { accessTokenSchema } from "@/lib/schemas/artifact";
 
@@ -52,11 +54,35 @@ export async function handleSandboxRequest(
   if (resolved.record === null) {
     return sandboxResponse("Not found", 404, csp);
   }
+  const { artifactId } = resolved.record;
 
-  const result = await getArtifact(
-    env.ARTIFACT_STORE,
-    resolved.record.artifactId,
+  const metadataLookup = await getArtifactMetadata(
+    env.ARTIFACT_METADATA,
+    artifactId,
   );
+  if (!metadataLookup.ok) {
+    console.error("Failed to read artifact metadata", metadataLookup.cause);
+    return sandboxResponse("Could not load the file. Try again.", 500, csp);
+  }
+  if (metadataLookup.metadata === null) {
+    return sandboxResponse("Not found", 404, csp);
+  }
+
+  const gate = await checkPasswordGate(env.ARTIFACT_METADATA, {
+    artifactId,
+    request,
+    passwordHash: metadataLookup.metadata.passwordHash,
+    providedPassword: new URL(request.url).searchParams.get("password"),
+  });
+  if (!gate.ok) {
+    if (gate.status === 500) {
+      console.error("Failed to check the password gate", gate.cause);
+      return sandboxResponse("Could not load the file. Try again.", 500, csp);
+    }
+    return sandboxResponse(gate.message, gate.status, csp);
+  }
+
+  const result = await getArtifact(env.ARTIFACT_STORE, artifactId);
   if (!result.ok) {
     console.error("Failed to read artifact", result.cause);
     return sandboxResponse("Could not load the file. Try again.", 500, csp);

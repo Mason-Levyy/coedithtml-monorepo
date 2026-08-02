@@ -5,6 +5,7 @@ export const artifactMetadataSchema = z.object({
   fileName: z.string().min(1),
   size: z.number().int().positive(),
   uploadedAt: z.string().datetime(),
+  passwordHash: z.string().optional(),
 });
 
 export type ArtifactMetadata = z.infer<typeof artifactMetadataSchema>;

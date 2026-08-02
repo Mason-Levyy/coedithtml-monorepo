@@ -124,6 +124,26 @@ export function stubAccessTokens(
   } as unknown as KVNamespace;
 }
 
+export function liveKv(
+  seed: { key: string; value: unknown }[] = [],
+): KVNamespace {
+  const store = new Map(
+    seed.map(({ key, value }) => [key, JSON.stringify(value)]),
+  );
+  return {
+    get: (key: string) => Promise.resolve(store.get(key) ?? null),
+    put: (key: string, value: string) => {
+      store.set(key, value);
+      return Promise.resolve(undefined);
+    },
+    list: () => Promise.resolve({ keys: [] }),
+    delete: (key: string) => {
+      store.delete(key);
+      return Promise.resolve(undefined);
+    },
+  } as unknown as KVNamespace;
+}
+
 export function mergeKv(...stores: KVNamespace[]): KVNamespace {
   return {
     get: async (key: string) => {

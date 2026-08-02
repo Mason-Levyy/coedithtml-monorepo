@@ -25,7 +25,7 @@ export function handleAppRequest(
     if (request.method !== "GET") {
       return jsonError("Method not allowed.", 405);
     }
-    return handleGetArtifact(token ?? "", env);
+    return handleGetArtifact(token ?? "", request, env);
   }
 
   return new Response("Coedit app origin", { status: 200 });
