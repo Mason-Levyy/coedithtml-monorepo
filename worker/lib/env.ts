@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { hostsAreDistinct, originConfigShape } from "./origins";
+import {
+  hostsAreDistinct,
+  originConfigShape,
+  redirectHostsAreDisjoint,
+} from "./origins";
 
 function exposes(value: unknown, methods: readonly string[]): boolean {
   if (typeof value !== "object" || value === null) {
@@ -28,6 +32,10 @@ export const workerEnvSchema = z
   .refine(hostsAreDistinct, {
     message: "APP_HOST and SANDBOX_HOST must be different hosts",
     path: ["SANDBOX_HOST"],
+  })
+  .refine(redirectHostsAreDisjoint, {
+    message: "REDIRECT_HOSTS must not contain APP_HOST or SANDBOX_HOST",
+    path: ["REDIRECT_HOSTS"],
   });
 
 export type WorkerEnv = z.infer<typeof workerEnvSchema>;
