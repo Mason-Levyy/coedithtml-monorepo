@@ -38,7 +38,7 @@ question.
       same-origin requests blocked
 - [x] View and edit tokens, unguessable, independently revocable
 - [x] Optional password gate on a link
-- [ ] Rate limits and abuse ceiling on upload
+- [x] Rate limits and abuse ceiling on upload
 
 ### Segmentation engine
 
@@ -99,7 +99,7 @@ to the task group above it belongs to.
         every push
   - [x] `05-domain-layout` — app on app.coedithtml.com, apex freed for the
         marketing site, www 301s to the apex
-- [ ] **Storage and serving**
+- [x] **Storage and serving**
   - [x] `06-upload-endpoint` — Zod-validated upload route, single `.html`
         only, size cap, content sniffing, stored to R2 byte-for-byte
   - [x] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
@@ -122,7 +122,7 @@ to the task group above it belongs to.
           sandbox origin is architecturally barred from ever holding a
           cookie — flagged for review since query strings land in browser
           history and any access logs
-    - [ ] `09c-upload-rate-limits` — general upload abuse ceiling, reusing
+    - [x] `09c-upload-rate-limits` — general upload abuse ceiling, reusing
           09b's rate-limit primitive
 - [ ] **Segmentation engine**
   - [ ] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period

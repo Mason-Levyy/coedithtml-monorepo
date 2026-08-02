@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { WorkerEnv } from "@/lib/env";
 import {
   fakeArtifactMetadata,
+  liveKv,
   recordingArtifactMetadata,
   recordingArtifactStore,
 } from "@/lib/fakes";
@@ -265,6 +266,21 @@ describe("handleUpload", () => {
 
     expect(response.status).toBe(415);
     expect(body.error).toMatch(/build step/i);
+  });
+
+  it("rate-limits repeated uploads from the same client", async () => {
+    const store = recordingArtifactStore();
+    const env = envWith(store.bucket, liveKv());
+
+    let last: Response | undefined;
+    for (let attempt = 0; attempt < 21; attempt += 1) {
+      last = await handleUpload(
+        uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+        env,
+      );
+    }
+
+    expect(last?.status).toBe(429);
   });
 
   it("refuses an oversized upload before reading the body", async () => {
