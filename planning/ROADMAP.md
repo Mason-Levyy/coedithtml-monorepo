@@ -21,8 +21,8 @@ question.
 
 - [x] pnpm workspace with `app/`, `worker/`, `runtime/`, `website/`
 - [x] Wrangler config with R2 and KV bindings, local dev running end to end
-- [ ] Two origins configured and verified separate in production
-- [ ] CI running typecheck, lint, and tests on every push
+- [x] Two origins configured and verified separate in production
+- [x] CI running typecheck, lint, and tests on every push
 
 ### Storage and serving
 
@@ -87,15 +87,15 @@ Phase 1 as a sequence of individually-reviewable branches/PRs, none expected
 to exceed ~1000 lines (flagged inline if one does once built). Each maps back
 to the task group above it belongs to.
 
-- [ ] **Foundation**
+- [x] **Foundation**
   - [x] `01-workspace-scaffold` — pnpm workspace; `app/`, `worker/`, `runtime/`,
         `website/` scaffolded, each buildable, nothing functional yet
   - [x] `02-wrangler-bindings` — `wrangler.jsonc` with R2 + KV bindings, local
         `wrangler dev` end to end
-  - [~] `03-two-origins` — app origin vs. sandbox origin as separate
-        Wrangler targets, enforced in config and code. Production DNS/routes
-        still unprovisioned — needs `wrangler login`
-  - [ ] `04-ci-pipeline` — GitHub Actions: install, typecheck, lint, test on
+  - [x] `03-two-origins` — app origin vs. sandbox origin as separate
+        Wrangler targets, enforced in config and code, live and verified
+        separate in production
+  - [x] `04-ci-pipeline` — GitHub Actions: install, typecheck, lint, test on
         every push
 - [ ] **Storage and serving**
   - [ ] `05-upload-endpoint` — Zod-validated upload route, single `.html`

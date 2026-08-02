@@ -14,8 +14,6 @@
     "SANDBOX_HOST": "sandbox.localhost:8787"
   },
 
-  // Artifact bytes, stored and returned unmodified. R2 is the only store here
-  // that does not normalize what it is given.
   "r2_buckets": [
     {
       "binding": "ARTIFACT_STORE",
@@ -24,31 +22,30 @@
     }
   ],
 
-  // Artifact metadata only — never the HTML itself, which would hit KV's 25MB
-  // value ceiling and lose byte fidelity.
-  //
-  // `id` is a placeholder until the namespace is provisioned against a real
-  // Cloudflare account. `wrangler dev` simulates KV locally and ignores it;
-  // `wrangler deploy` will not.
   "kv_namespaces": [
     {
       "binding": "ARTIFACT_METADATA",
-      "id": "placeholder_pending_provisioning"
+      "id": "c2a45fd936ac4d798f9c3251e813020f"
     }
   ],
 
   "env": {
-    // Named environments inherit nothing: every binding has to be restated
-    // here or it is simply absent at runtime and parseWorkerEnv 503s.
-    //
-    // Routes and DNS still need provisioning against a real Cloudflare
-    // account, so these hosts are the intended production pair, not a
-    // deployed one. Deploying is blocked until `wrangler login` has been run.
     "production": {
+      "name": "coedit",
       "vars": {
         "APP_HOST": "coedithtml.com",
-        "SANDBOX_HOST": "artifact-sandbox.net"
+        "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev"
       },
+
+      // The sandbox origin IS the workers.dev hostname, so this stays on.
+      // Defining routes below must not be read as a reason to turn it off.
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "coedithtml.com",
+          "custom_domain": true
+        }
+      ],
       "r2_buckets": [
         {
           "binding": "ARTIFACT_STORE",
@@ -58,7 +55,7 @@
       "kv_namespaces": [
         {
           "binding": "ARTIFACT_METADATA",
-          "id": "placeholder_pending_provisioning"
+          "id": "c2a45fd936ac4d798f9c3251e813020f"
         }
       ]
     }

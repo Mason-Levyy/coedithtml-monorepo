@@ -49,12 +49,9 @@ stays on. No `any` — use `unknown` and narrow. No `@ts-expect-error` without a
 one-line reason. Never invoke npm or yarn; this is a pnpm workspace and a stray
 lockfile breaks the build.
 
-**Comments carry rationale, not narration.** Do not restate what the code says —
+**Attempt to avoid all comments when possible.** Do not restate what the code says —
 if a comment is needed to explain *what* a block does, rename things or split the
-function instead. Do write a comment when the reason is invisible from the code:
-a browser quirk, a spec requirement, a deliberately non-obvious approach, or a
-constraint that will look like a mistake to the next reader. No commented-out
-code, no changelog comments, no section-banner comments. Delete dead code.
+function instead. No commented-out code, no changelog comments, no section-banner comments. Delete dead code.
 
 **Extract on the second use, not the first.** Don't build abstractions for
 hypothetical needs, but the moment logic appears twice, pull it out. Concrete
