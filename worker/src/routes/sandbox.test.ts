@@ -3,24 +3,34 @@ import { RUNTIME_SCRIPT_PATH } from "@/lib/artifact-render";
 import type { WorkerEnv } from "@/lib/env";
 import {
   FAKE_APP_HOST,
+  liveKv,
+  mergeKv,
   stubAccessTokens,
+  stubArtifactMetadata,
   stubArtifactStore,
 } from "@/lib/fakes";
+import { hashArtifactPassword } from "@/lib/password";
+import { accessTokenKey, artifactMetadataKey } from "@/lib/storage-keys";
 import { handleSandboxRequest } from "./sandbox";
 
 const ARTIFACT_ID = "b".repeat(32);
 const VIEW_TOKEN = "d".repeat(32);
 const VALID_HTML = "<!doctype html><html><body>Hi</body></html>";
+const METADATA = {
+  fileName: "deck.html",
+  size: VALID_HTML.length,
+  uploadedAt: "2026-08-01T00:00:00.000Z",
+};
 
-function envWith(store: R2Bucket, tokens: KVNamespace): WorkerEnv {
+function envWith(store: R2Bucket, kv: KVNamespace): WorkerEnv {
   return {
     ARTIFACT_STORE: store,
-    ARTIFACT_METADATA: tokens,
+    ARTIFACT_METADATA: kv,
     APP_HOST: FAKE_APP_HOST,
   } as unknown as WorkerEnv;
 }
 
-function knownArtifactEnv(): WorkerEnv {
+function knownArtifactEnv(metadata: unknown = METADATA): WorkerEnv {
   return envWith(
     stubArtifactStore([
       {
@@ -28,9 +38,15 @@ function knownArtifactEnv(): WorkerEnv {
         bytes: new Uint8Array(new TextEncoder().encode(VALID_HTML)).buffer,
       },
     ]),
-    stubAccessTokens([
-      { token: VIEW_TOKEN, record: { artifactId: ARTIFACT_ID, kind: "view" } },
-    ]),
+    mergeKv(
+      stubAccessTokens([
+        {
+          token: VIEW_TOKEN,
+          record: { artifactId: ARTIFACT_ID, kind: "view" },
+        },
+      ]),
+      stubArtifactMetadata([{ artifactId: ARTIFACT_ID, metadata }]),
+    ),
   );
 }
 
@@ -68,7 +84,7 @@ describe("handleSandboxRequest", () => {
   it("returns 404 for a token that does not exist", async () => {
     const response = await handleSandboxRequest(
       request(`/${VIEW_TOKEN}`),
-      envWith(stubArtifactStore([]), stubAccessTokens([])),
+      envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([]))),
     );
 
     expect(response.status).toBe(404);
@@ -77,7 +93,7 @@ describe("handleSandboxRequest", () => {
   it("returns 404 for a malformed path without touching storage", async () => {
     const response = await handleSandboxRequest(
       request("/not-a-valid-token"),
-      envWith(stubArtifactStore([]), stubAccessTokens([])),
+      envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([]))),
     );
 
     expect(response.status).toBe(404);
@@ -86,7 +102,7 @@ describe("handleSandboxRequest", () => {
   it("returns 404 for the runtime script path", async () => {
     const response = await handleSandboxRequest(
       request(RUNTIME_SCRIPT_PATH),
-      envWith(stubArtifactStore([]), stubAccessTokens([])),
+      envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([]))),
     );
 
     expect(response.status).toBe(404);
@@ -112,17 +128,90 @@ describe("handleSandboxRequest", () => {
       request(`/${VIEW_TOKEN}`),
       envWith(
         failingStore,
-        stubAccessTokens([
-          {
-            token: VIEW_TOKEN,
-            record: { artifactId: ARTIFACT_ID, kind: "view" },
-          },
-        ]),
+        mergeKv(
+          stubAccessTokens([
+            {
+              token: VIEW_TOKEN,
+              record: { artifactId: ARTIFACT_ID, kind: "view" },
+            },
+          ]),
+          stubArtifactMetadata([
+            { artifactId: ARTIFACT_ID, metadata: METADATA },
+          ]),
+        ),
       ),
     );
     const body = await response.text();
 
     expect(response.status).toBe(500);
     expect(body).not.toMatch(/internal-host-9/);
+  });
+
+  describe("password gate", () => {
+    async function envWithPassword(password: string): Promise<WorkerEnv> {
+      return knownArtifactEnv({
+        ...METADATA,
+        passwordHash: await hashArtifactPassword(ARTIFACT_ID, password),
+      });
+    }
+
+    it("requires a password when the artifact has one set", async () => {
+      const response = await handleSandboxRequest(
+        request(`/${VIEW_TOKEN}`),
+        await envWithPassword("hunter2"),
+      );
+
+      expect(response.status).toBe(401);
+    });
+
+    it("accepts the correct password as a query parameter", async () => {
+      const response = await handleSandboxRequest(
+        request(`/${VIEW_TOKEN}?password=hunter2`),
+        await envWithPassword("hunter2"),
+      );
+
+      expect(response.status).toBe(200);
+    });
+
+    it("rejects an incorrect password", async () => {
+      const response = await handleSandboxRequest(
+        request(`/${VIEW_TOKEN}?password=wrong`),
+        await envWithPassword("hunter2"),
+      );
+
+      expect(response.status).toBe(401);
+    });
+
+    it("rate-limits repeated incorrect attempts", async () => {
+      const passwordHash = await hashArtifactPassword(ARTIFACT_ID, "hunter2");
+      const env = envWith(
+        stubArtifactStore([
+          {
+            artifactId: ARTIFACT_ID,
+            bytes: new Uint8Array(new TextEncoder().encode(VALID_HTML)).buffer,
+          },
+        ]),
+        liveKv([
+          {
+            key: accessTokenKey(VIEW_TOKEN),
+            value: { artifactId: ARTIFACT_ID, kind: "view" },
+          },
+          {
+            key: artifactMetadataKey(ARTIFACT_ID),
+            value: { ...METADATA, passwordHash },
+          },
+        ]),
+      );
+
+      let last: Response | undefined;
+      for (let attempt = 0; attempt < 11; attempt += 1) {
+        last = await handleSandboxRequest(
+          request(`/${VIEW_TOKEN}?password=wrong`),
+          env,
+        );
+      }
+
+      expect(last?.status).toBe(429);
+    });
   });
 });

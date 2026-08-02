@@ -37,7 +37,7 @@ question.
 - [x] CSP on artifact responses: external resources allowed, credentialed
       same-origin requests blocked
 - [x] View and edit tokens, unguessable, independently revocable
-- [ ] Optional password gate on a link
+- [x] Optional password gate on a link
 - [ ] Rate limits and abuse ceiling on upload
 
 ### Segmentation engine
@@ -114,9 +114,14 @@ to the task group above it belongs to.
         guideline) — numbering kept as 09/09b/09c so 10-18 didn't need to
         shift:
     - [x] `09-csp-tokens` — this entry
-    - [ ] `09b-password-gate` — optional password gate backend (hash + verify
+    - [x] `09b-password-gate` — optional password gate backend (hash + verify
           + password-attempt rate limiting); no prompt UI yet, since the
-          viewer page it belongs on doesn't exist until stack C
+          viewer page it belongs on doesn't exist until stack C. Password is
+          passed as a `?password=` query param on the sandbox origin, since a
+          plain `<iframe src>` navigation can't carry a custom header and the
+          sandbox origin is architecturally barred from ever holding a
+          cookie — flagged for review since query strings land in browser
+          history and any access logs
     - [ ] `09c-upload-rate-limits` — general upload abuse ceiling, reusing
           09b's rate-limit primitive
 - [ ] **Segmentation engine**
