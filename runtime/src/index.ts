@@ -23,7 +23,7 @@ declare global {
 
 const VERSION = "0.2.0";
 
-async function start(): Promise<void> {
+export async function start(): Promise<void> {
   const container = resolvePrimaryContainer(document);
   await waitUntilReady(container);
 
@@ -32,13 +32,17 @@ async function start(): Promise<void> {
 
   const initial = segmentWithProfile(container);
   currentSlides = initial.slides;
-  sendToApp(
-    readyMessage(
-      initial.slides,
-      initial.profile,
-      hasStickyOrFixedPositioning(container),
-    ),
-  );
+  try {
+    sendToApp(
+      readyMessage(
+        initial.slides,
+        initial.profile,
+        hasStickyOrFixedPositioning(container),
+      ),
+    );
+  } catch (error) {
+    console.error("[coedit] failed to report ready", error);
+  }
 
   watchForResegmentation(container, (result) => {
     try {
