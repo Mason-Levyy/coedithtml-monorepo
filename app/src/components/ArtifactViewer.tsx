@@ -1,7 +1,9 @@
 import { useState } from "react";
 import {
   scrollToSlideCommand,
+  setProfileCommand,
   setStageSlideCommand,
+  type ReadingProfile,
 } from "@/lib/bridge-messages";
 import { useArtifactBridge } from "@/hooks/useArtifactBridge";
 import { ArtifactFrame } from "@/components/ArtifactFrame";
@@ -13,12 +15,16 @@ type ArtifactViewerProps = {
   src: string;
   sandboxOrigin: string;
   title: string;
+  onChangeProfile?: (profile: ReadingProfile) => void;
+  profilePending?: boolean;
 };
 
 export function ArtifactViewer({
   src,
   sandboxOrigin,
   title,
+  onChangeProfile,
+  profilePending,
 }: ArtifactViewerProps) {
   const { state, frameRef, sendCommand } = useArtifactBridge(sandboxOrigin);
   const [stageMode, setStageMode] = useState(false);
@@ -29,6 +35,11 @@ export function ArtifactViewer({
     sendCommand(
       stageMode ? setStageSlideCommand(index) : scrollToSlideCommand(index),
     );
+  }
+
+  function handleChangeProfile(profile: ReadingProfile): void {
+    sendCommand(setProfileCommand(profile));
+    onChangeProfile?.(profile);
   }
 
   function handleToggleStage(): void {
@@ -47,6 +58,10 @@ export function ArtifactViewer({
           slideCount={state.slides.length}
           stageMode={stageMode}
           onToggleStage={handleToggleStage}
+          onChangeProfile={
+            onChangeProfile === undefined ? undefined : handleChangeProfile
+          }
+          profilePending={profilePending}
         />
       )}
       {state.status === "ready" &&

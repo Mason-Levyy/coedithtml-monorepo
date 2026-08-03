@@ -44,6 +44,7 @@ export async function handleGetArtifact(
       fileName: metadata.fileName,
       size: metadata.size,
       uploadedAt: metadata.uploadedAt,
+      profile: metadata.profile ?? null,
       requiresPassword: false,
       sandboxOrigin: originFor(request, env.SANDBOX_HOST),
       artifactUrl: artifactUrl(request, env, resolved.artifact.token, grant),

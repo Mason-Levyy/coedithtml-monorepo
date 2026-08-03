@@ -1,11 +1,6 @@
-export type Slide = {
-  index: number;
-  startChild: number;
-  endChild: number;
-  label: string;
-};
+export type { ReadingProfile, Slide } from "@coedithtml/protocol";
 
-export type ReadingProfile = "slides" | "pages" | "app";
+import type { ReadingProfile, Slide } from "@coedithtml/protocol";
 
 export type SegmentResult = {
   slides: Slide[];
