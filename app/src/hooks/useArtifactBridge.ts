@@ -3,6 +3,7 @@ import {
   parseRuntimeToAppMessage,
   type ReadingProfile,
   type ScrollToSlideCommand,
+  type SetProfileCommand,
   type SetStageSlideCommand,
   type Slide,
 } from "@/lib/bridge-messages";
@@ -17,7 +18,8 @@ export type ArtifactBridgeState =
       activeSlideIndex: number;
     };
 
-export type ArtifactBridgeCommand = ScrollToSlideCommand | SetStageSlideCommand;
+export type ArtifactBridgeCommand =
+  ScrollToSlideCommand | SetStageSlideCommand | SetProfileCommand;
 
 export type ArtifactBridge = {
   state: ArtifactBridgeState;

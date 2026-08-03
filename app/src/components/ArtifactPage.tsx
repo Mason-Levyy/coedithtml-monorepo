@@ -1,4 +1,8 @@
-import { useArtifact, useUnlockArtifact } from "@/hooks/useArtifact";
+import {
+  useArtifact,
+  useSetArtifactProfile,
+  useUnlockArtifact,
+} from "@/hooks/useArtifact";
 import { ArtifactViewer } from "@/components/ArtifactViewer";
 import { PasswordPrompt } from "@/components/PasswordPrompt";
 
@@ -17,6 +21,7 @@ function Notice({ children }: { children: string }) {
 export function ArtifactPage({ token }: ArtifactPageProps) {
   const artifact = useArtifact(token);
   const unlock = useUnlockArtifact(token);
+  const setProfile = useSetArtifactProfile(token);
 
   if (artifact.isPending) {
     return <Notice>Loading…</Notice>;
@@ -39,6 +44,8 @@ export function ArtifactPage({ token }: ArtifactPageProps) {
       src={artifact.data.artifactUrl}
       sandboxOrigin={artifact.data.sandboxOrigin}
       title={artifact.data.fileName}
+      onChangeProfile={(profile) => setProfile.mutate(profile)}
+      profilePending={setProfile.isPending}
     />
   );
 }

@@ -1,4 +1,8 @@
-import type { SegmentResult, Slide } from "./segmentation/types";
+import type {
+  ReadingProfile,
+  SegmentResult,
+  Slide,
+} from "./segmentation/types";
 import { resolvePrimaryContainer } from "./segmentation/container";
 import { waitUntilReady } from "./segmentation/ready";
 import { segmentWithProfile } from "./segmentation/segment";
@@ -21,12 +25,15 @@ import { createStageController } from "./viewer/stage";
 
 export const VERSION = "0.3.0";
 
-function segmentSafely(container: Element): SegmentResult {
+function segmentSafely(
+  container: Element,
+  override: ReadingProfile | undefined,
+): SegmentResult {
   try {
-    return segmentWithProfile(container);
+    return segmentWithProfile(container, override);
   } catch (error) {
     console.error("[coedit] segmentation failed", error);
-    return { slides: [], profile: "app" };
+    return { slides: [], profile: override ?? "app" };
   }
 }
 
@@ -38,6 +45,7 @@ export async function start(): Promise<void> {
   let activeIndex = 0;
   let anchorElement: Element | null = null;
   let stagedIndex: number | null = null;
+  let profileOverride: ReadingProfile | undefined = undefined;
   const stage = createStageController(container);
 
   function trackActiveSlide(index: number): void {
@@ -45,7 +53,7 @@ export async function start(): Promise<void> {
     anchorElement = anchorElementFor(container, currentSlides, index);
   }
 
-  const initial = segmentSafely(container);
+  const initial = segmentSafely(container, profileOverride);
   currentSlides = initial.slides;
   trackActiveSlide(activeIndex);
   try {
@@ -60,9 +68,9 @@ export async function start(): Promise<void> {
     console.error("[coedit] failed to report ready", error);
   }
 
-  watchForStructuralChange(container, () => {
+  function resegment(): void {
     try {
-      const result = segmentSafely(container);
+      const result = segmentSafely(container, profileOverride);
       const resolvedIndex = resolveActiveIndexAfterResegmentation(
         container,
         anchorElement,
@@ -88,7 +96,9 @@ export async function start(): Promise<void> {
     } catch (error) {
       console.error("[coedit] failed to report resegmentation", error);
     }
-  });
+  }
+
+  watchForStructuralChange(container, resegment);
 
   watchScrollSpy(
     container,
@@ -113,6 +123,11 @@ export async function start(): Promise<void> {
     try {
       if (command.type === "scrollToSlide") {
         scrollToSlide(container, currentSlides, command.index);
+        return;
+      }
+      if (command.type === "setProfile") {
+        profileOverride = command.profile;
+        resegment();
         return;
       }
       stagedIndex = command.index;

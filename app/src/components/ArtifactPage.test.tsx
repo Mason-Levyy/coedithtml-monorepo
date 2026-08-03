@@ -41,6 +41,7 @@ describe("ArtifactPage", () => {
       fileName: "deck.html",
       size: 42,
       uploadedAt: "2026-08-01T00:00:00.000Z",
+      profile: null,
       sandboxOrigin: "https://sandbox.example.com",
       artifactUrl: `https://sandbox.example.com/${TOKEN}`,
     });
@@ -98,6 +99,7 @@ describe("ArtifactPage", () => {
                       fileName: "deck.html",
                       size: 42,
                       uploadedAt: "2026-08-01T00:00:00.000Z",
+                      profile: null,
                       sandboxOrigin: "https://sandbox.example.com",
                       artifactUrl: `https://sandbox.example.com/${TOKEN}?u=${"9".repeat(32)}`,
                     },

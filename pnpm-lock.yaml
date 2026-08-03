@@ -35,6 +35,9 @@ importers:
 
   app:
     dependencies:
+      '@coedithtml/protocol':
+        specifier: workspace:*
+        version: link:../protocol
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@6.4.3(@types/node@20.17.6)(jiti@2.7.0)(lightningcss@1.32.0))
@@ -79,7 +82,13 @@ importers:
         specifier: ^6.0.0
         version: 6.4.3(@types/node@20.17.6)(jiti@2.7.0)(lightningcss@1.32.0)
 
+  protocol: {}
+
   runtime:
+    dependencies:
+      '@coedithtml/protocol':
+        specifier: workspace:*
+        version: link:../protocol
     devDependencies:
       esbuild:
         specifier: ^0.24.0

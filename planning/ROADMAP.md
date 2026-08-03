@@ -48,17 +48,21 @@ The core of the phase. Budget more time here than feels reasonable.
 - [x] Strategy 1: explicit `[data-slide]` and top-level `<section>` detection
 - [x] Strategy 2: `<hr>` and heading-level grouping
 - [x] Strategy 3: accumulation over container children at a **fixed 900px
-      virtual height**, never the real viewport
-- [~] Strategy 4: single-slide fallback built and cascaded correctly;
-      "surfaced honestly in the UI" is stack C's job (the viewer doesn't
-      exist yet to surface anything in)
+      virtual height**, never the real viewport — heights are estimated from
+      the DOM at a fixed 720px reading column, since a measured height
+      reflows with the reader's viewport and put the phone and the laptop on
+      different slide counts again — 20
+- [x] Strategy 4: single-slide fallback built, cascaded correctly, and
+      surfaced honestly in the viewer ("this reads as one continuous view,
+      not a slide deck")
 - [x] Slides emitted as index ranges — no DOM restructuring anywhere in the path
 - [x] Slide labels derived from the first heading or first text in the range
 - [x] Debounced `MutationObserver` triggers re-segmentation on structural
       change only, preserving reader position by content — 19
-- [~] Reading profiles — Slides, Pages, App — auto-detection is built and
-      tested (`segmentWithProfile`); the `Reading as ▾` control and storing
-      the choice on the link are stack C/D work
+- [x] Reading profiles — Slides, Pages, App — auto-detected by the cascade,
+      overridable from a `Reading as ▾` control, and stored on the link
+      (`PATCH /api/artifacts/:token`, edit token only, so every reader sees
+      the same slide numbers) — 20
 - [x] Corpus of 20+ real artifacts checked into `fixtures/`, spanning documents,
       dashboards, games, and long-scroll pages
 - [x] Snapshot test asserting expected slide counts across the whole corpus
@@ -69,7 +73,8 @@ The core of the phase. Budget more time here than feels reasonable.
       attributes and no top-navigation or popups
 - [x] `postMessage` bridge: versioned schema, origin checked both directions —
       now genuinely bidirectional: runtime → app (ready/resegmented/
-      activeSlide) and app → runtime (scrollToSlide, setStageSlide), each
+      activeSlide) and app → runtime (scrollToSlide, setStageSlide,
+      setProfile), each
       checked on send (explicit target origin, never `"*"`) and on receipt
       (`event.origin` matched exactly, message shape validated before use)
 - [x] Flow mode: scroll-spy and jump-navigation are built and tested on the
@@ -86,12 +91,14 @@ The core of the phase. Budget more time here than feels reasonable.
 - [x] Mobile layout: filmstrip collapses to a swipe strip — 16
 - [x] Runtime fails open — kill the socket and the bridge in a test and confirm
       the artifact still reads correctly — 17
-- [x] Runtime build stays under 20KB minified, enforced by a hook — 17
+- [x] Runtime build stays under 20KB minified, enforced in CI — 17
 
 ### Ship
 
 - [x] Landing page explaining the product in one screen — 18
-- [x] Upload → link flow with no account required — 18
+- [x] Upload → link flow with no account required — 18; the share link opens
+      the app's viewer at `/a/<token>`, not the raw sandbox URL — 20
+- [x] App build served on the app origin — the open question flagged on 14 — 20
 - [ ] Ten real artifacts from ten real people uploaded and read
 
 ### Delivery stack
@@ -299,6 +306,43 @@ to the task group above it belongs to.
         module to throw once, then confirms resegmentation still recovers
         and reports real slides once the DOM settles again. Runtime bundle
         now 6.5KB
+- [x] **Integration and audit** — `20-phase-1-integration`
+  - [x] Phase 1 had been built as two stacks that both branched from `main`
+        and never met (07-09d/18 for storage and serving, 10-19 for
+        segmentation and the viewer), with `15b-design-system` committed once
+        on each side. Neither was Phase 1 alone; this merges them and
+        resolves the four conflicting files by union
+  - [x] The app build was never served: the only assets binding pointed at
+        `runtime/dist` and every non-API path on the app origin answered with
+        the string "Coedit app origin", so the filmstrip built across 14-19
+        had no consumer at all. `assemble-assets.mjs` stages the app build
+        and the runtime bundle into one directory (Wrangler allows a single
+        assets tree per Worker) and origin classification still decides what
+        each host may read
+  - [x] Fixes found in the end-of-phase audit:
+        segmentation measured rendered heights, so slide counts still
+        differed per device and the corpus could not catch it (its layout
+        fixtures carried `data-test-height` attributes the test read back as
+        stubbed geometry — removed, and those five fixtures rewritten at a
+        realistic length); the password gate charged a correct password
+        against its own attempt budget, locking readers out after roughly
+        five views; uploads using `<script type="module">` with CDN imports
+        were rejected as needing a build step; `resolveAppOrigin` fell back
+        to `document.referrer`, making any page that could frame an artifact
+        a trusted command origin; Stage mode never reported back, was not
+        re-applied after resegmentation, and fought the scroll-spy over
+        zero-height hidden elements; and the resegmentation watcher ran the
+        strategies inside its own timer, outside `start()`'s error handling —
+        the same fail-open gap 17 and 19 each fixed one layer up
+  - [x] Password handling reworked: PBKDF2 rather than one SHA-256 round, and
+        the password is POSTed to an unlock route and exchanged for a
+        short-lived artifact-scoped grant instead of riding in a query string
+        the artifact's own scripts could read back
+  - [x] Upload caps the body while reading it rather than after; token
+        revocation reachable at `DELETE /api/artifacts/:token`, which the
+        roadmap had already claimed while the helper had no caller
+  - [x] `@coedithtml/protocol` — the bridge schema had been maintained by
+        hand in two mirrored copies, one per package
 - [ ] **Ship**
   - [x] `18-landing-upload-flow` — independent stack (Stack D), rooted on this
         stack's own tip (`09d`) rather than the segmentation/viewer stack,

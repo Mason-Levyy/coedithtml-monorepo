@@ -2,6 +2,7 @@ import { serveAppAsset } from "@/lib/app-assets";
 import type { WorkerEnv } from "@/lib/env";
 import { jsonError } from "@/lib/responses";
 import { handleGetArtifact } from "./artifact";
+import { handleSetProfile } from "./profile";
 import { handleRevokeToken } from "./revoke";
 import { handleUnlockArtifact } from "./unlock";
 import { handleUpload } from "./upload";
@@ -40,6 +41,9 @@ export function handleAppRequest(
     }
     if (request.method === "DELETE") {
       return handleRevokeToken(token, env);
+    }
+    if (request.method === "PATCH") {
+      return handleSetProfile(token, request, env);
     }
     return jsonError("Method not allowed.", 405);
   }
