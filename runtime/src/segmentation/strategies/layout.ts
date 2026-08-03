@@ -1,14 +1,9 @@
 import { slidesFromStartIndices } from "../ranges";
 import type { Slide } from "../types";
+import { estimateVirtualHeight } from "../virtual-height";
 
 const VIRTUAL_HEIGHT = 900;
 const MIN_HITS = 2;
-
-// Real getBoundingClientRect height, not the viewport: a phone and a laptop
-// must land on the same slide boundaries for the same link.
-function heightOf(element: Element): number {
-  return element.getBoundingClientRect().height;
-}
 
 export function segmentByLayout(container: Element): Slide[] | null {
   const children = [...container.children];
@@ -20,7 +15,7 @@ export function segmentByLayout(container: Element): Slide[] | null {
   let accumulated = 0;
 
   children.forEach((child, i) => {
-    const height = heightOf(child);
+    const height = estimateVirtualHeight(child);
     if (i > 0 && accumulated + height > VIRTUAL_HEIGHT) {
       startIndices.push(i);
       accumulated = height;

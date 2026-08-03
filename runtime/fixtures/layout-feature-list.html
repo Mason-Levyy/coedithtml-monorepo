@@ -8,54 +8,87 @@
         font-family: system-ui, sans-serif;
         margin: 0;
         padding: 2rem;
+        max-width: 720px;
+        line-height: 1.6;
       }
       .feature {
-        padding: 0.5rem 0;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e5e5e5;
       }
     </style>
   </head>
   <body>
-    <div class="feature" data-test-height="150">
+    <div class="feature">
       ⚡ <strong>Fast search</strong> — results in under 50ms across a million
-      rows.
+      rows, with no index tuning required on your side. Queries are planned
+      against a column store, so filtering on one field out of two hundred costs
+      about what filtering on one field out of five costs.
     </div>
-    <div class="feature" data-test-height="150">
+    <div class="feature">
       🔒 <strong>Row-level security</strong> — every query respects your access
-      policies.
+      policies, including queries issued from the API and from scheduled
+      reports. Policies are written once against your user attributes and
+      applied everywhere, so there is no path that quietly bypasses them.
     </div>
-    <div class="feature" data-test-height="150">
-      📊 <strong>Live dashboards</strong> — charts update as new data arrives.
+    <div class="feature">
+      📊 <strong>Live dashboards</strong> — charts update as new data arrives
+      rather than on a polling interval, so a dashboard left open on a wall
+      display stays current. Updates stream over a single connection shared by
+      every chart on the page instead of one request per tile.
     </div>
-    <div class="feature" data-test-height="150">
+    <div class="feature">
       🔔 <strong>Alerts</strong> — get notified the moment a metric crosses a
-      threshold.
+      threshold you define, by email, Slack, or webhook. Alerts support a
+      cooldown window and a recovery notification, so a metric oscillating
+      around its threshold does not generate a hundred messages an hour.
     </div>
-    <div class="feature" data-test-height="150">
+    <div class="feature">
       🧩 <strong>Integrations</strong> — connects to your warehouse in a few
-      clicks.
+      clicks, with first-party support for Snowflake, BigQuery, Redshift, and
+      Postgres. Credentials are scoped to a read-only role, and the connection
+      can be restricted to a specific set of schemas before it is enabled.
     </div>
-    <div class="feature" data-test-height="150">
-      👥 <strong>Team roles</strong> — admin, editor, and viewer permissions.
+    <div class="feature">
+      👥 <strong>Team roles</strong> — admin, editor, and viewer permissions
+      that map onto how teams actually work, plus per-dashboard overrides for
+      the cases that do not fit. Role changes take effect immediately and are
+      recorded in an audit log you can export at any time.
     </div>
-    <div class="feature" data-test-height="150">
-      📱 <strong>Mobile app</strong> — check your dashboards from anywhere.
+    <div class="feature">
+      📱 <strong>Mobile app</strong> — check your dashboards from anywhere,
+      including offline access to the last snapshot of anything you have
+      starred. Charts are rendered natively rather than in a web view, so
+      panning and zooming on a dense time series stays responsive.
     </div>
-    <div class="feature" data-test-height="150">
-      🗂️ <strong>Saved views</strong> — bookmark the filters you use most.
+    <div class="feature">
+      🗂️ <strong>Saved views</strong> — bookmark the filters you use most and
+      share them with your team as named views. A saved view captures the filter
+      state, the date range, and the column layout, so handing someone a link
+      shows them exactly what you were looking at.
     </div>
-    <div class="feature" data-test-height="150">
+    <div class="feature">
       🌐 <strong>Public sharing</strong> — publish a read-only link to any
-      dashboard.
+      dashboard, optionally protected by a password and an expiry date. Public
+      links are served from a separate domain with their own rate limits, so
+      sharing widely cannot affect performance for your own team.
     </div>
-    <div class="feature" data-test-height="150">
-      ⏱️ <strong>Scheduled reports</strong> — emailed as a PDF every Monday.
+    <div class="feature">
+      ⏱️ <strong>Scheduled reports</strong> — emailed as a PDF every Monday, or
+      on whatever cadence you choose, rendered at the same fidelity as the
+      dashboard itself. Recipients do not need an account, and each report
+      includes a link back to the live version for anyone who does.
     </div>
-    <div class="feature" data-test-height="150">
+    <div class="feature">
       🧮 <strong>Custom formulas</strong> — build metrics with a
-      spreadsheet-style editor.
+      spreadsheet-style editor that autocompletes against your schema. Formulas
+      are stored as definitions rather than as materialized columns, so
+      correcting one propagates to every chart that references it.
     </div>
-    <div class="feature" data-test-height="150">
-      🛠️ <strong>API access</strong> — full REST API on every plan.
+    <div class="feature">
+      🛠️ <strong>API access</strong> — a full REST API on every plan, including
+      the free one, with the same rate limits and the same authentication model
+      as the interface itself. Everything the app can do, the API can do, and
+      the API reference is generated from the same schema the app uses.
     </div>
   </body>
 </html>

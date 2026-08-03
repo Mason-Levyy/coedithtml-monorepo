@@ -1,17 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { segmentByLayout } from "./layout";
 
-function withHeight(element: Element, height: number): Element {
-  element.getBoundingClientRect = () => ({ height }) as unknown as DOMRect;
-  return element;
-}
-
+// An <img height> is the one input the estimator takes at face value, which
+// makes it the cleanest way to give a child a known virtual height.
 function containerWithChildHeights(heights: number[]): Element {
   const container = document.createElement("div");
-  heights.forEach((height, i) => {
+  heights.forEach((height) => {
     const child = document.createElement("div");
-    child.textContent = `Child ${i}`;
-    withHeight(child, height);
+    const image = document.createElement("img");
+    image.setAttribute("height", String(height));
+    child.appendChild(image);
     container.appendChild(child);
   });
   return container;
@@ -50,5 +48,21 @@ describe("segmentByLayout", () => {
     const container = document.createElement("div");
 
     expect(segmentByLayout(container)).toBeNull();
+  });
+
+  // The reason the estimator exists: two readers on different devices have to
+  // agree on what "slide 4" refers to, so a rendered height must not be an
+  // input to the answer.
+  it("ignores rendered geometry entirely", () => {
+    const container = containerWithChildHeights([400, 400, 400, 400]);
+    const asOnADesktop = segmentByLayout(container);
+
+    for (const child of [...container.children]) {
+      child.getBoundingClientRect = () =>
+        ({ height: 4000 }) as unknown as DOMRect;
+    }
+    const asOnAPhone = segmentByLayout(container);
+
+    expect(asOnAPhone).toEqual(asOnADesktop);
   });
 });
