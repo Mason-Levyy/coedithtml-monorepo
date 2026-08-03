@@ -30,9 +30,20 @@ export function validateArtifactFile(file: File): string | null {
   return null;
 }
 
-export async function uploadArtifact(file: File): Promise<UploadResult> {
+export type UploadInput = {
+  file: File;
+  password: string | null;
+};
+
+export async function uploadArtifact({
+  file,
+  password,
+}: UploadInput): Promise<UploadResult> {
   const form = new FormData();
   form.append("file", file);
+  if (password !== null && password.length > 0) {
+    form.append("password", password);
+  }
 
   const response = await fetch("/api/artifacts", {
     method: "POST",

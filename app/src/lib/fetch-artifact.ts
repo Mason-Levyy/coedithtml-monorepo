@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { readErrorMessage } from "@/lib/api-error";
 
-const artifactSchema = z.object({
+const unavailable = "Could not load the file. Try again.";
+
+const lockedSchema = z.object({ requiresPassword: z.literal(true) });
+
+const unlockedSchema = z.object({
+  requiresPassword: z.literal(false),
   artifactId: z.string(),
   fileName: z.string(),
   size: z.number(),
@@ -10,20 +15,41 @@ const artifactSchema = z.object({
   artifactUrl: z.string(),
 });
 
+const artifactSchema = z.union([lockedSchema, unlockedSchema]);
+
 export type Artifact = z.infer<typeof artifactSchema>;
+export type UnlockedArtifact = z.infer<typeof unlockedSchema>;
 
-export async function fetchArtifact(token: string): Promise<Artifact> {
-  const response = await fetch(`/api/artifacts/${encodeURIComponent(token)}`);
+function artifactPath(token: string, suffix = ""): string {
+  return `/api/artifacts/${encodeURIComponent(token)}${suffix}`;
+}
 
+async function parseArtifact(response: Response): Promise<Artifact> {
   if (!response.ok) {
-    throw new Error(
-      await readErrorMessage(response, "Could not load the file. Try again."),
-    );
+    throw new Error(await readErrorMessage(response, unavailable));
   }
-
   const parsed = artifactSchema.safeParse(await response.json());
   if (!parsed.success) {
     throw new Error("The server returned an unexpected response.");
   }
   return parsed.data;
+}
+
+export async function fetchArtifact(token: string): Promise<Artifact> {
+  return parseArtifact(await fetch(artifactPath(token)));
+}
+
+export async function unlockArtifact(
+  token: string,
+  password: string,
+): Promise<Artifact> {
+  // A POST body, never a query string: a password in a URL is written to
+  // browser history and to every access log the request passes through.
+  return parseArtifact(
+    await fetch(artifactPath(token, "/unlock"), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ password }),
+    }),
+  );
 }

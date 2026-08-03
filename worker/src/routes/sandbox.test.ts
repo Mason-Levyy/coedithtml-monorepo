@@ -3,6 +3,7 @@ import { RUNTIME_SCRIPT_PATH } from "@/lib/artifact-render";
 import type { WorkerEnv } from "@/lib/env";
 import {
   fakeAssets,
+  failingArtifactStore,
   FAKE_APP_HOST,
   liveKv,
   mergeKv,
@@ -10,9 +11,10 @@ import {
   stubArtifactMetadata,
   stubArtifactStore,
   stubAssets,
+  testWorkerEnv,
 } from "@/lib/fakes";
 import { hashArtifactPassword } from "@/lib/password";
-import { accessTokenKey, artifactMetadataKey } from "@/lib/storage-keys";
+import { mintUnlockGrant } from "@/lib/unlock-grants";
 import { handleSandboxRequest } from "./sandbox";
 
 const ARTIFACT_ID = "b".repeat(32);
@@ -29,12 +31,11 @@ function envWith(
   kv: KVNamespace,
   assets: Fetcher = fakeAssets() as unknown as Fetcher,
 ): WorkerEnv {
-  return {
+  return testWorkerEnv({
     ARTIFACT_STORE: store,
     ARTIFACT_METADATA: kv,
     ASSETS: assets,
-    APP_HOST: FAKE_APP_HOST,
-  } as unknown as WorkerEnv;
+  });
 }
 
 function knownArtifactEnv(metadata: unknown = METADATA): WorkerEnv {
@@ -164,16 +165,10 @@ describe("handleSandboxRequest", () => {
   });
 
   it("reports a storage failure without leaking the cause", async () => {
-    const failingStore = {
-      get: () => {
-        throw new Error("R2 connection reset at internal-host-9");
-      },
-    } as unknown as R2Bucket;
-
     const response = await handleSandboxRequest(
       request(`/${VIEW_TOKEN}`),
       envWith(
-        failingStore,
+        failingArtifactStore("R2 connection reset at internal-host-9"),
         mergeKv(
           stubAccessTokens([
             {
@@ -197,11 +192,11 @@ describe("handleSandboxRequest", () => {
     async function envWithPassword(password: string): Promise<WorkerEnv> {
       return knownArtifactEnv({
         ...METADATA,
-        passwordHash: await hashArtifactPassword(ARTIFACT_ID, password),
+        passwordHash: await hashArtifactPassword(password),
       });
     }
 
-    it("requires a password when the artifact has one set", async () => {
+    it("refuses a protected artifact with no unlock grant", async () => {
       const response = await handleSandboxRequest(
         request(`/${VIEW_TOKEN}`),
         await envWithPassword("hunter2"),
@@ -210,54 +205,75 @@ describe("handleSandboxRequest", () => {
       expect(response.status).toBe(401);
     });
 
-    it("accepts the correct password as a query parameter", async () => {
+    // The password itself never reaches this origin: it is exchanged for a
+    // grant on the app origin, so it stays out of history and access logs.
+    it("serves the artifact when a grant for it is presented", async () => {
+      const kv = mergeKv(
+        stubAccessTokens([
+          {
+            token: VIEW_TOKEN,
+            record: { artifactId: ARTIFACT_ID, kind: "view" },
+          },
+        ]),
+        stubArtifactMetadata([
+          {
+            artifactId: ARTIFACT_ID,
+            metadata: {
+              ...METADATA,
+              passwordHash: await hashArtifactPassword("hunter2"),
+            },
+          },
+        ]),
+        liveKv(),
+      );
+      const minted = await mintUnlockGrant(kv, ARTIFACT_ID);
+      if (!minted.ok) throw new Error("expected a grant");
+
       const response = await handleSandboxRequest(
-        request(`/${VIEW_TOKEN}?password=hunter2`),
-        await envWithPassword("hunter2"),
+        request(`/${VIEW_TOKEN}?u=${minted.grant}`),
+        envWith(
+          stubArtifactStore([
+            {
+              artifactId: ARTIFACT_ID,
+              bytes: new Uint8Array(new TextEncoder().encode(VALID_HTML))
+                .buffer,
+            },
+          ]),
+          kv,
+        ),
       );
 
       expect(response.status).toBe(200);
     });
 
-    it("rejects an incorrect password", async () => {
+    it("refuses a grant issued for a different artifact", async () => {
+      const kv = mergeKv(
+        stubAccessTokens([
+          {
+            token: VIEW_TOKEN,
+            record: { artifactId: ARTIFACT_ID, kind: "view" },
+          },
+        ]),
+        stubArtifactMetadata([
+          {
+            artifactId: ARTIFACT_ID,
+            metadata: {
+              ...METADATA,
+              passwordHash: await hashArtifactPassword("hunter2"),
+            },
+          },
+        ]),
+        liveKv(),
+      );
+      const minted = await mintUnlockGrant(kv, "9".repeat(32));
+      if (!minted.ok) throw new Error("expected a grant");
+
       const response = await handleSandboxRequest(
-        request(`/${VIEW_TOKEN}?password=wrong`),
-        await envWithPassword("hunter2"),
+        request(`/${VIEW_TOKEN}?u=${minted.grant}`),
+        envWith(stubArtifactStore([]), kv),
       );
 
       expect(response.status).toBe(401);
-    });
-
-    it("rate-limits repeated incorrect attempts", async () => {
-      const passwordHash = await hashArtifactPassword(ARTIFACT_ID, "hunter2");
-      const env = envWith(
-        stubArtifactStore([
-          {
-            artifactId: ARTIFACT_ID,
-            bytes: new Uint8Array(new TextEncoder().encode(VALID_HTML)).buffer,
-          },
-        ]),
-        liveKv([
-          {
-            key: accessTokenKey(VIEW_TOKEN),
-            value: { artifactId: ARTIFACT_ID, kind: "view" },
-          },
-          {
-            key: artifactMetadataKey(ARTIFACT_ID),
-            value: { ...METADATA, passwordHash },
-          },
-        ]),
-      );
-
-      let last: Response | undefined;
-      for (let attempt = 0; attempt < 11; attempt += 1) {
-        last = await handleSandboxRequest(
-          request(`/${VIEW_TOKEN}?password=wrong`),
-          env,
-        );
-      }
-
-      expect(last?.status).toBe(429);
     });
   });
 });

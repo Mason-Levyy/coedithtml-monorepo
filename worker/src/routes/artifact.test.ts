@@ -4,10 +4,12 @@ import {
   liveKv,
   mergeKv,
   stubAccessTokens,
+  failingKv,
   stubArtifactMetadata,
+  testWorkerEnv,
 } from "@/lib/fakes";
 import { hashArtifactPassword } from "@/lib/password";
-import { accessTokenKey, artifactMetadataKey } from "@/lib/storage-keys";
+import { mintUnlockGrant } from "@/lib/unlock-grants";
 import { handleGetArtifact } from "./artifact";
 
 const ARTIFACT_ID = "a".repeat(32);
@@ -19,7 +21,7 @@ const METADATA = {
 };
 
 function envWith(kv: KVNamespace): WorkerEnv {
-  return { ARTIFACT_METADATA: kv } as unknown as WorkerEnv;
+  return testWorkerEnv({ ARTIFACT_METADATA: kv });
 }
 
 function envFor(metadata: unknown): WorkerEnv {
@@ -60,11 +62,8 @@ describe("handleGetArtifact", () => {
   it("never includes the password hash in the response", async () => {
     const response = await handleGetArtifact(
       VIEW_TOKEN,
-      request(`?password=${encodeURIComponent("hunter2")}`),
-      envFor({
-        ...METADATA,
-        passwordHash: await hashArtifactPassword(ARTIFACT_ID, "hunter2"),
-      }),
+      request(),
+      envFor(METADATA),
     );
     const body = (await response.json()) as Record<string, unknown>;
 
@@ -112,16 +111,10 @@ describe("handleGetArtifact", () => {
   });
 
   it("reports a token resolution failure without leaking the cause", async () => {
-    const failingKv = {
-      get: () => {
-        throw new Error("KV connection reset at internal-host-9");
-      },
-    } as unknown as KVNamespace;
-
     const response = await handleGetArtifact(
       VIEW_TOKEN,
       request(),
-      envWith(failingKv),
+      envWith(failingKv("KV connection reset at internal-host-9")),
     );
     const body = (await response.json()) as { error?: string };
 
@@ -133,69 +126,64 @@ describe("handleGetArtifact", () => {
     async function envWithPassword(password: string): Promise<WorkerEnv> {
       return envFor({
         ...METADATA,
-        passwordHash: await hashArtifactPassword(ARTIFACT_ID, password),
+        passwordHash: await hashArtifactPassword(password),
       });
     }
 
-    it("requires a password when the artifact has one set", async () => {
+    it("reports that a password is needed, without leaking the file name", async () => {
       const response = await handleGetArtifact(
         VIEW_TOKEN,
         request(),
         await envWithPassword("hunter2"),
       );
-      const body = (await response.json()) as { error?: string };
-
-      expect(response.status).toBe(401);
-      expect(body.error).toBe("Password required.");
-    });
-
-    it("accepts the correct password", async () => {
-      const response = await handleGetArtifact(
-        VIEW_TOKEN,
-        request(`?password=${encodeURIComponent("hunter2")}`),
-        await envWithPassword("hunter2"),
-      );
+      const body = (await response.json()) as Record<string, unknown>;
 
       expect(response.status).toBe(200);
+      expect(body).toEqual({ requiresPassword: true });
     });
 
-    it("rejects an incorrect password", async () => {
-      const response = await handleGetArtifact(
-        VIEW_TOKEN,
-        request("?password=wrong"),
-        await envWithPassword("hunter2"),
-      );
-      const body = (await response.json()) as { error?: string };
-
-      expect(response.status).toBe(401);
-      expect(body.error).toBe("Incorrect password.");
-    });
-
-    it("rate-limits repeated incorrect attempts", async () => {
-      const passwordHash = await hashArtifactPassword(ARTIFACT_ID, "hunter2");
-      const env = envWith(
-        liveKv([
+    it("serves the metadata once a grant for this artifact is presented", async () => {
+      const kv = mergeKv(
+        stubAccessTokens([
           {
-            key: accessTokenKey(VIEW_TOKEN),
-            value: { artifactId: ARTIFACT_ID, kind: "view" },
-          },
-          {
-            key: artifactMetadataKey(ARTIFACT_ID),
-            value: { ...METADATA, passwordHash },
+            token: VIEW_TOKEN,
+            record: { artifactId: ARTIFACT_ID, kind: "view" },
           },
         ]),
+        stubArtifactMetadata([
+          {
+            artifactId: ARTIFACT_ID,
+            metadata: {
+              ...METADATA,
+              passwordHash: await hashArtifactPassword("hunter2"),
+            },
+          },
+        ]),
+        liveKv(),
       );
+      const minted = await mintUnlockGrant(kv, ARTIFACT_ID);
+      if (!minted.ok) throw new Error("expected a grant");
 
-      let last: Response | undefined;
-      for (let attempt = 0; attempt < 11; attempt += 1) {
-        last = await handleGetArtifact(
-          VIEW_TOKEN,
-          request("?password=wrong"),
-          env,
-        );
-      }
+      const response = await handleGetArtifact(
+        VIEW_TOKEN,
+        request(`?u=${minted.grant}`),
+        envWith(kv),
+      );
+      const body = (await response.json()) as Record<string, unknown>;
 
-      expect(last?.status).toBe(429);
+      expect(response.status).toBe(200);
+      expect(body).toMatchObject({ fileName: "deck.html" });
+    });
+
+    it("refuses a grant that was never issued", async () => {
+      const response = await handleGetArtifact(
+        VIEW_TOKEN,
+        request(`?u=${"f".repeat(32)}`),
+        await envWithPassword("hunter2"),
+      );
+      const body = (await response.json()) as Record<string, unknown>;
+
+      expect(body).toEqual({ requiresPassword: true });
     });
   });
 });

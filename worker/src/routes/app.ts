@@ -2,9 +2,12 @@ import { serveAppAsset } from "@/lib/app-assets";
 import type { WorkerEnv } from "@/lib/env";
 import { jsonError } from "@/lib/responses";
 import { handleGetArtifact } from "./artifact";
+import { handleRevokeToken } from "./revoke";
+import { handleUnlockArtifact } from "./unlock";
 import { handleUpload } from "./upload";
 
 const ARTIFACT_TOKEN_PATH = /^\/api\/artifacts\/([^/]+)$/;
+const ARTIFACT_UNLOCK_PATH = /^\/api\/artifacts\/([^/]+)\/unlock$/;
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
 // Sandbox origin never reaches this router, so artifact scripts can't call the upload API.
@@ -21,13 +24,24 @@ export function handleAppRequest(
     return handleUpload(request, env);
   }
 
-  const tokenMatch = ARTIFACT_TOKEN_PATH.exec(pathname);
-  if (tokenMatch) {
-    const token = tokenMatch[1];
-    if (request.method !== "GET") {
+  const unlockMatch = ARTIFACT_UNLOCK_PATH.exec(pathname);
+  if (unlockMatch) {
+    if (request.method !== "POST") {
       return jsonError("Method not allowed.", 405);
     }
-    return handleGetArtifact(token ?? "", request, env);
+    return handleUnlockArtifact(unlockMatch[1] ?? "", request, env);
+  }
+
+  const tokenMatch = ARTIFACT_TOKEN_PATH.exec(pathname);
+  if (tokenMatch) {
+    const token = tokenMatch[1] ?? "";
+    if (request.method === "GET") {
+      return handleGetArtifact(token, request, env);
+    }
+    if (request.method === "DELETE") {
+      return handleRevokeToken(token, env);
+    }
+    return jsonError("Method not allowed.", 405);
   }
 
   if (pathname.startsWith("/api/")) {

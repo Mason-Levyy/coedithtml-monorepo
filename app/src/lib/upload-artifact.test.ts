@@ -60,7 +60,10 @@ describe("uploadArtifact", () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(result, 201));
     vi.stubGlobal("fetch", fetchMock);
 
-    const returned = await uploadArtifact(htmlFile("deck.html", 100));
+    const returned = await uploadArtifact({
+      file: htmlFile("deck.html", 100),
+      password: null,
+    });
 
     expect(returned).toEqual(result);
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -76,18 +79,18 @@ describe("uploadArtifact", () => {
       vi.fn().mockResolvedValue(jsonResponse({ error: "Too big." }, 413)),
     );
 
-    await expect(uploadArtifact(htmlFile("deck.html", 100))).rejects.toThrow(
-      "Too big.",
-    );
+    await expect(
+      uploadArtifact({ file: htmlFile("deck.html", 100), password: null }),
+    ).rejects.toThrow("Too big.");
   });
 
   it("falls back to a generic message when the error body is unreadable", async () => {
     const response = new Response("not json", { status: 500 });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
 
-    await expect(uploadArtifact(htmlFile("deck.html", 100))).rejects.toThrow(
-      "Could not upload the file. Try again.",
-    );
+    await expect(
+      uploadArtifact({ file: htmlFile("deck.html", 100), password: null }),
+    ).rejects.toThrow("Could not upload the file. Try again.");
   });
 
   it("throws when the success response fails schema validation", async () => {
@@ -96,8 +99,8 @@ describe("uploadArtifact", () => {
       vi.fn().mockResolvedValue(jsonResponse({ artifactId: "x" }, 201)),
     );
 
-    await expect(uploadArtifact(htmlFile("deck.html", 100))).rejects.toThrow(
-      /unexpected response/,
-    );
+    await expect(
+      uploadArtifact({ file: htmlFile("deck.html", 100), password: null }),
+    ).rejects.toThrow(/unexpected response/);
   });
 });
