@@ -4,7 +4,7 @@ import { putArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
 import { checkHtmlDocument, describeRejection } from "@/lib/html-document";
 import { hashArtifactPassword } from "@/lib/password";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { isWithinRateLimit, recordRateLimitedAttempt } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
 import { jsonError, jsonResponse } from "@/lib/responses";
 import { viewerUrl } from "@/lib/share-links";
@@ -47,11 +47,11 @@ export async function handleUpload(
     return jsonError("The file is larger than 5MB.", 413);
   }
 
-  const rateLimit = await checkRateLimit(
+  const uploadKey = `upload-attempts:${clientIpOf(request)}`;
+  const rateLimit = await isWithinRateLimit(
     env.ARTIFACT_METADATA,
-    `upload-attempts:${clientIpOf(request)}`,
+    uploadKey,
     UPLOAD_LIMIT,
-    UPLOAD_WINDOW_SECONDS,
   );
   if (!rateLimit.ok) {
     console.error("Failed to check the upload rate limit", rateLimit.cause);
@@ -59,6 +59,15 @@ export async function handleUpload(
   }
   if (!rateLimit.allowed) {
     return jsonError("Too many uploads. Try again later.", 429);
+  }
+  const recorded = await recordRateLimitedAttempt(
+    env.ARTIFACT_METADATA,
+    uploadKey,
+    UPLOAD_WINDOW_SECONDS,
+  );
+  if (!recorded.ok) {
+    console.error("Failed to record the upload attempt", recorded.cause);
+    return jsonError("Could not save the file. Try again.", 500);
   }
 
   const form = await readForm(request);
