@@ -234,7 +234,12 @@ to the task group above it belongs to.
         gate: `runtime/check-bundle-size.mjs` (no build side effect — CI's
         own `pnpm build` step already produced `runtime/dist/`) wired in as
         `pnpm --filter runtime run check-size`, verified to both pass at the
-        current 6.0KB and fail loudly against a planted oversized file
+        current 6.0KB and fail loudly against a planted oversized file.
+        Flagged for the end-of-phase audit: the runtime-auditor subagent
+        review that caught a real bug on 15 (the scroll-spy fail-open gap)
+        was kicked off for this branch too but didn't return after 30+
+        minutes (every prior audit this session took 2-3), so this went out
+        on manual review only — worth a human runtime/ read before merging
 - [ ] **Ship**
   - [ ] `18-landing-upload-flow` — landing page, upload→link flow, no account
   - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
