@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   classifyRequestOrigin,
+  originFor,
   redirectTargetFor,
   type OriginConfig,
 } from "./origins";
@@ -87,5 +88,22 @@ describe("redirectTargetFor", () => {
 
   it("ignores hosts it was never told to redirect", () => {
     expect(target("http://example.com/")).toBeNull();
+  });
+});
+
+describe("originFor", () => {
+  it("combines the request's protocol with the given host", () => {
+    expect(
+      originFor(
+        new Request("https://app.test/api/artifacts"),
+        FAKE_SANDBOX_HOST,
+      ),
+    ).toBe(`https://${FAKE_SANDBOX_HOST}`);
+  });
+
+  it("preserves an http request's protocol for local dev", () => {
+    expect(
+      originFor(new Request("http://app.test:8787/"), FAKE_SANDBOX_HOST),
+    ).toBe(`http://${FAKE_SANDBOX_HOST}`);
   });
 });

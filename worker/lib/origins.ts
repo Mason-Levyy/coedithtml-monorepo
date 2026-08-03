@@ -64,6 +64,10 @@ export function redirectTargetFor(
   return url;
 }
 
+export function originFor(request: Request, host: string): string {
+  return `${new URL(request.url).protocol}//${host}`;
+}
+
 export type RequestOrigin = "app" | "sandbox" | "unknown";
 
 export function classifyRequestOrigin(
