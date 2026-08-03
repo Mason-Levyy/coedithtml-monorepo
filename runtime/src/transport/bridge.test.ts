@@ -3,12 +3,15 @@ import { sendToApp } from "./bridge";
 import { readyMessage } from "./messages";
 
 afterEach(() => {
-  delete window.__coedit_config__;
+  delete window.__coedit__;
 });
 
 describe("sendToApp", () => {
   it("posts the message to the resolved app origin", () => {
-    window.__coedit_config__ = { appOrigin: "https://app.example.com" };
+    window.__coedit__ = {
+      version: "test",
+      config: { appOrigin: "https://app.example.com" },
+    };
     const postMessage = vi.fn();
     vi.stubGlobal("parent", { postMessage });
 
@@ -24,7 +27,10 @@ describe("sendToApp", () => {
   });
 
   it("does not send when running at the top level (window.parent === window)", () => {
-    window.__coedit_config__ = { appOrigin: "https://app.example.com" };
+    window.__coedit__ = {
+      version: "test",
+      config: { appOrigin: "https://app.example.com" },
+    };
     const postMessage = vi.fn();
     vi.stubGlobal("parent", window);
 

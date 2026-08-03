@@ -4,7 +4,7 @@ import { listenForAppCommands } from "./receive";
 const APP_ORIGIN = "https://app.example.com";
 
 afterEach(() => {
-  delete window.__coedit_config__;
+  delete window.__coedit__;
 });
 
 function dispatchMessage(origin: string, data: unknown): void {
@@ -13,7 +13,7 @@ function dispatchMessage(origin: string, data: unknown): void {
 
 describe("listenForAppCommands", () => {
   it("invokes the callback for a valid command from the app origin", () => {
-    window.__coedit_config__ = { appOrigin: APP_ORIGIN };
+    window.__coedit__ = { version: "test", config: { appOrigin: APP_ORIGIN } };
     const commands: unknown[] = [];
     const stop = listenForAppCommands((command) => commands.push(command));
 
@@ -28,7 +28,7 @@ describe("listenForAppCommands", () => {
   });
 
   it("ignores a message from an origin other than the resolved app origin", () => {
-    window.__coedit_config__ = { appOrigin: APP_ORIGIN };
+    window.__coedit__ = { version: "test", config: { appOrigin: APP_ORIGIN } };
     const commands: unknown[] = [];
     const stop = listenForAppCommands((command) => commands.push(command));
 
@@ -61,7 +61,7 @@ describe("listenForAppCommands", () => {
   });
 
   it("ignores a malformed message from the correct origin", () => {
-    window.__coedit_config__ = { appOrigin: APP_ORIGIN };
+    window.__coedit__ = { version: "test", config: { appOrigin: APP_ORIGIN } };
     const commands: unknown[] = [];
     const stop = listenForAppCommands((command) => commands.push(command));
 
@@ -72,7 +72,7 @@ describe("listenForAppCommands", () => {
   });
 
   it("stops invoking the callback after the returned stop function is called", () => {
-    window.__coedit_config__ = { appOrigin: APP_ORIGIN };
+    window.__coedit__ = { version: "test", config: { appOrigin: APP_ORIGIN } };
     const commands: unknown[] = [];
     const stop = listenForAppCommands((command) => commands.push(command));
     stop();
