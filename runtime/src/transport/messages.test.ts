@@ -22,12 +22,13 @@ describe("readyMessage", () => {
 
 describe("resegmentedMessage", () => {
   it("builds a versioned resegmented message", () => {
-    expect(resegmentedMessage(SLIDES, "pages", false)).toEqual({
+    expect(resegmentedMessage(SLIDES, "pages", false, 0)).toEqual({
       version: 1,
       type: "resegmented",
       slides: SLIDES,
       profile: "pages",
       hasStickyOrFixed: false,
+      activeSlideIndex: 0,
     });
   });
 });

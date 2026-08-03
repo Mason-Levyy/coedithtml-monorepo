@@ -16,6 +16,7 @@ export type RuntimeResegmentedMessage = {
   slides: Slide[];
   profile: ReadingProfile;
   hasStickyOrFixed: boolean;
+  activeSlideIndex: number;
 };
 
 export type RuntimeActiveSlideMessage = {
@@ -45,6 +46,7 @@ export function resegmentedMessage(
   slides: Slide[],
   profile: ReadingProfile,
   hasStickyOrFixed: boolean,
+  activeSlideIndex: number,
 ): RuntimeResegmentedMessage {
   return {
     version: BRIDGE_VERSION,
@@ -52,6 +54,7 @@ export function resegmentedMessage(
     slides,
     profile,
     hasStickyOrFixed,
+    activeSlideIndex,
   };
 }
 

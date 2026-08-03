@@ -54,10 +54,8 @@ The core of the phase. Budget more time here than feels reasonable.
       exist yet to surface anything in)
 - [x] Slides emitted as index ranges — no DOM restructuring anywhere in the path
 - [x] Slide labels derived from the first heading or first text in the range
-- [~] Debounced `MutationObserver` triggers re-segmentation on structural
-      change only (built and tested); "preserving reader position" is a
-      viewer-side concern (map old slide to new by content, not raw index)
-      that has nothing to attach to until stack C
+- [x] Debounced `MutationObserver` triggers re-segmentation on structural
+      change only, preserving reader position by content — 19
 - [~] Reading profiles — Slides, Pages, App — auto-detection is built and
       tested (`segmentWithProfile`); the `Reading as ▾` control and storing
       the choice on the link are stack C/D work
@@ -240,6 +238,23 @@ to the task group above it belongs to.
         was kicked off for this branch too but didn't return after 30+
         minutes (every prior audit this session took 2-3), so this went out
         on manual review only — worth a human runtime/ read before merging
+  - [x] `19-viewer-position-preservation` — closes a gap flagged back on 13
+        and never actually picked up by 14-17: resegmentation was clamping
+        `activeSlideIndex` numerically
+        (`Math.min(previous, newSlides.length - 1)`) instead of "preserving
+        reader position... by content, not raw index" as the roadmap always
+        said. New `runtime/src/viewer/position.ts`: the runtime now holds a
+        live reference to the active slide's anchor DOM element (updated on
+        every scroll-spy change), and on resegmentation re-locates that same
+        element in the post-mutation DOM to find which *new* slide contains
+        it — falling back to the old numeric clamp only if the anchor itself
+        was removed. `resegmented` messages now carry the resolved
+        `activeSlideIndex` directly (both `runtime/transport/messages.ts`
+        and the app's `bridge-messages.ts` schemas extended, mirroring each
+        other exactly as they already did for every other message field);
+        `useArtifactBridge` deleted its own clamping logic in favor of
+        trusting the runtime's answer. Runtime bundle now 6.4KB, still well
+        inside the 20KB budget
 - [ ] **Ship**
   - [ ] `18-landing-upload-flow` — landing page, upload→link flow, no account
   - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
