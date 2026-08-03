@@ -86,9 +86,9 @@ The core of the phase. Budget more time here than feels reasonable.
 - [x] Thumbnails generated from live slide ranges, not screenshots — 15c
 - [x] Keyboard navigation: arrows, home, end, and a visible focus ring — 16
 - [x] Mobile layout: filmstrip collapses to a swipe strip — 16
-- [ ] Runtime fails open — kill the socket and the bridge in a test and confirm
-      the artifact still reads correctly
-- [ ] Runtime build stays under 20KB minified, enforced by a hook
+- [x] Runtime fails open — kill the socket and the bridge in a test and confirm
+      the artifact still reads correctly — 17
+- [x] Runtime build stays under 20KB minified, enforced by a hook — 17
 
 ### Ship
 
@@ -137,7 +137,7 @@ to the task group above it belongs to.
         expected counts, debounced `MutationObserver` re-segmentation,
         `segmentWithProfile()` reading-profile auto-detection. UI control and
         server-side persistence of the chosen profile are stack C/D
-- [ ] **Viewer — filmstrip**
+- [x] **Viewer — filmstrip**
   - [x] `14-viewer-iframe-bridge` — `ArtifactFrame` (exact
         `sandbox="allow-scripts allow-same-origin"`, locked in by a test) +
         `useArtifactBridge` hook on the app side; `runtime/src/transport/`
@@ -218,8 +218,23 @@ to the task group above it belongs to.
         wrapping — confirmed via `document.activeElement`, since (as with
         clicks in 15c) the *visual* active-slide highlight only updates from
         a runtime-reported message the demo harness has no runtime to send
-  - [ ] `17-viewer-fail-open-budget` — fail-open test, runtime-size-budget
-        hook wired into CI
+  - [x] `17-viewer-fail-open-budget` — fixed a real fail-open gap: `start()`'s
+        initial ready-send wasn't try/caught, so a dead bridge (postMessage
+        throwing) skipped wiring up resegmentation watching, scroll-spy, and
+        command listening entirely, not just that one message. Now each
+        phase is independently try/caught, matching the pattern already used
+        for the others. New `runtime/src/index.test.ts` exercises the whole
+        `start()` pipeline end-to-end with a `window.parent.postMessage` that
+        always throws: confirms the artifact's own markup is byte-for-byte
+        untouched, confirms Stage-mode commands still apply correctly
+        despite the failed ready-send, and confirms `waitUntilReady`
+        resolves via its `maxWaitMs` cap rather than hanging on a
+        continuously-mutating page. Bundle-size budget moved out of the
+        session-only Claude Code hook and into CI as its own authoritative
+        gate: `runtime/check-bundle-size.mjs` (no build side effect — CI's
+        own `pnpm build` step already produced `runtime/dist/`) wired in as
+        `pnpm --filter runtime run check-size`, verified to both pass at the
+        current 6.0KB and fail loudly against a planted oversized file
 - [ ] **Ship**
   - [ ] `18-landing-upload-flow` — landing page, upload→link flow, no account
   - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
