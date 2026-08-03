@@ -18,6 +18,7 @@ export default defineConfig({
   },
   test: {
     environment: "happy-dom",
+    setupFiles: ["./src/test-setup.ts"],
     // Otherwise happy-dom actually fetches every rendered <iframe src>.
     environmentOptions: {
       happyDOM: { settings: { disableIframePageLoading: true } },

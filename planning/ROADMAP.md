@@ -74,16 +74,16 @@ The core of the phase. Budget more time here than feels reasonable.
       activeSlide) and app → runtime (scrollToSlide, setStageSlide), each
       checked on send (explicit target origin, never `"*"`) and on receipt
       (`event.origin` matched exactly, message shape validated before use)
-- [~] Flow mode: scroll-spy and jump-navigation are built and tested on the
+- [x] Flow mode: scroll-spy and jump-navigation are built and tested on the
       runtime side (`watchScrollSpy`, `scrollToSlide`) — reporting which
       slide is in view and executing a scroll command are both live. The
-      filmstrip UI that displays this and lets a reader click a thumbnail is
-      15b
-- [~] Stage mode: hide/show logic (`createStageController`) and sticky/fixed
+      filmstrip UI that displays this and lets a reader click a thumbnail
+      landed in 15c
+- [x] Stage mode: hide/show logic (`createStageController`) and sticky/fixed
       detection (`hasStickyOrFixedPositioning`, included in every
       ready/resegmented message) are built and tested. The opt-in control and
-      the warning UI are 15b
-- [ ] Thumbnails generated from live slide ranges, not screenshots — 15b
+      the warning UI landed in 15c
+- [x] Thumbnails generated from live slide ranges, not screenshots — 15c
 - [ ] Keyboard navigation: arrows, home, end, and a visible focus ring
 - [ ] Mobile layout: filmstrip collapses to a swipe strip
 - [ ] Runtime fails open — kill the socket and the bridge in a test and confirm
@@ -183,12 +183,27 @@ to the task group above it belongs to.
           Verified by building and grepping the compiled CSS for the
           registered tokens, not just a clean `tsc`. No visual smoke test
           yet — nothing user-facing exists until 15c
-    - [ ] `15c-viewer-flow-stage-ui` — the actual filmstrip, built on 15b's
+    - [x] `15c-viewer-flow-stage-ui` — the actual filmstrip, built on 15b's
           tokens: thumbnails (text/label-based, not screenshots — no way to
           capture cross-origin iframe content without much more machinery),
           Flow mode's scroll-spy-highlighted strip, the Stage-mode opt-in
           toggle and its sticky/fixed warning — the layout and interaction
-          patterns are a rough match for "Mock D" in the reference file
+          patterns are a rough match for "Mock D" in the reference file.
+          `ArtifactStatusBar`, `Filmstrip`, `StickyWarning`, `ArtifactViewer`
+          composing them, 16 new tests. Browser-verified against a demo
+          harness dispatching a synthetic `ready` message: design system
+          renders correctly, the Stage toggle (local state, no round trip)
+          updates immediately. Clicking a thumbnail correctly does *not* move
+          the active-slide highlight in the demo — that highlight is driven
+          only by an `activeSlide` message the real runtime sends back after
+          its own scroll-spy detects the new position, and the demo's
+          `src="about:blank"` has no runtime to send it. Confirmed this is
+          the intended design (the highlighted thumbnail should only ever
+          reflect what the document actually shows, never an optimistic
+          guess) rather than a bug, but it means the click→highlight round
+          trip itself is unverified in a browser until a real artifact is
+          served end-to-end — worth a manual check against a live sandboxed
+          artifact before Phase 1 ships
   - [ ] `16-viewer-keyboard-mobile` — keyboard nav + focus ring, mobile swipe
         strip
   - [ ] `17-viewer-fail-open-budget` — fail-open test, runtime-size-budget
