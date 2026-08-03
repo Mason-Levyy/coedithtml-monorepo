@@ -28,17 +28,17 @@ question.
 
 - [x] Upload endpoint: single `.html` only, size cap, content sniffing, reject
       anything that is not a complete HTML document
-- [~] Artifact stored in R2 byte-for-byte; metadata in KV still to come
-- [ ] Serve handler appends exactly one script tag **after `</html>`** — a pure
+- [x] Artifact stored in R2 byte-for-byte, metadata in KV with a read path
+- [x] Serve handler appends exactly one script tag **after `</html>`** — a pure
       append, never a search-and-replace — and changes nothing else, verified by
       a byte-diff test
-- [ ] Detect artifacts shipping their own restrictive CSP meta tag and show an
+- [x] Detect artifacts shipping their own restrictive CSP meta tag and show an
       honest error rather than a silently dead viewer
-- [ ] CSP on artifact responses: external resources allowed, credentialed
+- [x] CSP on artifact responses: external resources allowed, credentialed
       same-origin requests blocked
-- [ ] View and edit tokens, unguessable, independently revocable
-- [ ] Optional password gate on a link
-- [ ] Rate limits and abuse ceiling on upload
+- [x] View and edit tokens, unguessable, independently revocable
+- [x] Optional password gate on a link
+- [x] Rate limits and abuse ceiling on upload
 
 ### Segmentation engine
 
@@ -90,8 +90,8 @@ The core of the phase. Budget more time here than feels reasonable.
 
 ### Ship
 
-- [ ] Landing page explaining the product in one screen
-- [ ] Upload → link flow with no account required
+- [x] Landing page explaining the product in one screen — 18
+- [x] Upload → link flow with no account required — 18
 - [ ] Ten real artifacts from ten real people uploaded and read
 
 ### Delivery stack
@@ -112,15 +112,43 @@ to the task group above it belongs to.
         every push
   - [x] `05-domain-layout` — app on app.coedithtml.com, apex freed for the
         marketing site, www 301s to the apex
-- [ ] **Storage and serving**
+- [x] **Storage and serving**
   - [x] `06-upload-endpoint` — Zod-validated upload route, single `.html`
         only, size cap, content sniffing, stored to R2 byte-for-byte
-  - [ ] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
+  - [x] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
         write and storage-key helpers landed with 06
-  - [ ] `08-serve-append-handler` — append-after-`</html>` serve handler,
+  - [x] `08-serve-append-handler` — append-after-`</html>` serve handler,
         byte-diff test
-  - [ ] `09-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
-        tokens, password gate, rate limits
+  - [x] `09-csp-tokens` — CSP meta-tag detection/error, CSP response headers
+        (`frame-ancestors` locked to the app origin), view/edit tokens minted
+        on upload and required by both read routes. Split into three branches
+        rather than one (password gate and rate limits are separable
+        concerns, and bundled would have pushed well past the ~1000-line
+        guideline) — numbering kept as 09/09b/09c so 10-18 didn't need to
+        shift:
+    - [x] `09-csp-tokens` — this entry
+    - [x] `09b-password-gate` — optional password gate backend (hash + verify
+          + password-attempt rate limiting); no prompt UI yet, since the
+          viewer page it belongs on doesn't exist until stack C. Password is
+          passed as a `?password=` query param on the sandbox origin, since a
+          plain `<iframe src>` navigation can't carry a custom header and the
+          sandbox origin is architecturally barred from ever holding a
+          cookie — flagged for review since query strings land in browser
+          history and any access logs
+    - [x] `09c-upload-rate-limits` — general upload abuse ceiling, reusing
+          09b's rate-limit primitive
+    - [x] `09d-serve-runtime-bundle` — replaces the `/__coedit/runtime.js`
+          404 placeholder with the real esbuild output, served via Cloudflare
+          Workers Static Assets (`assets.directory` pointed straight at
+          `runtime/dist`, `run_worker_first: true` so origin classification
+          and CSP still apply to it). Injects `window.__coedit_config__ =
+          {appOrigin}` ahead of the bundle so the not-yet-built postMessage
+          bridge (stack C) has a safe `postMessage` target origin, since the
+          runtime can't otherwise read the parent's origin from inside a
+          cross-origin iframe. Added as its own branch once it became clear
+          branch 14 (viewer, rooted on the segmentation stack off `main`)
+          has no ancestry containing this worker code and can't touch it
+          directly — this stays on stack A instead
 - [x] **Segmentation engine**
   - [x] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
   - [x] `11-segmentation-strategies-markers-semantic` — explicit markers, then
@@ -272,7 +300,41 @@ to the task group above it belongs to.
         and reports real slides once the DOM settles again. Runtime bundle
         now 6.5KB
 - [ ] **Ship**
-  - [ ] `18-landing-upload-flow` — landing page, upload→link flow, no account
+  - [x] `18-landing-upload-flow` — independent stack (Stack D), rooted on this
+        stack's own tip (`09d`) rather than the segmentation/viewer stack,
+        since the real dependency here is the upload/token/serving contract
+        those branches built, not the viewer UI. Cherry-picked `15b`'s
+        design-system commit from the other stack onto this one (same
+        content, duplicated on purpose — reconciled when the user merges
+        both stacks) so the landing page uses the same tokens rather than
+        inventing new ones. `worker/src/routes/upload.ts` now returns
+        fully-qualified `viewUrl`/`editUrl` (not just raw tokens) computed
+        server-side via a new shared `originFor()` helper in
+        `worker/lib/origins.ts`, also used by `sandbox.ts` — the frontend
+        has no other way to know the sandbox host without duplicating worker
+        config. `app/`: `useUploadArtifact` (TanStack Query mutation) +
+        `UploadDropzone` (drag/drop, client-side `.html`/size validation) +
+        `ShareLinkResult` (copy-to-clipboard) + `LandingPage` composing them
+        with one-screen explanatory copy. Added a Vite dev proxy for `/api`
+        so the app dev server can reach the worker locally; hit and fixed a
+        real gotcha along the way — Node's DNS resolver doesn't special-case
+        `*.localhost` the way browsers do, so the proxy target has to be
+        `127.0.0.1` with the `Host` header set by hand, not
+        `app.localhost:8787` directly. Browser-verified for real, not
+        against a demo harness: ran the actual worker (`wrangler dev`) and
+        app dev servers together, uploaded a real file through the UI,
+        confirmed the returned link resolves and serves the artifact
+        byte-for-byte with the runtime injected (`window.__coedit__`
+        present). Flagged for the end-of-phase audit: the link this flow
+        hands back opens the **raw sandboxed artifact directly** — no
+        Filmstrip/Flow/Stage chrome, because that lives in `ArtifactViewer`
+        on the other, currently-unmerged stack, and wiring an app-origin
+        "reader" route through it needs the two stacks integrated first
+        (the user's own merge step). Separately, and more fundamentally,
+        *how `app/`'s own build output gets served in production at all* is
+        still the same open question flagged back on branch 14 — until
+        that's resolved, there's no production URL for this landing page to
+        live at regardless of the reader-route question
   - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
 
 ---

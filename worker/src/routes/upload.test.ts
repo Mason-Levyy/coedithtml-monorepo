@@ -1,23 +1,43 @@
 import { describe, expect, it } from "vitest";
 import type { WorkerEnv } from "@/lib/env";
-import { recordingArtifactStore } from "@/lib/fakes";
+import {
+  FAKE_SANDBOX_HOST,
+  fakeArtifactMetadata,
+  liveKv,
+  recordingArtifactMetadata,
+  recordingArtifactStore,
+} from "@/lib/fakes";
+import { verifyArtifactPassword } from "@/lib/password";
 import { MAX_ARTIFACT_BYTES } from "@/lib/schemas/artifact";
 import { handleUpload } from "./upload";
 
 const VALID_HTML = `<!doctype html>
 <html lang="en"><body><section><h1>Q3</h1></section></body></html>`;
 
-function envWith(store: R2Bucket): WorkerEnv {
-  return { ARTIFACT_STORE: store } as unknown as WorkerEnv;
+function envWith(
+  store: R2Bucket,
+  metadata: KVNamespace = fakeArtifactMetadata() as unknown as KVNamespace,
+): WorkerEnv {
+  return {
+    ARTIFACT_STORE: store,
+    ARTIFACT_METADATA: metadata,
+    SANDBOX_HOST: FAKE_SANDBOX_HOST,
+  } as unknown as WorkerEnv;
 }
 
-function uploadRequest(files: { name: string; body: string }[]): Request {
+function uploadRequest(
+  files: { name: string; body: string }[],
+  password?: string,
+): Request {
   const form = new FormData();
   for (const file of files) {
     form.append(
       "file",
       new File([file.body], file.name, { type: "text/html" }),
     );
+  }
+  if (password !== undefined) {
+    form.append("password", password);
   }
   return new Request("https://app.test/api/artifacts", {
     method: "POST",
@@ -35,6 +55,10 @@ async function upload(
   );
   const body = (await response.json()) as {
     artifactId?: string;
+    viewToken?: string;
+    editToken?: string;
+    viewUrl?: string;
+    editUrl?: string;
     error?: string;
   };
   return { response, body, store };
@@ -59,6 +83,144 @@ describe("handleUpload", () => {
     const [put] = store.puts;
     expect(put && new TextDecoder().decode(put.bytes)).toBe(VALID_HTML);
     expect(put?.key).toBe(`artifacts/${body.artifactId}.html`);
+  });
+
+  it("stores metadata in KV alongside the R2 object", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as { artifactId: string };
+
+    const metadataPut = metadata.puts.find(
+      (put) => put.key === `artifacts/${body.artifactId}`,
+    );
+    expect(metadataPut && JSON.parse(metadataPut.value)).toMatchObject({
+      fileName: "deck.html",
+      size: VALID_HTML.length,
+    });
+  });
+
+  it("mints distinct view and edit tokens", async () => {
+    const { response, body } = await upload([
+      { name: "deck.html", body: VALID_HTML },
+    ]);
+
+    expect(response.status).toBe(201);
+    expect(body.viewToken).toMatch(/^[0-9a-f]{32}$/);
+    expect(body.editToken).toMatch(/^[0-9a-f]{32}$/);
+    expect(body.viewToken).not.toBe(body.editToken);
+  });
+
+  it("reports fully-qualified, distinct view and edit URLs on the sandbox origin", async () => {
+    const { body } = await upload([{ name: "deck.html", body: VALID_HTML }]);
+
+    expect(body.viewUrl).toBe(`https://${FAKE_SANDBOX_HOST}/${body.viewToken}`);
+    expect(body.editUrl).toBe(`https://${FAKE_SANDBOX_HOST}/${body.editToken}`);
+  });
+
+  it("stores both tokens in KV, each scoped to the artifact", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as {
+      artifactId: string;
+      viewToken: string;
+      editToken: string;
+    };
+
+    const tokenPuts = metadata.puts.filter((put) =>
+      put.key.startsWith("tokens/"),
+    );
+    expect(tokenPuts).toHaveLength(2);
+
+    const viewPut = tokenPuts.find(
+      (put) => put.key === `tokens/${body.viewToken}`,
+    );
+    const editPut = tokenPuts.find(
+      (put) => put.key === `tokens/${body.editToken}`,
+    );
+    expect(viewPut && JSON.parse(viewPut.value)).toEqual({
+      artifactId: body.artifactId,
+      kind: "view",
+    });
+    expect(editPut && JSON.parse(editPut.value)).toEqual({
+      artifactId: body.artifactId,
+      kind: "edit",
+    });
+  });
+
+  it("omits passwordHash when no password is given", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as { artifactId: string };
+
+    const metadataPut = metadata.puts.find(
+      (put) => put.key === `artifacts/${body.artifactId}`,
+    );
+    expect(
+      metadataPut && JSON.parse(metadataPut.value).passwordHash,
+    ).toBeUndefined();
+  });
+
+  it("hashes and stores an optional password", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }], "hunter2"),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as { artifactId: string };
+
+    const metadataPut = metadata.puts.find(
+      (put) => put.key === `artifacts/${body.artifactId}`,
+    );
+    const storedHash =
+      metadataPut && JSON.parse(metadataPut.value).passwordHash;
+
+    expect(typeof storedHash).toBe("string");
+    expect(storedHash).not.toBe("hunter2");
+    expect(
+      await verifyArtifactPassword(body.artifactId, "hunter2", storedHash),
+    ).toBe(true);
+  });
+
+  it("rejects a file that ships its own CSP meta tag", async () => {
+    const { response, body } = await upload([
+      {
+        name: "deck.html",
+        body: `<html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'"></head><body>hi</body></html>`,
+      },
+    ]);
+
+    expect(response.status).toBe(415);
+    expect(body.error).toMatch(/Content-Security-Policy/i);
+  });
+
+  it("reports a metadata write failure without leaking the cause", async () => {
+    const store = recordingArtifactStore();
+    const metadata = recordingArtifactMetadata(() => {
+      throw new Error("KV connection reset at internal-host-9");
+    });
+
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(store.bucket, metadata.kv),
+    );
+    const body = (await response.json()) as { error?: string };
+
+    expect(response.status).toBe(500);
+    expect(body.error).toBe("Could not save the file. Try again.");
+    expect(JSON.stringify(body)).not.toMatch(/internal-host-9/);
   });
 
   it("gives each upload a distinct id", async () => {
@@ -115,6 +277,21 @@ describe("handleUpload", () => {
 
     expect(response.status).toBe(415);
     expect(body.error).toMatch(/build step/i);
+  });
+
+  it("rate-limits repeated uploads from the same client", async () => {
+    const store = recordingArtifactStore();
+    const env = envWith(store.bucket, liveKv());
+
+    let last: Response | undefined;
+    for (let attempt = 0; attempt < 21; attempt += 1) {
+      last = await handleUpload(
+        uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+        env,
+      );
+    }
+
+    expect(last?.status).toBe(429);
   });
 
   it("refuses an oversized upload before reading the body", async () => {
