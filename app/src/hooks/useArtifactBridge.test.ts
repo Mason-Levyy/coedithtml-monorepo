@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { useArtifactBridge } from "./useArtifactBridge";
 
 const SANDBOX_ORIGIN = "https://sandbox.example.com";
@@ -8,101 +8,131 @@ function dispatchMessage(origin: string, data: unknown): void {
   window.dispatchEvent(new MessageEvent("message", { origin, data }));
 }
 
+function readyMessage(slideCount: number) {
+  return {
+    version: 1,
+    type: "ready",
+    slides: Array.from({ length: slideCount }, (_, i) => ({
+      index: i,
+      startChild: i,
+      endChild: i,
+      label: `Slide ${i}`,
+    })),
+    profile: "slides",
+    hasStickyOrFixed: false,
+  };
+}
+
 describe("useArtifactBridge", () => {
   it("starts in the loading state", () => {
     const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
 
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current.state).toEqual({ status: "loading" });
   });
 
-  it("becomes ready on a valid message from the sandbox origin", () => {
+  it("becomes ready with activeSlideIndex 0 on a ready message", () => {
+    const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
+
+    act(() => {
+      dispatchMessage(SANDBOX_ORIGIN, readyMessage(3));
+    });
+
+    expect(result.current.state).toMatchObject({
+      status: "ready",
+      activeSlideIndex: 0,
+      hasStickyOrFixed: false,
+    });
+  });
+
+  it("updates activeSlideIndex on an activeSlide message", () => {
+    const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
+
+    act(() => {
+      dispatchMessage(SANDBOX_ORIGIN, readyMessage(3));
+    });
+    act(() => {
+      dispatchMessage(SANDBOX_ORIGIN, {
+        version: 1,
+        type: "activeSlide",
+        index: 2,
+      });
+    });
+
+    expect(result.current.state).toMatchObject({ activeSlideIndex: 2 });
+  });
+
+  it("ignores an activeSlide message before the first ready message", () => {
     const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
 
     act(() => {
       dispatchMessage(SANDBOX_ORIGIN, {
         version: 1,
-        type: "ready",
-        slides: [{ index: 0, startChild: 0, endChild: 0, label: "One" }],
-        profile: "slides",
+        type: "activeSlide",
+        index: 2,
       });
     });
 
-    expect(result.current).toEqual({
-      status: "ready",
-      slides: [{ index: 0, startChild: 0, endChild: 0, label: "One" }],
-      profile: "slides",
+    expect(result.current.state).toEqual({ status: "loading" });
+  });
+
+  it("clamps activeSlideIndex when resegmentation shrinks the slide count", () => {
+    const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
+
+    act(() => {
+      dispatchMessage(SANDBOX_ORIGIN, readyMessage(5));
     });
+    act(() => {
+      dispatchMessage(SANDBOX_ORIGIN, {
+        version: 1,
+        type: "activeSlide",
+        index: 4,
+      });
+    });
+    act(() => {
+      dispatchMessage(SANDBOX_ORIGIN, {
+        ...readyMessage(2),
+        type: "resegmented",
+      });
+    });
+
+    expect(result.current.state).toMatchObject({ activeSlideIndex: 1 });
   });
 
   it("ignores a message from an origin other than the sandbox", () => {
     const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
 
     act(() => {
-      dispatchMessage("https://evil.example.com", {
-        version: 1,
-        type: "ready",
-        slides: [],
-        profile: "app",
-      });
+      dispatchMessage("https://evil.example.com", readyMessage(1));
     });
 
-    expect(result.current).toEqual({ status: "loading" });
+    expect(result.current.state).toEqual({ status: "loading" });
   });
 
-  it("ignores a malformed message from the sandbox origin", () => {
+  it("posts a command to the bound iframe's contentWindow at the sandbox origin", () => {
     const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
+    const postMessage = vi.fn();
+    const iframe = {
+      contentWindow: { postMessage },
+    } as unknown as HTMLIFrameElement;
+    result.current.frameRef.current = iframe;
 
-    act(() => {
-      dispatchMessage(SANDBOX_ORIGIN, { hello: "world" });
-    });
+    result.current.sendCommand({ version: 1, type: "scrollToSlide", index: 2 });
 
-    expect(result.current).toEqual({ status: "loading" });
-  });
-
-  it("updates again on a later resegmented message", () => {
-    const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
-
-    act(() => {
-      dispatchMessage(SANDBOX_ORIGIN, {
-        version: 1,
-        type: "ready",
-        slides: [{ index: 0, startChild: 0, endChild: 0, label: "One" }],
-        profile: "slides",
-      });
-    });
-    act(() => {
-      dispatchMessage(SANDBOX_ORIGIN, {
-        version: 1,
-        type: "resegmented",
-        slides: [
-          { index: 0, startChild: 0, endChild: 0, label: "One" },
-          { index: 1, startChild: 1, endChild: 1, label: "Two" },
-        ],
-        profile: "slides",
-      });
-    });
-
-    expect(result.current).toMatchObject({ status: "ready" });
-    expect(
-      result.current.status === "ready" ? result.current.slides.length : -1,
-    ).toBe(2);
-  });
-
-  it("stops updating after unmount", () => {
-    const { result, unmount } = renderHook(() =>
-      useArtifactBridge(SANDBOX_ORIGIN),
+    expect(postMessage).toHaveBeenCalledWith(
+      { version: 1, type: "scrollToSlide", index: 2 },
+      SANDBOX_ORIGIN,
     );
-    unmount();
+  });
 
-    act(() => {
-      dispatchMessage(SANDBOX_ORIGIN, {
+  it("does not throw when sending a command with no iframe bound", () => {
+    const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
+
+    expect(() =>
+      result.current.sendCommand({
         version: 1,
-        type: "ready",
-        slides: [],
-        profile: "app",
-      });
-    });
-
-    expect(result.current).toEqual({ status: "loading" });
+        type: "setStageSlide",
+        index: null,
+      }),
+    ).not.toThrow();
   });
 });

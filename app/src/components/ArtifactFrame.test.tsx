@@ -1,4 +1,5 @@
 import { render } from "@testing-library/react";
+import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { ArtifactFrame } from "./ArtifactFrame";
 
@@ -33,5 +34,18 @@ describe("ArtifactFrame", () => {
       container.querySelector("iframe")?.getAttribute("sandbox") ?? "";
     expect(sandbox).not.toContain("allow-top-navigation");
     expect(sandbox).not.toContain("allow-popups");
+  });
+
+  it("forwards a ref to the underlying iframe element", () => {
+    const ref = createRef<HTMLIFrameElement>();
+    render(
+      <ArtifactFrame
+        ref={ref}
+        src="https://sandbox.example.com/abc123"
+        title="Deck"
+      />,
+    );
+
+    expect(ref.current?.tagName).toBe("IFRAME");
   });
 });
