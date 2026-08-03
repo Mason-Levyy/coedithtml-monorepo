@@ -1,0 +1,42 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { ShareLinkResult } from "./ShareLinkResult";
+
+const VIEW_URL = "https://sandbox.test/" + "a".repeat(32);
+
+describe("ShareLinkResult", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("shows the view URL", () => {
+    render(<ShareLinkResult viewUrl={VIEW_URL} onUploadAnother={() => {}} />);
+
+    expect(() => screen.getByText(VIEW_URL)).not.toThrow();
+  });
+
+  it("copies the link to the clipboard and confirms it", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+
+    render(<ShareLinkResult viewUrl={VIEW_URL} onUploadAnother={() => {}} />);
+
+    fireEvent.click(screen.getByText("Copy link"));
+    await vi.waitFor(() => {
+      expect(() => screen.getByText("Copied")).not.toThrow();
+    });
+
+    expect(writeText).toHaveBeenCalledWith(VIEW_URL);
+  });
+
+  it("calls onUploadAnother when clicked", () => {
+    const onUploadAnother = vi.fn();
+    render(
+      <ShareLinkResult viewUrl={VIEW_URL} onUploadAnother={onUploadAnother} />,
+    );
+
+    fireEvent.click(screen.getByText("Upload another"));
+
+    expect(onUploadAnother).toHaveBeenCalledTimes(1);
+  });
+});

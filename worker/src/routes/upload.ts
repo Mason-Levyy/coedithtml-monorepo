@@ -3,6 +3,7 @@ import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { putArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
 import { checkHtmlDocument, describeRejection } from "@/lib/html-document";
+import { originFor } from "@/lib/origins";
 import { hashArtifactPassword } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
@@ -136,5 +137,15 @@ export async function handleUpload(
     return jsonError("Could not save the file. Try again.", 500);
   }
 
-  return jsonResponse({ artifactId, viewToken, editToken }, 201);
+  const sandboxOrigin = originFor(request, env.SANDBOX_HOST);
+  return jsonResponse(
+    {
+      artifactId,
+      viewToken,
+      editToken,
+      viewUrl: `${sandboxOrigin}/${viewToken}`,
+      editUrl: `${sandboxOrigin}/${editToken}`,
+    },
+    201,
+  );
 }

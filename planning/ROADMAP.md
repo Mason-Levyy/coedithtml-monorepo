@@ -77,8 +77,8 @@ The core of the phase. Budget more time here than feels reasonable.
 
 ### Ship
 
-- [ ] Landing page explaining the product in one screen
-- [ ] Upload → link flow with no account required
+- [x] Landing page explaining the product in one screen — 18
+- [x] Upload → link flow with no account required — 18
 - [ ] Ten real artifacts from ten real people uploaded and read
 
 ### Delivery stack
@@ -154,7 +154,41 @@ to the task group above it belongs to.
   - [ ] `17-viewer-fail-open-budget` — fail-open test, runtime-size-budget
         hook wired into CI
 - [ ] **Ship**
-  - [ ] `18-landing-upload-flow` — landing page, upload→link flow, no account
+  - [x] `18-landing-upload-flow` — independent stack (Stack D), rooted on this
+        stack's own tip (`09d`) rather than the segmentation/viewer stack,
+        since the real dependency here is the upload/token/serving contract
+        those branches built, not the viewer UI. Cherry-picked `15b`'s
+        design-system commit from the other stack onto this one (same
+        content, duplicated on purpose — reconciled when the user merges
+        both stacks) so the landing page uses the same tokens rather than
+        inventing new ones. `worker/src/routes/upload.ts` now returns
+        fully-qualified `viewUrl`/`editUrl` (not just raw tokens) computed
+        server-side via a new shared `originFor()` helper in
+        `worker/lib/origins.ts`, also used by `sandbox.ts` — the frontend
+        has no other way to know the sandbox host without duplicating worker
+        config. `app/`: `useUploadArtifact` (TanStack Query mutation) +
+        `UploadDropzone` (drag/drop, client-side `.html`/size validation) +
+        `ShareLinkResult` (copy-to-clipboard) + `LandingPage` composing them
+        with one-screen explanatory copy. Added a Vite dev proxy for `/api`
+        so the app dev server can reach the worker locally; hit and fixed a
+        real gotcha along the way — Node's DNS resolver doesn't special-case
+        `*.localhost` the way browsers do, so the proxy target has to be
+        `127.0.0.1` with the `Host` header set by hand, not
+        `app.localhost:8787` directly. Browser-verified for real, not
+        against a demo harness: ran the actual worker (`wrangler dev`) and
+        app dev servers together, uploaded a real file through the UI,
+        confirmed the returned link resolves and serves the artifact
+        byte-for-byte with the runtime injected (`window.__coedit__`
+        present). Flagged for the end-of-phase audit: the link this flow
+        hands back opens the **raw sandboxed artifact directly** — no
+        Filmstrip/Flow/Stage chrome, because that lives in `ArtifactViewer`
+        on the other, currently-unmerged stack, and wiring an app-origin
+        "reader" route through it needs the two stacks integrated first
+        (the user's own merge step). Separately, and more fundamentally,
+        *how `app/`'s own build output gets served in production at all* is
+        still the same open question flagged back on branch 14 — until
+        that's resolved, there's no production URL for this landing page to
+        live at regardless of the reader-route question
   - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
 
 ---

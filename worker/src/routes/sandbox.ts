@@ -6,6 +6,7 @@ import {
 import { getArtifactMetadata } from "@/lib/artifact-metadata";
 import { getArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
+import { originFor } from "@/lib/origins";
 import { checkPasswordGate } from "@/lib/password-gate";
 import { sandboxContentSecurityPolicy } from "@/lib/sandbox-headers";
 import { accessTokenSchema } from "@/lib/schemas/artifact";
@@ -36,7 +37,7 @@ async function serveRuntimeScript(
     return sandboxResponse("Not found", 404, csp);
   }
 
-  const appOrigin = `${new URL(request.url).protocol}//${env.APP_HOST}`;
+  const appOrigin = originFor(request, env.APP_HOST);
   const body = await assetResponse.text();
   // Own "use strict" first, or prepending anything drops the bundle's own directive and the script runs sloppy-mode.
   const configured = `"use strict";\nwindow.__coedit_config__=${JSON.stringify({ appOrigin })};\n${body}`;
