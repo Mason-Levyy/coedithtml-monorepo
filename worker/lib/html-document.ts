@@ -1,5 +1,5 @@
 export type HtmlDocumentRejection =
-  "needs-build-step" | "not-html" | "no-closing-html-tag";
+  "needs-build-step" | "not-html" | "no-closing-html-tag" | "has-own-csp";
 
 export type HtmlDocumentCheck =
   { ok: true } | { ok: false; reason: HtmlDocumentRejection };
@@ -16,6 +16,11 @@ const OPENING_HTML_TAG = /<html[\s>]/i;
 
 const CLOSING_HTML_TAG = /<\/html\s*>/i;
 
+// Report-only is excluded on purpose: it can't silently break the injected
+// runtime, which is the only failure mode this check exists to catch.
+const OWN_CSP_META_TAG =
+  /<meta\s[^>]*http-equiv\s*=\s*["']?Content-Security-Policy["']?(?=[\s/>])[^>]*>/i;
+
 export function checkHtmlDocument(source: string): HtmlDocumentCheck {
   if (BUILD_STEP_MARKERS.some((marker) => marker.test(source))) {
     return { ok: false, reason: "needs-build-step" };
@@ -25,6 +30,9 @@ export function checkHtmlDocument(source: string): HtmlDocumentCheck {
   }
   if (!CLOSING_HTML_TAG.test(source)) {
     return { ok: false, reason: "no-closing-html-tag" };
+  }
+  if (OWN_CSP_META_TAG.test(source)) {
+    return { ok: false, reason: "has-own-csp" };
   }
   return { ok: true };
 }
@@ -37,5 +45,7 @@ export function describeRejection(reason: HtmlDocumentRejection): string {
       return "This file is not an HTML document.";
     case "no-closing-html-tag":
       return "This HTML document is incomplete — it has no closing </html> tag.";
+    case "has-own-csp":
+      return "This file sets its own Content-Security-Policy, which can silently block the editor. Remove the <meta> CSP tag and re-upload.";
   }
 }

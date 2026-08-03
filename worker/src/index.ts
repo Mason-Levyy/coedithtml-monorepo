@@ -1,6 +1,7 @@
 import { parseWorkerEnv } from "@/lib/env";
 import { classifyRequestOrigin, redirectTargetFor } from "@/lib/origins";
 import { handleAppRequest } from "@/routes/app";
+import { handleSandboxRequest } from "@/routes/sandbox";
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -19,7 +20,7 @@ export default {
 
     switch (classifyRequestOrigin(request, parsed.env)) {
       case "sandbox":
-        return new Response("Artifact sandbox origin", { status: 200 });
+        return handleSandboxRequest(request, parsed.env);
       case "app":
         return handleAppRequest(request, parsed.env);
       case "unknown":
