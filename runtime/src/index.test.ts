@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type * as SegmentModule from "./segmentation/segment";
 
 function dispatchAppCommand(data: unknown): void {
   window.dispatchEvent(
@@ -67,6 +68,52 @@ describe("runtime fail-open behavior", () => {
 
     expect(first.style.display).toBe("none");
     expect(second.style.display).not.toBe("none");
+  });
+
+  it("keeps watching for resegmentation even when the initial segmentation call throws", async () => {
+    const postMessage = vi.fn();
+    vi.stubGlobal("parent", { postMessage });
+
+    vi.doMock("./segmentation/segment", async () => {
+      const actual = await vi.importActual<typeof SegmentModule>(
+        "./segmentation/segment",
+      );
+      let calls = 0;
+      return {
+        ...actual,
+        segmentWithProfile: (container: Element) => {
+          calls += 1;
+          if (calls === 1) {
+            throw new Error("segmentation exploded");
+          }
+          return actual.segmentWithProfile(container);
+        },
+      };
+    });
+
+    const { start } = await import("./index");
+    const startPromise = start();
+    await vi.advanceTimersByTimeAsync(1000);
+    await startPromise;
+
+    const main = document.querySelector("main");
+    if (main === null) {
+      throw new Error("expected a container");
+    }
+    const third = document.createElement("section");
+    third.innerHTML = "<h1>Third</h1>";
+    main.appendChild(third);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    vi.doUnmock("./segmentation/segment");
+
+    const resegmentedCall = postMessage.mock.calls.find(
+      ([message]) =>
+        typeof message === "object" &&
+        message !== null &&
+        (message as { type?: unknown }).type === "resegmented",
+    );
+    expect(resegmentedCall).toBeDefined();
   });
 
   it("resolves via the max-wait cap instead of hanging forever on a page that keeps mutating", async () => {

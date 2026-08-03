@@ -1,4 +1,4 @@
-import type { Slide } from "./segmentation/types";
+import type { SegmentResult, Slide } from "./segmentation/types";
 import { resolvePrimaryContainer } from "./segmentation/container";
 import { waitUntilReady } from "./segmentation/ready";
 import { segmentWithProfile } from "./segmentation/segment";
@@ -27,6 +27,15 @@ declare global {
 
 const VERSION = "0.2.0";
 
+function segmentSafely(container: Element): SegmentResult {
+  try {
+    return segmentWithProfile(container);
+  } catch (error) {
+    console.error("[coedit] initial segmentation failed", error);
+    return { slides: [], profile: "app" };
+  }
+}
+
 export async function start(): Promise<void> {
   const container = resolvePrimaryContainer(document);
   await waitUntilReady(container);
@@ -36,7 +45,7 @@ export async function start(): Promise<void> {
   let anchorElement: Element | null = null;
   const stage = createStageController(container);
 
-  const initial = segmentWithProfile(container);
+  const initial = segmentSafely(container);
   currentSlides = initial.slides;
   anchorElement = anchorElementFor(container, currentSlides, activeIndex);
   try {

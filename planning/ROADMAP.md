@@ -233,11 +233,14 @@ to the task group above it belongs to.
         own `pnpm build` step already produced `runtime/dist/`) wired in as
         `pnpm --filter runtime run check-size`, verified to both pass at the
         current 6.0KB and fail loudly against a planted oversized file.
-        Flagged for the end-of-phase audit: the runtime-auditor subagent
-        review that caught a real bug on 15 (the scroll-spy fail-open gap)
-        was kicked off for this branch too but didn't return after 30+
-        minutes (every prior audit this session took 2-3), so this went out
-        on manual review only — worth a human runtime/ read before merging
+        The runtime-auditor subagent review that caught a real bug on 15
+        (the scroll-spy fail-open gap) was kicked off for this branch too;
+        this went out on manual review only since it took over an hour to
+        return (every prior audit this session took 2-3 minutes) — it did
+        eventually finish and confirmed the try/catch fix itself is correct,
+        with no dependency/global-scope issues in the new files, but it also
+        found one more gap in the same spirit one line earlier
+        (`segmentWithProfile()` itself wasn't guarded) — fixed in 19
   - [x] `19-viewer-position-preservation` — closes a gap flagged back on 13
         and never actually picked up by 14-17: resegmentation was clamping
         `activeSlideIndex` numerically
@@ -254,7 +257,20 @@ to the task group above it belongs to.
         other exactly as they already did for every other message field);
         `useArtifactBridge` deleted its own clamping logic in favor of
         trusting the runtime's answer. Runtime bundle now 6.4KB, still well
-        inside the 20KB budget
+        inside the 20KB budget. Follow-up once the runtime-auditor review of
+        17 finally returned (see 17's note — it took over an hour): it found
+        one more un-try/caught throw path in the exact same spirit as 17's
+        own fix, one line earlier — the initial `segmentWithProfile()` call
+        itself wasn't guarded, so a throw there would skip wiring up
+        resegmentation watching, scroll-spy, and command listening entirely,
+        same as the bug 17 fixed for the ready-send. Low severity (no
+        segmentation strategy mutates the DOM, so the artifact itself was
+        never at risk) but same class of bug, so fixed the same way: a
+        `segmentSafely()` wrapper falling back to an empty single-slide
+        result, with a new regression test that mocks the segmentation
+        module to throw once, then confirms resegmentation still recovers
+        and reports real slides once the DOM settles again. Runtime bundle
+        now 6.5KB
 - [ ] **Ship**
   - [ ] `18-landing-upload-flow` — landing page, upload→link flow, no account
   - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
