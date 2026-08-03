@@ -3,11 +3,11 @@ import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { putArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
 import { checkHtmlDocument, describeRejection } from "@/lib/html-document";
-import { originFor } from "@/lib/origins";
 import { hashArtifactPassword } from "@/lib/password";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
 import { jsonError, jsonResponse } from "@/lib/responses";
+import { viewerUrl } from "@/lib/share-links";
 import {
   MAX_ARTIFACT_BYTES,
   uploadFieldName,
@@ -137,14 +137,13 @@ export async function handleUpload(
     return jsonError("Could not save the file. Try again.", 500);
   }
 
-  const sandboxOrigin = originFor(request, env.SANDBOX_HOST);
   return jsonResponse(
     {
       artifactId,
       viewToken,
       editToken,
-      viewUrl: `${sandboxOrigin}/${viewToken}`,
-      editUrl: `${sandboxOrigin}/${editToken}`,
+      viewUrl: viewerUrl(request, env, viewToken),
+      editUrl: viewerUrl(request, env, editToken),
     },
     201,
   );

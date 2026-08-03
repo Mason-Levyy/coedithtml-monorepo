@@ -1,9 +1,11 @@
 import { resolveAccessToken } from "@/lib/access-tokens";
 import { getArtifactMetadata } from "@/lib/artifact-metadata";
 import type { WorkerEnv } from "@/lib/env";
+import { originFor } from "@/lib/origins";
 import { checkPasswordGate } from "@/lib/password-gate";
 import { jsonError, jsonResponse } from "@/lib/responses";
 import { accessTokenSchema } from "@/lib/schemas/artifact";
+import { artifactUrl } from "@/lib/share-links";
 
 export async function handleGetArtifact(
   token: string,
@@ -55,7 +57,12 @@ export async function handleGetArtifact(
   }
 
   return jsonResponse(
-    { artifactId: resolved.record.artifactId, ...publicMetadata },
+    {
+      artifactId: resolved.record.artifactId,
+      ...publicMetadata,
+      sandboxOrigin: originFor(request, env.SANDBOX_HOST),
+      artifactUrl: artifactUrl(request, env, parsedToken.data),
+    },
     200,
   );
 }

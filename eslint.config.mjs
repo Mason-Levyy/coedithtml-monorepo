@@ -7,6 +7,8 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/build/**",
+      // Staged copy of the app and runtime builds, assembled before deploy.
+      "worker/public/**",
       "**/.next/**",
       "**/.wrangler/**",
       "**/node_modules/**",

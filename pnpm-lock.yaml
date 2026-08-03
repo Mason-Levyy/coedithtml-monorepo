@@ -113,6 +113,9 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
     devDependencies:
+      '@coedithtml/app':
+        specifier: workspace:*
+        version: link:../app
       '@coedithtml/runtime':
         specifier: workspace:*
         version: link:../runtime

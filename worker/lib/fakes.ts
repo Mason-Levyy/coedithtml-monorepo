@@ -1,4 +1,5 @@
 import type { TokenRecord } from "./access-tokens";
+import { parseWorkerEnv, type WorkerEnv } from "./env";
 import {
   accessTokenKey,
   artifactMetadataKey,
@@ -208,4 +209,18 @@ export function fakeWorkerEnvWithout(key: string): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(fakeWorkerEnv()).filter(([name]) => name !== key),
   );
+}
+
+// Goes through the real schema rather than casting: a fake that drifts out of
+// shape should fail here, not in whichever handler happens to read the field.
+export function testWorkerEnv(
+  overrides: Record<string, unknown> = {},
+): WorkerEnv {
+  const parsed = parseWorkerEnv({ ...fakeWorkerEnv(), ...overrides });
+  if (!parsed.ok) {
+    throw new Error(
+      `fake env is invalid: ${parsed.invalidBindings.join(", ")}`,
+    );
+  }
+  return parsed.env;
 }

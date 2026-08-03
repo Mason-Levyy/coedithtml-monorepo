@@ -1,9 +1,11 @@
+import { serveAppAsset } from "@/lib/app-assets";
 import type { WorkerEnv } from "@/lib/env";
 import { jsonError } from "@/lib/responses";
 import { handleGetArtifact } from "./artifact";
 import { handleUpload } from "./upload";
 
 const ARTIFACT_TOKEN_PATH = /^\/api\/artifacts\/([^/]+)$/;
+const READ_METHODS = new Set(["GET", "HEAD"]);
 
 // Sandbox origin never reaches this router, so artifact scripts can't call the upload API.
 export function handleAppRequest(
@@ -28,5 +30,12 @@ export function handleAppRequest(
     return handleGetArtifact(token ?? "", request, env);
   }
 
-  return new Response("Coedit app origin", { status: 200 });
+  if (pathname.startsWith("/api/")) {
+    return jsonError("Not found.", 404);
+  }
+
+  if (!READ_METHODS.has(request.method)) {
+    return new Response("Method not allowed", { status: 405 });
+  }
+  return serveAppAsset(request, env);
 }

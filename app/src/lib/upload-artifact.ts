@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readErrorMessage } from "@/lib/api-error";
 
 export const MAX_ARTIFACT_BYTES = 5 * 1024 * 1024;
 
@@ -29,19 +30,6 @@ export function validateArtifactFile(file: File): string | null {
   return null;
 }
 
-async function readErrorMessage(response: Response): Promise<string> {
-  const body: unknown = await response.json().catch(() => null);
-  if (
-    body !== null &&
-    typeof body === "object" &&
-    "error" in body &&
-    typeof body.error === "string"
-  ) {
-    return body.error;
-  }
-  return "Could not upload the file. Try again.";
-}
-
 export async function uploadArtifact(file: File): Promise<UploadResult> {
   const form = new FormData();
   form.append("file", file);
@@ -52,7 +40,9 @@ export async function uploadArtifact(file: File): Promise<UploadResult> {
   });
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response));
+    throw new Error(
+      await readErrorMessage(response, "Could not upload the file. Try again."),
+    );
   }
 
   const parsed = uploadResponseSchema.safeParse(await response.json());

@@ -1,5 +1,7 @@
 export const RUNTIME_SCRIPT_PATH = "/__coedit/runtime.js";
 
+export const RUNTIME_ASSET_PATH = "/runtime.js";
+
 // Blind append, not splice-after-</html>: that tag may be absent or appear
 // inside the artifact's own script; trailing content still hoists into place.
 export function appendRuntimeScript(bytes: ArrayBuffer): ArrayBuffer {
