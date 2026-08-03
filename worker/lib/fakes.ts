@@ -145,7 +145,10 @@ export function liveKv(
   } as unknown as KVNamespace;
 }
 
+// Reads fall through the stores in order; writes go to the last one, so
+// passing a liveKv() last gives a merged store that can also be written to.
 export function mergeKv(...stores: KVNamespace[]): KVNamespace {
+  const writable = stores.at(-1);
   return {
     get: async (key: string) => {
       for (const store of stores) {
@@ -156,10 +159,42 @@ export function mergeKv(...stores: KVNamespace[]): KVNamespace {
       }
       return null;
     },
+    put: (key: string, value: string, options?: unknown) =>
+      writable === undefined
+        ? Promise.resolve(undefined)
+        : writable.put(key, value, options as KVNamespacePutOptions),
+    list: () => Promise.resolve({ keys: [] }),
+    delete: (key: string) =>
+      writable === undefined
+        ? Promise.resolve(undefined)
+        : writable.delete(key),
+  } as unknown as KVNamespace;
+}
+
+// Shaped like the real binding so it still passes env validation, but every
+// read throws — which is what the "does not leak the cause" tests exercise.
+export function failingKv(message: string): KVNamespace {
+  const boom = () => {
+    throw new Error(message);
+  };
+  return {
+    get: boom,
     put: () => Promise.resolve(undefined),
     list: () => Promise.resolve({ keys: [] }),
     delete: () => Promise.resolve(undefined),
   } as unknown as KVNamespace;
+}
+
+export function failingArtifactStore(message: string): R2Bucket {
+  const boom = () => {
+    throw new Error(message);
+  };
+  return {
+    get: boom,
+    put: () => Promise.resolve(undefined),
+    head: () => Promise.resolve(null),
+    delete: () => Promise.resolve(undefined),
+  } as unknown as R2Bucket;
 }
 
 export function fakeAssets(): Record<string, unknown> {

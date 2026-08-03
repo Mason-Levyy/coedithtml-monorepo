@@ -1,6 +1,7 @@
 import { putAccessToken } from "@/lib/access-tokens";
 import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { putArtifact } from "@/lib/artifact-store";
+import { readBodyWithinLimit } from "@/lib/capped-body";
 import type { WorkerEnv } from "@/lib/env";
 import { checkHtmlDocument, describeRejection } from "@/lib/html-document";
 import { hashArtifactPassword } from "@/lib/password";
@@ -9,7 +10,7 @@ import { clientIpOf } from "@/lib/request-ip";
 import { jsonError, jsonResponse } from "@/lib/responses";
 import { viewerUrl } from "@/lib/share-links";
 import {
-  MAX_ARTIFACT_BYTES,
+  MAX_UPLOAD_BODY_BYTES,
   uploadFieldName,
   uploadedArtifactSchema,
 } from "@/lib/schemas/artifact";
@@ -21,9 +22,31 @@ const UPLOAD_WINDOW_SECONDS = 3600;
 
 type ParsedForm = { files: File[]; password: string | null };
 
-async function readForm(request: Request): Promise<ParsedForm | null> {
+type ReadFormResult =
+  { ok: true; form: ParsedForm } | { ok: false; status: 400 | 413 };
+
+async function readForm(request: Request): Promise<ReadFormResult> {
+  const capped = await readBodyWithinLimit(request, MAX_UPLOAD_BODY_BYTES);
+  if (!capped.ok) {
+    return { ok: false, status: capped.reason === "too-large" ? 413 : 400 };
+  }
+
+  const parsed = await parseFormBytes(request, capped.bytes);
+  return parsed === null
+    ? { ok: false, status: 400 }
+    : { ok: true, form: parsed };
+}
+
+async function parseFormBytes(
+  request: Request,
+  bytes: Uint8Array,
+): Promise<ParsedForm | null> {
   try {
-    const form = await request.formData();
+    const form = await new Request(request.url, {
+      method: "POST",
+      headers: request.headers,
+      body: bytes as BodyInit,
+    }).formData();
     const files = form
       .getAll(uploadFieldName)
       .filter((part): part is File => part instanceof File);
@@ -43,7 +66,7 @@ export async function handleUpload(
   env: WorkerEnv,
 ): Promise<Response> {
   const declaredBytes = Number(request.headers.get("content-length"));
-  if (Number.isFinite(declaredBytes) && declaredBytes > MAX_ARTIFACT_BYTES) {
+  if (Number.isFinite(declaredBytes) && declaredBytes > MAX_UPLOAD_BODY_BYTES) {
     return jsonError("The file is larger than 5MB.", 413);
   }
 
@@ -70,11 +93,13 @@ export async function handleUpload(
     return jsonError("Could not save the file. Try again.", 500);
   }
 
-  const form = await readForm(request);
-  if (form === null) {
-    return jsonError(BAD_FORM, 400);
+  const read = await readForm(request);
+  if (!read.ok) {
+    return read.status === 413
+      ? jsonError("The file is larger than 5MB.", 413)
+      : jsonError(BAD_FORM, 400);
   }
-  const { files, password } = form;
+  const { files, password } = read.form;
   if (files.length !== 1) {
     return jsonError(
       files.length === 0 ? BAD_FORM : "Upload one file, not several.",
@@ -109,9 +134,7 @@ export async function handleUpload(
   }
 
   const passwordHash =
-    password === null
-      ? undefined
-      : await hashArtifactPassword(artifactId, password);
+    password === null ? undefined : await hashArtifactPassword(password);
 
   const storedMetadata = await putArtifactMetadata(
     env.ARTIFACT_METADATA,

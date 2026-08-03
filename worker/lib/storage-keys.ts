@@ -21,3 +21,11 @@ export function artifactMetadataKey(artifactId: string): string {
 export function accessTokenKey(token: string): string {
   return `tokens/${token}`;
 }
+
+export function unlockGrantKey(grant: string): string {
+  return `unlocks/${grant}`;
+}
+
+export function newUnlockGrant(): string {
+  return randomId();
+}

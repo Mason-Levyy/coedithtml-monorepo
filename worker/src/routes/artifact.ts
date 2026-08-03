@@ -1,67 +1,52 @@
-import { resolveAccessToken } from "@/lib/access-tokens";
-import { getArtifactMetadata } from "@/lib/artifact-metadata";
 import type { WorkerEnv } from "@/lib/env";
 import { originFor } from "@/lib/origins";
 import { checkPasswordGate } from "@/lib/password-gate";
+import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { jsonError, jsonResponse } from "@/lib/responses";
-import { accessTokenSchema } from "@/lib/schemas/artifact";
-import { artifactUrl } from "@/lib/share-links";
+import { artifactUrl, UNLOCK_QUERY_PARAM } from "@/lib/share-links";
+
+const UNAVAILABLE = "Could not load the file. Try again.";
 
 export async function handleGetArtifact(
   token: string,
   request: Request,
   env: WorkerEnv,
 ): Promise<Response> {
-  const parsedToken = accessTokenSchema.safeParse(token);
-  if (!parsedToken.success) {
-    return jsonError("Not found.", 404);
-  }
-
-  const resolved = await resolveAccessToken(
-    env.ARTIFACT_METADATA,
-    parsedToken.data,
-  );
+  const resolved = await resolveArtifactByToken(env.ARTIFACT_METADATA, token);
   if (!resolved.ok) {
-    console.error("Failed to resolve access token", resolved.cause);
-    return jsonError("Could not load the file. Try again.", 500);
-  }
-  if (resolved.record === null) {
+    if (resolved.status === 500) {
+      console.error("Failed to resolve the artifact", resolved.cause);
+      return jsonError(UNAVAILABLE, 500);
+    }
     return jsonError("Not found.", 404);
   }
 
-  const lookup = await getArtifactMetadata(
-    env.ARTIFACT_METADATA,
-    resolved.record.artifactId,
-  );
-  if (!lookup.ok) {
-    console.error("Failed to read artifact metadata", lookup.cause);
-    return jsonError("Could not load the file. Try again.", 500);
-  }
-  if (lookup.metadata === null) {
-    return jsonError("Not found.", 404);
-  }
-
-  const { passwordHash, ...publicMetadata } = lookup.metadata;
+  const { artifactId, metadata } = resolved.artifact;
+  const grant = new URL(request.url).searchParams.get(UNLOCK_QUERY_PARAM);
   const gate = await checkPasswordGate(env.ARTIFACT_METADATA, {
-    artifactId: resolved.record.artifactId,
-    request,
-    passwordHash,
-    providedPassword: new URL(request.url).searchParams.get("password"),
+    artifactId,
+    passwordHash: metadata.passwordHash,
+    grant,
   });
   if (!gate.ok) {
     if (gate.status === 500) {
       console.error("Failed to check the password gate", gate.cause);
-      return jsonError("Could not load the file. Try again.", 500);
+      return jsonError(UNAVAILABLE, 500);
     }
-    return jsonError(gate.message, gate.status);
+    // Not an error: the viewer needs to know to ask for a password, and the
+    // file name is withheld until it has one.
+    return jsonResponse({ requiresPassword: true }, 200);
   }
 
   return jsonResponse(
     {
-      artifactId: resolved.record.artifactId,
-      ...publicMetadata,
+      artifactId,
+      fileName: metadata.fileName,
+      size: metadata.size,
+      uploadedAt: metadata.uploadedAt,
+      requiresPassword: false,
       sandboxOrigin: originFor(request, env.SANDBOX_HOST),
-      artifactUrl: artifactUrl(request, env, parsedToken.data),
+      artifactUrl: artifactUrl(request, env, resolved.artifact.token, grant),
     },
     200,
   );

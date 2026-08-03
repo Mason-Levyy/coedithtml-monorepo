@@ -9,7 +9,7 @@ import {
   testWorkerEnv,
 } from "@/lib/fakes";
 import { verifyArtifactPassword } from "@/lib/password";
-import { MAX_ARTIFACT_BYTES } from "@/lib/schemas/artifact";
+import { MAX_UPLOAD_BODY_BYTES } from "@/lib/schemas/artifact";
 import { handleUpload } from "./upload";
 
 const VALID_HTML = `<!doctype html>
@@ -192,9 +192,7 @@ describe("handleUpload", () => {
 
     expect(typeof storedHash).toBe("string");
     expect(storedHash).not.toBe("hunter2");
-    expect(
-      await verifyArtifactPassword(body.artifactId, "hunter2", storedHash),
-    ).toBe(true);
+    expect(await verifyArtifactPassword("hunter2", storedHash)).toBe(true);
   });
 
   it("rejects a file that ships its own CSP meta tag", async () => {
@@ -300,7 +298,7 @@ describe("handleUpload", () => {
   it("refuses an oversized upload before reading the body", async () => {
     const request = new Request("https://app.test/api/artifacts", {
       method: "POST",
-      headers: { "content-length": String(MAX_ARTIFACT_BYTES + 1) },
+      headers: { "content-length": String(MAX_UPLOAD_BODY_BYTES + 1) },
       body: "x",
     });
     const store = recordingArtifactStore();
