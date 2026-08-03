@@ -69,15 +69,21 @@ The core of the phase. Budget more time here than feels reasonable.
 
 - [x] Chrome on app origin, artifact in cross-origin iframe with correct sandbox
       attributes and no top-navigation or popups
-- [~] `postMessage` bridge: versioned schema, origin checked both directions
-      for the traffic that exists today (runtime → app: ready/resegmented,
-      checked on send via a resolved target origin and on receipt via a
-      strict `event.origin` check). No app → runtime messages exist yet —
-      lands in 15 with the first real navigation command
-- [ ] Flow mode: natural scroll, filmstrip as scroll-spy and jump navigation
-- [ ] Stage mode: one slide visible, opt-in, warned when sticky or fixed
-      positioning is detected
-- [ ] Thumbnails generated from live slide ranges, not screenshots
+- [x] `postMessage` bridge: versioned schema, origin checked both directions —
+      now genuinely bidirectional: runtime → app (ready/resegmented/
+      activeSlide) and app → runtime (scrollToSlide, setStageSlide), each
+      checked on send (explicit target origin, never `"*"`) and on receipt
+      (`event.origin` matched exactly, message shape validated before use)
+- [~] Flow mode: scroll-spy and jump-navigation are built and tested on the
+      runtime side (`watchScrollSpy`, `scrollToSlide`) — reporting which
+      slide is in view and executing a scroll command are both live. The
+      filmstrip UI that displays this and lets a reader click a thumbnail is
+      15b
+- [~] Stage mode: hide/show logic (`createStageController`) and sticky/fixed
+      detection (`hasStickyOrFixedPositioning`, included in every
+      ready/resegmented message) are built and tested. The opt-in control and
+      the warning UI are 15b
+- [ ] Thumbnails generated from live slide ranges, not screenshots — 15b
 - [ ] Keyboard navigation: arrows, home, end, and a visible focus ring
 - [ ] Mobile layout: filmstrip collapses to a swipe strip
 - [ ] Runtime fails open — kill the socket and the bridge in a test and confirm
@@ -142,8 +148,33 @@ to the task group above it belongs to.
         by design (no baked-in env vars) since how `app/`'s build output
         itself gets served in production is still an open question — flagged
         for the end-of-phase audit, not solved here
-  - [ ] `15-viewer-flow-stage` — Flow scroll-spy, Stage mode with sticky/fixed
-        warning, thumbnails from live ranges
+  - [x] `15-viewer-flow-stage` — split into wiring and UI, matching the
+        09/09b/09c precedent (each half is substantial and independently
+        reviewable; scroll-spy alone needs 3 new message types since a
+        cross-origin iframe is opaque to the parent's own scroll/DOM
+        observation, so there's more bridge protocol here than UI):
+    - [x] `15-viewer-flow-stage` — this entry: bridge wiring only.
+          `runtime/src/viewer/` (`positioning.ts` sticky/fixed detection,
+          `scroll-spy.ts` scroll-spy + throttled reporting, `stage.ts`
+          hide/show with a `WeakMap` preserving each element's real original
+          inline `display` value, `navigate.ts` jump-to-slide) plus the
+          matching `transport/` extensions (3 new message types, a
+          `receive.ts` listener finally exercising the "checked in both
+          directions" half left open by 14). App-side hook extended to track
+          `activeSlideIndex`/`hasStickyOrFixed` and expose `sendCommand` +
+          `frameRef`; `ArtifactFrame` now forwards a ref. Runtime bundle is
+          6.0KB, still well inside the 20KB budget. Runtime-auditor
+          subagent review: one low-severity fail-open gap found and fixed
+          (`scroll-spy.ts`'s throttled recheck wasn't try/caught like the
+          other watchers); everything else — Stage's hide/restore
+          correctness across multi-cycle switches, no global-scope leaks,
+          zero new dependencies, origin-recompute-per-message being the
+          right call — came back clean
+    - [ ] `15b-viewer-flow-stage-ui` — the actual filmstrip: thumbnails
+          (text/label-based, not screenshots — no way to capture
+          cross-origin iframe content without much more machinery), Flow
+          mode's scroll-spy-highlighted strip, the Stage-mode opt-in toggle
+          and its sticky/fixed warning
   - [ ] `16-viewer-keyboard-mobile` — keyboard nav + focus ring, mobile swipe
         strip
   - [ ] `17-viewer-fail-open-budget` — fail-open test, runtime-size-budget

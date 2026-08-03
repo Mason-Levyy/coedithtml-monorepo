@@ -13,3 +13,4 @@ out/
 coverage/
 *.tsbuildinfo
 worker/worker-configuration.d.ts
+.claude/scheduled_tasks.lock

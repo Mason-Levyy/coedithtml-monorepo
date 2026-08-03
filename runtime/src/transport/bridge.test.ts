@@ -12,7 +12,7 @@ describe("sendToApp", () => {
     const postMessage = vi.fn();
     vi.stubGlobal("parent", { postMessage });
 
-    const message = readyMessage([], "app");
+    const message = readyMessage([], "app", false);
     sendToApp(message);
 
     expect(postMessage).toHaveBeenCalledWith(
@@ -28,7 +28,7 @@ describe("sendToApp", () => {
     const postMessage = vi.fn();
     vi.stubGlobal("parent", window);
 
-    sendToApp(readyMessage([], "app"));
+    sendToApp(readyMessage([], "app", false));
 
     expect(postMessage).not.toHaveBeenCalled();
 
@@ -43,7 +43,7 @@ describe("sendToApp", () => {
       configurable: true,
     });
 
-    sendToApp(readyMessage([], "app"));
+    sendToApp(readyMessage([], "app", false));
 
     expect(postMessage).not.toHaveBeenCalled();
 
