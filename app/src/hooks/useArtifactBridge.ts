@@ -52,16 +52,14 @@ export function useArtifactBridge(sandboxOrigin: string): ArtifactBridge {
         return;
       }
 
-      setState((previous) => ({
+      setState({
         status: "ready",
         slides: message.slides,
         profile: message.profile,
         hasStickyOrFixed: message.hasStickyOrFixed,
         activeSlideIndex:
-          message.type === "resegmented" && previous.status === "ready"
-            ? Math.min(previous.activeSlideIndex, message.slides.length - 1)
-            : 0,
-      }));
+          message.type === "resegmented" ? message.activeSlideIndex : 0,
+      });
     }
 
     window.addEventListener("message", handleMessage);

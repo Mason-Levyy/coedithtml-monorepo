@@ -75,7 +75,7 @@ describe("useArtifactBridge", () => {
     expect(result.current.state).toEqual({ status: "loading" });
   });
 
-  it("clamps activeSlideIndex when resegmentation shrinks the slide count", () => {
+  it("uses the runtime-provided activeSlideIndex on a resegmented message", () => {
     const { result } = renderHook(() => useArtifactBridge(SANDBOX_ORIGIN));
 
     act(() => {
@@ -92,6 +92,7 @@ describe("useArtifactBridge", () => {
       dispatchMessage(SANDBOX_ORIGIN, {
         ...readyMessage(2),
         type: "resegmented",
+        activeSlideIndex: 1,
       });
     });
 

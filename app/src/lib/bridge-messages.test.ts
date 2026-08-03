@@ -33,9 +33,29 @@ describe("parseRuntimeToAppMessage", () => {
       slides: [],
       profile: "app",
       hasStickyOrFixed: true,
+      activeSlideIndex: 2,
     });
 
-    expect(message?.type).toBe("resegmented");
+    expect(message).toEqual({
+      version: 1,
+      type: "resegmented",
+      slides: [],
+      profile: "app",
+      hasStickyOrFixed: true,
+      activeSlideIndex: 2,
+    });
+  });
+
+  it("rejects a resegmented message missing activeSlideIndex", () => {
+    expect(
+      parseRuntimeToAppMessage({
+        version: 1,
+        type: "resegmented",
+        slides: [],
+        profile: "app",
+        hasStickyOrFixed: true,
+      }),
+    ).toBeNull();
   });
 
   it("accepts a well-formed activeSlide message", () => {

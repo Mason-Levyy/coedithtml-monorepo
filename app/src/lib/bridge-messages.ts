@@ -9,12 +9,21 @@ export type ReadingProfile = "slides" | "pages" | "app";
 
 const BRIDGE_VERSION = 1;
 
-export type RuntimeSegmentMessage = {
+export type RuntimeReadyMessage = {
   version: 1;
-  type: "ready" | "resegmented";
+  type: "ready";
   slides: Slide[];
   profile: ReadingProfile;
   hasStickyOrFixed: boolean;
+};
+
+export type RuntimeResegmentedMessage = {
+  version: 1;
+  type: "resegmented";
+  slides: Slide[];
+  profile: ReadingProfile;
+  hasStickyOrFixed: boolean;
+  activeSlideIndex: number;
 };
 
 export type RuntimeActiveSlideMessage = {
@@ -24,7 +33,7 @@ export type RuntimeActiveSlideMessage = {
 };
 
 export type RuntimeToAppMessage =
-  RuntimeSegmentMessage | RuntimeActiveSlideMessage;
+  RuntimeReadyMessage | RuntimeResegmentedMessage | RuntimeActiveSlideMessage;
 
 function isSlide(value: unknown): value is Slide {
   if (typeof value !== "object" || value === null) {
@@ -47,6 +56,30 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+type SegmentFields = {
+  slides: Slide[];
+  profile: ReadingProfile;
+  hasStickyOrFixed: boolean;
+};
+
+function readSegmentFields(
+  candidate: Record<string, unknown>,
+): SegmentFields | null {
+  if (
+    !Array.isArray(candidate.slides) ||
+    !candidate.slides.every(isSlide) ||
+    !isReadingProfile(candidate.profile) ||
+    typeof candidate.hasStickyOrFixed !== "boolean"
+  ) {
+    return null;
+  }
+  return {
+    slides: candidate.slides,
+    profile: candidate.profile,
+    hasStickyOrFixed: candidate.hasStickyOrFixed,
+  };
+}
+
 export function parseRuntimeToAppMessage(
   value: unknown,
 ): RuntimeToAppMessage | null {
@@ -66,19 +99,22 @@ export function parseRuntimeToAppMessage(
     };
   }
 
-  if (
-    (candidate.type === "ready" || candidate.type === "resegmented") &&
-    Array.isArray(candidate.slides) &&
-    candidate.slides.every(isSlide) &&
-    isReadingProfile(candidate.profile) &&
-    typeof candidate.hasStickyOrFixed === "boolean"
-  ) {
+  if (candidate.type === "ready") {
+    const fields = readSegmentFields(candidate);
+    if (fields === null) return null;
+    return { version: BRIDGE_VERSION, type: "ready", ...fields };
+  }
+
+  if (candidate.type === "resegmented") {
+    const fields = readSegmentFields(candidate);
+    if (fields === null || !isFiniteNumber(candidate.activeSlideIndex)) {
+      return null;
+    }
     return {
       version: BRIDGE_VERSION,
-      type: candidate.type,
-      slides: candidate.slides,
-      profile: candidate.profile,
-      hasStickyOrFixed: candidate.hasStickyOrFixed,
+      type: "resegmented",
+      ...fields,
+      activeSlideIndex: candidate.activeSlideIndex,
     };
   }
 

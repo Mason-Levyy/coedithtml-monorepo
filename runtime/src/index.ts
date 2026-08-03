@@ -12,6 +12,10 @@ import {
 import { listenForAppCommands } from "./transport/receive";
 import { scrollToSlide } from "./viewer/navigate";
 import { hasStickyOrFixedPositioning } from "./viewer/positioning";
+import {
+  anchorElementFor,
+  resolveActiveIndexAfterResegmentation,
+} from "./viewer/position";
 import { watchScrollSpy } from "./viewer/scroll-spy";
 import { createStageController } from "./viewer/stage";
 
@@ -28,10 +32,13 @@ export async function start(): Promise<void> {
   await waitUntilReady(container);
 
   let currentSlides: Slide[] = [];
+  let activeIndex = 0;
+  let anchorElement: Element | null = null;
   const stage = createStageController(container);
 
   const initial = segmentWithProfile(container);
   currentSlides = initial.slides;
+  anchorElement = anchorElementFor(container, currentSlides, activeIndex);
   try {
     sendToApp(
       readyMessage(
@@ -46,12 +53,20 @@ export async function start(): Promise<void> {
 
   watchForResegmentation(container, (result) => {
     try {
+      activeIndex = resolveActiveIndexAfterResegmentation(
+        container,
+        anchorElement,
+        result.slides,
+        activeIndex,
+      );
       currentSlides = result.slides;
+      anchorElement = anchorElementFor(container, currentSlides, activeIndex);
       sendToApp(
         resegmentedMessage(
           result.slides,
           result.profile,
           hasStickyOrFixedPositioning(container),
+          activeIndex,
         ),
       );
     } catch (error) {
@@ -64,6 +79,8 @@ export async function start(): Promise<void> {
     () => currentSlides,
     (index) => {
       try {
+        activeIndex = index;
+        anchorElement = anchorElementFor(container, currentSlides, index);
         sendToApp(activeSlideMessage(index));
       } catch (error) {
         console.error("[coedit] failed to report the active slide", error);
