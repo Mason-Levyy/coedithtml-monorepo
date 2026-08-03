@@ -79,13 +79,13 @@ export const FIXTURE_MANIFEST: FixtureExpectation[] = [
   {
     file: "layout-photo-gallery.html",
     category: "layout",
-    expectedSlideCount: 3,
+    expectedSlideCount: 5,
     expectedProfile: "pages",
   },
   {
     file: "layout-terms-of-service.html",
     category: "layout",
-    expectedSlideCount: 4,
+    expectedSlideCount: 3,
     expectedProfile: "pages",
   },
   {

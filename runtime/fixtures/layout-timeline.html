@@ -8,30 +8,87 @@
         font-family: system-ui, sans-serif;
         margin: 0;
         padding: 2rem;
+        max-width: 680px;
+        line-height: 1.6;
       }
       .event {
-        padding: 0.5rem 0;
+        padding: 0.75rem 0;
+        border-left: 3px solid #ddd;
+        padding-left: 1rem;
+        margin-bottom: 0.5rem;
       }
     </style>
   </head>
   <body>
-    <div class="event" data-test-height="1000">
+    <div class="event">
+      <strong>2017</strong> — Two of the three eventual founders met while
+      working on an internal reporting tool at a logistics company, where they
+      spent most of a year discovering that every team had quietly built its own
+      spreadsheet because the official dashboards answered the wrong questions.
+      Neither of them thought of it as a company at the time.
+    </div>
+    <div class="event">
+      <strong>2018</strong> — Built the first prototype on weekends, mostly to
+      settle an argument about whether the problem was the tooling or the way
+      the company was organized. It was both, but the prototype was convincing
+      enough that a former colleague offered to be the first design partner if
+      it ever became a real product.
+    </div>
+    <div class="event">
       <strong>2019</strong> — Founded in a shared kitchen space above a hardware
       store, with three people and a spreadsheet. The first six months were
       spent talking to fifty potential customers before writing a line of code,
-      which turned out to be the best decision the founders made.
+      which turned out to be the best decision the founders made. The
+      spreadsheet that came out of those conversations still shapes the product
+      roadmap.
     </div>
-    <div class="event" data-test-height="100">
-      <strong>2020</strong> — Shipped the first version to five pilot customers.
+    <div class="event">
+      <strong>2020</strong> — Shipped the first version to five pilot customers,
+      three of whom are still customers today. The product did roughly a tenth
+      of what it does now and was held together by a nightly script that a
+      founder ran by hand. Two of the five pilots churned within a quarter, and
+      the exit interviews became the basis for the following year's work.
     </div>
-    <div class="event" data-test-height="100">
-      <strong>2021</strong> — Raised a seed round and hired the first engineer.
+    <div class="event">
+      <strong>2021</strong> — Raised a seed round and hired the first engineer
+      who was not a founder, followed shortly by the first support hire. Revenue
+      was small enough that the round was a bet on the customer conversations
+      rather than the numbers. Most of the money went into replacing the nightly
+      script with something that could run unattended.
     </div>
-    <div class="event" data-test-height="100">
-      <strong>2022</strong> — Crossed 100 paying customers.
+    <div class="event">
+      <strong>2022</strong> — Crossed 100 paying customers and, more usefully,
+      crossed the point where support requests stopped being about bugs and
+      started being about how to do things. The team grew to eleven people and
+      moved out of the kitchen space into an office with a door that locked.
     </div>
-    <div class="event" data-test-height="100">
-      <strong>2023</strong> — Opened a second office.
+    <div class="event">
+      <strong>2023</strong> — Opened a second office to cover European working
+      hours after support response times became the most common complaint in
+      renewal conversations. Shipped the API, which had been the single most
+      requested feature for two years running and which turned out to drive more
+      expansion revenue than any interface work done in the same period.
+    </div>
+    <div class="event">
+      <strong>2024</strong> — Reached profitability without raising again, at a
+      headcount of twenty-six. The decision not to raise a Series A was
+      contentious internally and cost the company two senior people who wanted
+      to move faster. In hindsight it bought the independence to say no to a
+      large customer who wanted the roadmap rewritten around them.
+    </div>
+    <div class="event">
+      <strong>2025</strong> — Rebuilt the data layer over nine months, a project
+      that was estimated at three and was very nearly abandoned twice. The
+      result cut query latency by roughly eighty percent and made the row-level
+      security model possible, which had been blocked on the old schema since
+      the beginning.
+    </div>
+    <div class="event">
+      <strong>2026</strong> — Passed a thousand customers and opened the free
+      tier that had been debated since 2021. Early numbers suggest the free tier
+      converts at about a third the rate of the trial it replaced, on roughly
+      six times the volume, which is the outcome the model predicted and nobody
+      quite believed.
     </div>
   </body>
 </html>

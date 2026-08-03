@@ -27,12 +27,10 @@ describe("segment", () => {
   });
 
   it("falls through to the layout heuristic when nothing else is confident", () => {
-    const container = containerFromHtml("<p>A</p><p>B</p><p>C</p><p>D</p>");
-    const children = [...container.children];
-    children.forEach((child) => {
-      child.getBoundingClientRect = () =>
-        ({ height: 400 }) as unknown as DOMRect;
-    });
+    const container = containerFromHtml(
+      '<p><img height="400"></p><p><img height="400"></p>' +
+        '<p><img height="400"></p><p><img height="400"></p>',
+    );
 
     const slides = segment(container);
 
@@ -76,11 +74,10 @@ describe("segmentWithProfile", () => {
   });
 
   it("labels a layout-driven result as pages", () => {
-    const container = containerFromHtml("<p>A</p><p>B</p><p>C</p><p>D</p>");
-    [...container.children].forEach((child) => {
-      child.getBoundingClientRect = () =>
-        ({ height: 400 }) as unknown as DOMRect;
-    });
+    const container = containerFromHtml(
+      '<p><img height="400"></p><p><img height="400"></p>' +
+        '<p><img height="400"></p><p><img height="400"></p>',
+    );
 
     expect(segmentWithProfile(container).profile).toBe("pages");
   });
