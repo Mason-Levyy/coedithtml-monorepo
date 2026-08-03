@@ -12,6 +12,16 @@ const BUILD_STEP_MARKERS = [
   /<\/?[A-Z][a-z][A-Za-z0-9]*[\s/>]/,
 ];
 
+const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi;
+
+// `<script type="module">import * as THREE from "https://…"</script>` is a
+// complete document a browser runs as-is, so the build-step markers must not
+// see inside a script. They exist to catch a JSX/TSX source file uploaded by
+// mistake, and that file has no script tags to hide in.
+function withoutScriptContents(source: string): string {
+  return source.replace(SCRIPT_BLOCK, "");
+}
+
 const OPENING_HTML_TAG = /<html[\s>]/i;
 
 const CLOSING_HTML_TAG = /<\/html\s*>/i;
@@ -22,7 +32,8 @@ const OWN_CSP_META_TAG =
   /<meta\s[^>]*http-equiv\s*=\s*["']?Content-Security-Policy["']?(?=[\s/>])[^>]*>/i;
 
 export function checkHtmlDocument(source: string): HtmlDocumentCheck {
-  if (BUILD_STEP_MARKERS.some((marker) => marker.test(source))) {
+  const outsideScripts = withoutScriptContents(source);
+  if (BUILD_STEP_MARKERS.some((marker) => marker.test(outsideScripts))) {
     return { ok: false, reason: "needs-build-step" };
   }
   if (!OPENING_HTML_TAG.test(source)) {

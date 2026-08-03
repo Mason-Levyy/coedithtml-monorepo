@@ -1,5 +1,5 @@
 import { verifyArtifactPassword } from "./password";
-import { checkRateLimit } from "./rate-limit";
+import { isWithinRateLimit, recordRateLimitedAttempt } from "./rate-limit";
 import { clientIpOf } from "./request-ip";
 
 const ATTEMPT_LIMIT = 10;
@@ -29,12 +29,8 @@ export async function checkPasswordGate(
     return { ok: true };
   }
 
-  const rateLimit = await checkRateLimit(
-    kv,
-    `password-attempts:${artifactId}:${clientIpOf(request)}`,
-    ATTEMPT_LIMIT,
-    ATTEMPT_WINDOW_SECONDS,
-  );
+  const attemptKey = `password-attempts:${artifactId}:${clientIpOf(request)}`;
+  const rateLimit = await isWithinRateLimit(kv, attemptKey, ATTEMPT_LIMIT);
   if (!rateLimit.ok) {
     return { ok: false, status: 500, cause: rateLimit.cause };
   }
@@ -49,12 +45,18 @@ export async function checkPasswordGate(
   if (providedPassword === null) {
     return { ok: false, status: 401, message: "Password required." };
   }
-  const valid = await verifyArtifactPassword(
-    artifactId,
-    providedPassword,
-    passwordHash,
-  );
-  if (!valid) {
+
+  if (
+    !(await verifyArtifactPassword(artifactId, providedPassword, passwordHash))
+  ) {
+    const recorded = await recordRateLimitedAttempt(
+      kv,
+      attemptKey,
+      ATTEMPT_WINDOW_SECONDS,
+    );
+    if (!recorded.ok) {
+      return { ok: false, status: 500, cause: recorded.cause };
+    }
     return { ok: false, status: 401, message: "Incorrect password." };
   }
 

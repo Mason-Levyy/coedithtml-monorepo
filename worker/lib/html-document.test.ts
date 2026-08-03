@@ -31,6 +31,30 @@ describe("checkHtmlDocument", () => {
     );
   });
 
+  it("accepts a module script importing from a CDN, which a browser runs as-is", () => {
+    const withModuleScript = `<!doctype html>
+<html lang="en">
+  <body>
+    <canvas id="scene"></canvas>
+    <script type="module">
+      import * as THREE from "https://cdn.skypack.dev/three";
+      export default null;
+      const scene = new THREE.Scene();
+      console.log(scene);
+    </script>
+  </body>
+</html>`;
+    expect(checkHtmlDocument(withModuleScript).ok).toBe(true);
+  });
+
+  it("still rejects a bare module source file that only looks like markup", () => {
+    const source = `import { render } from "./render";
+export default function Deck() {
+  return null;
+}`;
+    expect(reasonFor(source)).toBe("needs-build-step");
+  });
+
   it("rejects JSX, which needs a build step", () => {
     const jsx = `import React from "react";
 export default function Deck() {
