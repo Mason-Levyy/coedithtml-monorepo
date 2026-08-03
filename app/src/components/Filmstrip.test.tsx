@@ -45,4 +45,92 @@ describe("Filmstrip", () => {
 
     expect(onSelectSlide).toHaveBeenCalledWith(2);
   });
+
+  it("gives only the active tab a tab stop, the rest are removed from tab order", () => {
+    render(
+      <Filmstrip slides={SLIDES} activeIndex={1} onSelectSlide={() => {}} />,
+    );
+
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs[0]?.getAttribute("tabindex")).toBe("-1");
+    expect(tabs[1]?.getAttribute("tabindex")).toBe("0");
+    expect(tabs[2]?.getAttribute("tabindex")).toBe("-1");
+  });
+
+  it("moves selection to the next tab on ArrowRight", () => {
+    const onSelectSlide = vi.fn();
+    render(
+      <Filmstrip
+        slides={SLIDES}
+        activeIndex={0}
+        onSelectSlide={onSelectSlide}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByText("Intro"), { key: "ArrowRight" });
+
+    expect(onSelectSlide).toHaveBeenCalledWith(1);
+  });
+
+  it("moves selection to the previous tab on ArrowLeft", () => {
+    const onSelectSlide = vi.fn();
+    render(
+      <Filmstrip
+        slides={SLIDES}
+        activeIndex={1}
+        onSelectSlide={onSelectSlide}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByText("Details"), { key: "ArrowLeft" });
+
+    expect(onSelectSlide).toHaveBeenCalledWith(0);
+  });
+
+  it("clamps at the last tab instead of wrapping on ArrowRight", () => {
+    const onSelectSlide = vi.fn();
+    render(
+      <Filmstrip
+        slides={SLIDES}
+        activeIndex={2}
+        onSelectSlide={onSelectSlide}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByText("Wrap up"), { key: "ArrowRight" });
+
+    expect(onSelectSlide).toHaveBeenCalledWith(2);
+  });
+
+  it("clamps at the first tab instead of wrapping on ArrowLeft", () => {
+    const onSelectSlide = vi.fn();
+    render(
+      <Filmstrip
+        slides={SLIDES}
+        activeIndex={0}
+        onSelectSlide={onSelectSlide}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByText("Intro"), { key: "ArrowLeft" });
+
+    expect(onSelectSlide).toHaveBeenCalledWith(0);
+  });
+
+  it("jumps to the last tab on End and the first on Home", () => {
+    const onSelectSlide = vi.fn();
+    render(
+      <Filmstrip
+        slides={SLIDES}
+        activeIndex={1}
+        onSelectSlide={onSelectSlide}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByText("Details"), { key: "End" });
+    expect(onSelectSlide).toHaveBeenLastCalledWith(2);
+
+    fireEvent.keyDown(screen.getByText("Details"), { key: "Home" });
+    expect(onSelectSlide).toHaveBeenLastCalledWith(0);
+  });
 });

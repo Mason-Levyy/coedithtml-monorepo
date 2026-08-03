@@ -84,8 +84,8 @@ The core of the phase. Budget more time here than feels reasonable.
       ready/resegmented message) are built and tested. The opt-in control and
       the warning UI landed in 15c
 - [x] Thumbnails generated from live slide ranges, not screenshots — 15c
-- [ ] Keyboard navigation: arrows, home, end, and a visible focus ring
-- [ ] Mobile layout: filmstrip collapses to a swipe strip
+- [x] Keyboard navigation: arrows, home, end, and a visible focus ring — 16
+- [x] Mobile layout: filmstrip collapses to a swipe strip — 16
 - [ ] Runtime fails open — kill the socket and the bridge in a test and confirm
       the artifact still reads correctly
 - [ ] Runtime build stays under 20KB minified, enforced by a hook
@@ -204,8 +204,20 @@ to the task group above it belongs to.
           trip itself is unverified in a browser until a real artifact is
           served end-to-end — worth a manual check against a live sandboxed
           artifact before Phase 1 ships
-  - [ ] `16-viewer-keyboard-mobile` — keyboard nav + focus ring, mobile swipe
-        strip
+  - [x] `16-viewer-keyboard-mobile` — roving-tabindex keyboard nav on the
+        `Filmstrip` tablist (ArrowLeft/Right move and select, clamped rather
+        than wrapping at the ends; Home/End jump to first/last), a
+        `focus-visible` ring matching the `Button` component's tape-yellow
+        outline, and CSS scroll-snap (`snap-x snap-mandatory` /
+        `snap-start`) so the strip behaves like a native swipe carousel on
+        touch — no separate mobile layout needed since the strip was already
+        a single-row `overflow-x-auto` track at every width, matching the
+        reference file's own filmstrip mock. Browser-verified: clicking a
+        thumbnail focuses it; ArrowRight/Left/Home/End move DOM focus
+        01→02→03→04→(End)→04, and ArrowLeft clamps at 01 rather than
+        wrapping — confirmed via `document.activeElement`, since (as with
+        clicks in 15c) the *visual* active-slide highlight only updates from
+        a runtime-reported message the demo harness has no runtime to send
   - [ ] `17-viewer-fail-open-budget` — fail-open test, runtime-size-budget
         hook wired into CI
 - [ ] **Ship**
