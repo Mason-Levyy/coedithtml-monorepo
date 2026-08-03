@@ -25,7 +25,7 @@ function sandboxResponse(
   return new Response(body, { status, headers });
 }
 
-// Runs before the IIFE in the same script, so __coedit_config__ is already set when it reads it.
+// Runs before the IIFE in the same script, so the config is already set when the bundle reads it.
 async function serveRuntimeScript(
   request: Request,
   env: WorkerEnv,
@@ -41,7 +41,7 @@ async function serveRuntimeScript(
   const appOrigin = originFor(request, env.APP_HOST);
   const body = await assetResponse.text();
   // Own "use strict" first, or prepending anything drops the bundle's own directive and the script runs sloppy-mode.
-  const configured = `"use strict";\nwindow.__coedit_config__=${JSON.stringify({ appOrigin })};\n${body}`;
+  const configured = `"use strict";\nwindow.__coedit__=${JSON.stringify({ config: { appOrigin } })};\n${body}`;
 
   const headers = new Headers(assetResponse.headers);
   headers.set("content-security-policy", csp);

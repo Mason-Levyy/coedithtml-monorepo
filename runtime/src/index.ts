@@ -2,7 +2,7 @@ import type { SegmentResult, Slide } from "./segmentation/types";
 import { resolvePrimaryContainer } from "./segmentation/container";
 import { waitUntilReady } from "./segmentation/ready";
 import { segmentWithProfile } from "./segmentation/segment";
-import { watchForResegmentation } from "./segmentation/watch";
+import { watchForStructuralChange } from "./segmentation/watch";
 import { sendToApp } from "./transport/bridge";
 import {
   activeSlideMessage,
@@ -19,19 +19,13 @@ import {
 import { watchScrollSpy } from "./viewer/scroll-spy";
 import { createStageController } from "./viewer/stage";
 
-declare global {
-  interface Window {
-    __coedit__?: { version: string };
-  }
-}
-
-const VERSION = "0.2.0";
+export const VERSION = "0.3.0";
 
 function segmentSafely(container: Element): SegmentResult {
   try {
     return segmentWithProfile(container);
   } catch (error) {
-    console.error("[coedit] initial segmentation failed", error);
+    console.error("[coedit] segmentation failed", error);
     return { slides: [], profile: "app" };
   }
 }
@@ -43,11 +37,17 @@ export async function start(): Promise<void> {
   let currentSlides: Slide[] = [];
   let activeIndex = 0;
   let anchorElement: Element | null = null;
+  let stagedIndex: number | null = null;
   const stage = createStageController(container);
+
+  function trackActiveSlide(index: number): void {
+    activeIndex = index;
+    anchorElement = anchorElementFor(container, currentSlides, index);
+  }
 
   const initial = segmentSafely(container);
   currentSlides = initial.slides;
-  anchorElement = anchorElementFor(container, currentSlides, activeIndex);
+  trackActiveSlide(activeIndex);
   try {
     sendToApp(
       readyMessage(
@@ -60,22 +60,29 @@ export async function start(): Promise<void> {
     console.error("[coedit] failed to report ready", error);
   }
 
-  watchForResegmentation(container, (result) => {
+  watchForStructuralChange(container, () => {
     try {
-      activeIndex = resolveActiveIndexAfterResegmentation(
+      const result = segmentSafely(container);
+      const resolvedIndex = resolveActiveIndexAfterResegmentation(
         container,
         anchorElement,
         result.slides,
         activeIndex,
       );
       currentSlides = result.slides;
-      anchorElement = anchorElementFor(container, currentSlides, activeIndex);
+      trackActiveSlide(resolvedIndex);
+      // Children added since the last segmentation have never been hidden, so
+      // a still-staged document would otherwise start showing its other slides.
+      if (stagedIndex !== null) {
+        stagedIndex = resolvedIndex;
+        stage.setActiveSlide(currentSlides, resolvedIndex);
+      }
       sendToApp(
         resegmentedMessage(
           result.slides,
           result.profile,
           hasStickyOrFixedPositioning(container),
-          activeIndex,
+          resolvedIndex,
         ),
       );
     } catch (error) {
@@ -88,8 +95,13 @@ export async function start(): Promise<void> {
     () => currentSlides,
     (index) => {
       try {
-        activeIndex = index;
-        anchorElement = anchorElementFor(container, currentSlides, index);
+        // Staging hides every other slide, and a hidden element reports a
+        // zero-height rect that reads as "scrolled past". Position is known
+        // exactly while staged, so scroll position is not worth consulting.
+        if (stagedIndex !== null) {
+          return;
+        }
+        trackActiveSlide(index);
         sendToApp(activeSlideMessage(index));
       } catch (error) {
         console.error("[coedit] failed to report the active slide", error);
@@ -101,18 +113,18 @@ export async function start(): Promise<void> {
     try {
       if (command.type === "scrollToSlide") {
         scrollToSlide(container, currentSlides, command.index);
-      } else {
-        stage.setActiveSlide(currentSlides, command.index);
+        return;
+      }
+      stagedIndex = command.index;
+      stage.setActiveSlide(currentSlides, command.index);
+      if (command.index !== null) {
+        trackActiveSlide(command.index);
+        // Nothing scrolls when a slide is staged, so this is the only thing
+        // that tells the filmstrip which slide the reader is now looking at.
+        sendToApp(activeSlideMessage(command.index));
       }
     } catch (error) {
       console.error("[coedit] failed to apply a viewer command", error);
     }
-  });
-}
-
-if (typeof window !== "undefined") {
-  window.__coedit__ = { version: VERSION };
-  start().catch((error) => {
-    console.error("[coedit] runtime failed to start", error);
   });
 }

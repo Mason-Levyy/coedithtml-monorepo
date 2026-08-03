@@ -121,9 +121,7 @@ describe("handleSandboxRequest", () => {
     const body = await response.text();
 
     expect(response.status).toBe(200);
-    expect(body.startsWith('"use strict";\nwindow.__coedit_config__=')).toBe(
-      true,
-    );
+    expect(body.startsWith('"use strict";\nwindow.__coedit__=')).toBe(true);
     expect(body).toContain(`"appOrigin":"https://${FAKE_APP_HOST}"`);
     expect(body).toContain("console.log(1);");
     expect(response.headers.get("content-type")).toBe("text/javascript");
