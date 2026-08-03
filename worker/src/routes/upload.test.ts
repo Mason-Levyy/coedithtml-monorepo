@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { WorkerEnv } from "@/lib/env";
 import {
-  FAKE_SANDBOX_HOST,
+  FAKE_APP_HOST,
   fakeArtifactMetadata,
   liveKv,
   recordingArtifactMetadata,
   recordingArtifactStore,
+  testWorkerEnv,
 } from "@/lib/fakes";
 import { verifyArtifactPassword } from "@/lib/password";
 import { MAX_ARTIFACT_BYTES } from "@/lib/schemas/artifact";
@@ -18,11 +19,10 @@ function envWith(
   store: R2Bucket,
   metadata: KVNamespace = fakeArtifactMetadata() as unknown as KVNamespace,
 ): WorkerEnv {
-  return {
+  return testWorkerEnv({
     ARTIFACT_STORE: store,
     ARTIFACT_METADATA: metadata,
-    SANDBOX_HOST: FAKE_SANDBOX_HOST,
-  } as unknown as WorkerEnv;
+  });
 }
 
 function uploadRequest(
@@ -114,11 +114,14 @@ describe("handleUpload", () => {
     expect(body.viewToken).not.toBe(body.editToken);
   });
 
-  it("reports fully-qualified, distinct view and edit URLs on the sandbox origin", async () => {
+  // The shared link must open the app's viewer, not the artifact by itself:
+  // the sandbox URL renders the bare document with no filmstrip around it.
+  it("reports distinct view and edit URLs on the app origin", async () => {
     const { body } = await upload([{ name: "deck.html", body: VALID_HTML }]);
 
-    expect(body.viewUrl).toBe(`https://${FAKE_SANDBOX_HOST}/${body.viewToken}`);
-    expect(body.editUrl).toBe(`https://${FAKE_SANDBOX_HOST}/${body.editToken}`);
+    expect(body.viewUrl).toBe(`https://${FAKE_APP_HOST}/a/${body.viewToken}`);
+    expect(body.editUrl).toBe(`https://${FAKE_APP_HOST}/a/${body.editToken}`);
+    expect(body.viewUrl).not.toBe(body.editUrl);
   });
 
   it("stores both tokens in KV, each scoped to the artifact", async () => {

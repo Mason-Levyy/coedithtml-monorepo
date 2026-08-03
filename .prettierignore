@@ -1,5 +1,6 @@
 dist/
 build/
+worker/public/
 .next/
 out/
 .wrangler/

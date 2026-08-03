@@ -1,6 +1,7 @@
 import { resolveAccessToken } from "@/lib/access-tokens";
 import {
   appendRuntimeScript,
+  RUNTIME_ASSET_PATH,
   RUNTIME_SCRIPT_PATH,
 } from "@/lib/artifact-render";
 import { getArtifactMetadata } from "@/lib/artifact-metadata";
@@ -31,7 +32,7 @@ async function serveRuntimeScript(
   csp: string,
 ): Promise<Response> {
   const assetResponse = await env.ASSETS.fetch(
-    new Request(new URL("/runtime.js", request.url)),
+    new Request(new URL(RUNTIME_ASSET_PATH, request.url)),
   );
   if (!assetResponse.ok) {
     return sandboxResponse("Not found", 404, csp);
