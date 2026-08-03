@@ -170,11 +170,25 @@ to the task group above it belongs to.
           correctness across multi-cycle switches, no global-scope leaks,
           zero new dependencies, origin-recompute-per-message being the
           right call — came back clean
-    - [ ] `15b-viewer-flow-stage-ui` — the actual filmstrip: thumbnails
-          (text/label-based, not screenshots — no way to capture
-          cross-origin iframe content without much more machinery), Flow
-          mode's scroll-spy-highlighted strip, the Stage-mode opt-in toggle
-          and its sticky/fixed warning
+    - [x] `15b-design-system` — Tailwind v4 + shadcn/ui-compatible structure
+          for `app/` (`components.json`, `src/lib/utils.ts`'s `cn()`,
+          `class-variance-authority` for variant-based components), carrying
+          forward the design language from the original planning artifact
+          (`planning/coedithtml-build-plan.html`, at the user's explicit
+          request) rather than inventing a new one: Archivo + IBM Plex Mono,
+          a `paper`/`ink`/`wet`/`tape`/`dry`/`line` color palette mapped onto
+          shadcn's semantic tokens via Tailwind v4's `@theme inline`, hard
+          2px ink borders, sharp 3px corners, a `tape`-yellow focus ring
+          matching the reference file's own `:focus-visible` convention.
+          Verified by building and grepping the compiled CSS for the
+          registered tokens, not just a clean `tsc`. No visual smoke test
+          yet — nothing user-facing exists until 15c
+    - [ ] `15c-viewer-flow-stage-ui` — the actual filmstrip, built on 15b's
+          tokens: thumbnails (text/label-based, not screenshots — no way to
+          capture cross-origin iframe content without much more machinery),
+          Flow mode's scroll-spy-highlighted strip, the Stage-mode opt-in
+          toggle and its sticky/fixed warning — the layout and interaction
+          patterns are a rough match for "Mock D" in the reference file
   - [ ] `16-viewer-keyboard-mobile` — keyboard nav + focus ring, mobile swipe
         strip
   - [ ] `17-viewer-fail-open-budget` — fail-open test, runtime-size-budget

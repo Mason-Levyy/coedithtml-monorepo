@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-paper: #e9eae4;
+  --color-paper-2: #f4f5f0;
+  --color-ink: #14161a;
+  --color-ink-soft: #5c6169;
+  --color-line: #cbcec5;
+  --color-wet: #1b44e0;
+  --color-wet-deep: #0f2fa8;
+  --color-dry: #b7bcc2;
+  --color-tape: #e8c547;
+}
+
+:root {
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
+  --card: var(--color-paper-2);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-paper-2);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-wet);
+  --primary-foreground: #ffffff;
+  --secondary: var(--color-paper-2);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-paper-2);
+  --muted-foreground: var(--color-ink-soft);
+  --accent: var(--color-tape);
+  --accent-foreground: var(--color-ink);
+  --destructive: #d9455f;
+  --destructive-foreground: #ffffff;
+  --border: var(--color-line);
+  --input: var(--color-line);
+  --ring: var(--color-tape);
+  --radius: 3px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+  }
+}
