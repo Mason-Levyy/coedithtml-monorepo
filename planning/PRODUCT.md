@@ -126,15 +126,27 @@ changed twice by then. Build the export; stay uncommitted about the rest.
 ### Anchoring
 
 Every overlay entry needs an address that outlives a new version of the
-artifact. Each anchor stores three things:
+artifact. An anchor describes **what the reader selected**, not a structural
+unit we picked for them. Each one stores four things:
 
-- a structural path (an `nth-of-type` chain from the container),
-- a short hash of the node's normalized text content,
+- the exact selected text,
+- a short run of text either side of it, so the same phrase appearing twice can
+  be told apart,
+- a structural path (an `nth-of-type` chain from `<body>`), used only to
+  disambiguate,
 - the artifact revision it was created against.
 
-Resolution tries path first, then hash anywhere in the document, then gives up
-and marks the anchor orphaned. Orphans are shown to the user as unplaced rather
-than silently dropped or silently misplaced. Never guess.
+Resolution tries the text first, then uses the path to choose between multiple
+matches, then gives up and marks the anchor orphaned. Orphans are shown to the
+user as unplaced rather than silently dropped or silently misplaced. Never
+guess.
+
+Text first, path second, is the opposite of the obvious order, and it follows
+from the main path being regeneration. When a model rewrites an artifact it
+produces entirely new markup for substantially the same words — every
+structural path breaks while nearly every sentence survives. Structure is the
+volatile thing here and text is the stable one, so the durable identifier is
+the quote and the path is a tie-breaker.
 
 Re-upload is a first-class flow with its own screen, not a resilience feature:
 after re-anchoring, report plainly — "14 comments, 11 re-placed, 3 need review" —
@@ -169,9 +181,10 @@ overlay. Live presence. Resolve and reply. Unresolved counts in the comment
 rail. Re-upload with re-anchoring, and overlay export for the regeneration
 loop.
 
-**Phase 3 — Edit.** Text editable in place, section-level locks, and a full
-revision history built before any of it is switched on. Do not build toward this
-during Phases 1 and 2 beyond keeping anchors revision-aware.
+**Phase 3 — Edit.** Text editable in place, a soft lock on the element being
+edited, and a full revision history built before any of it is switched on. Do
+not build toward this during Phases 1 and 2 beyond keeping anchors
+revision-aware.
 
 **Phase 4 — Converge.** A menu, not a plan: accounts and identity, gated
 sharing, file export, automated AI round-trip, per-node CRDTs, custom domains.

@@ -1,6 +1,6 @@
 # coeditHTML — Roadmap
 
-Two phases. Check the phase box only when every task under it is done and the
+Four phases. Check the phase box only when every task under it is done and the
 exit criteria hold. Read `PRODUCT.md` first — it explains why several of these
 tasks look stranger than they need to.
 
@@ -44,8 +44,6 @@ you — its own layout, its own navigation — without asking a question.
 
 - [x] Chrome on app origin, artifact in cross-origin iframe with correct sandbox
       attributes and no top-navigation or popups
-- [x] Serve handler appends exactly one script tag **after `</html>`** and
-      changes nothing else, verified by a byte-diff test
 - [x] `postMessage` bridge: versioned schema, origin checked on send (explicit
       target origin, never `"*"`) and on receipt (`event.origin` matched
       exactly, shape validated before use)
@@ -228,19 +226,44 @@ simultaneously, see each other, and disagree in writing.
 
 - [ ] **Phase 2 complete**
 
+### What the pivot changed here
+
+Phase 1 stopped inferring structure, so Phase 2 cannot lean on any. Three
+consequences, each of which shapes the tasks below:
+
+- **Anchors hang off the reader's selection**, not off a unit we chose. There
+  is no section to attach a comment to and no filmstrip to hang a count on.
+- **The artifact decides what is on screen.** It is a running application: it
+  changes slides, opens tabs, and re-renders whenever it likes. A comment's
+  target may be present but hidden, or absent until the reader navigates to it.
+  The rail has to say so rather than guess a position.
+- **Highlights are drawn, not inserted.** Wrapping a selection in a `<mark>`
+  would edit somebody else's live document and fight its own rendering. The
+  runtime paints highlights in its shadow-root overlay from
+  `Range.getClientRects()`; the artifact's own DOM is not touched in this phase
+  at all.
+
 ### Overlay and anchoring
 
 - [ ] Overlay document defined and versioned: artifact revision and entries of
       anchor + kind + body + author + status
 - [ ] Author shape carries `source: "anonymous"` from day one so accounts are a
       new value later, not a migration
-- [ ] Anchor format: structural path + normalized text hash + revision id
-- [ ] Resolution order: path, then hash, then orphan
+- [ ] Anchor format: selected text + a short run of context either side +
+      `nth-of-type` path from `<body>` + revision id
+- [ ] Resolution order: text first, then the path to choose between duplicate
+      matches, then orphan. Text before structure is deliberate and the reason
+      is in `PRODUCT.md` — regeneration rewrites markup and keeps wording
 - [ ] Orphaned anchors displayed as unplaced — never guessed, never dropped
+- [ ] Anchors re-resolved when the artifact mutates its own DOM
+- [ ] Targets that resolve but are off screen are reported as such, and the rail
+      offers to reveal them rather than placing them wrongly
 - [ ] Re-upload is a first-class screen: new revision, re-anchor, and a plain
       report — "14 comments, 11 re-placed, 3 need review"
 - [ ] Orphans can be dragged back into place or dismissed by the owner
-- [ ] Test suite covering drift: reordered sections, edited text, deleted nodes
+- [ ] Test suite covering drift against regenerated artifacts rather than
+      hand-edited ones: rewritten markup around identical wording, edited
+      wording, deleted passages, and the same sentence appearing twice
 
 ### Realtime
 
@@ -252,13 +275,20 @@ simultaneously, see each other, and disagree in writing.
 
 ### Comment UI
 
-- [ ] Select text in the artifact, leave a comment — selection handled inside
-      the runtime and reported up
-- [ ] Region-level comments for artifacts with no selectable text
+- [ ] Select text in the artifact, leave a comment — selection captured inside
+      the runtime and reported up over the bridge
+- [ ] Highlights painted in the runtime's shadow root and repositioned on
+      scroll, resize, and mutation — never written into the artifact
+- [ ] Element-level comments for artifacts with no selectable text, anchored to
+      the element the reader clicked
 - [ ] Comment rail beside the artifact, threads anchored to their selection
 - [ ] Unresolved count shown in the rail
 - [ ] Reply, resolve, and reopen
 - [ ] Commenter names are self-declared and stored locally — still no accounts
+- [ ] Bridge protocol goes to version 2: selection, anchor resolution, and
+      highlight geometry. Phase 1 left it at one message, `ready`
+- [ ] Runtime still under 20KB minified with selection, highlights, and the
+      socket included — it enters this phase at 0.5KB
 
 ### Ship
 
@@ -268,6 +298,38 @@ simultaneously, see each other, and disagree in writing.
 - [ ] Owner dashboard listing artifacts, links, and unresolved counts
 - [ ] One full regeneration loop: share, collect, export, regenerate, re-upload,
       re-anchor — run with people who are not you
+
+### Delivery stack
+
+One stack this time, rooted on merged `main`. Phase 1's split into two stacks
+that never met cost an integration branch and a duplicated commit; the ordering
+below keeps each branch dependent only on the one before it.
+
+- [ ] `22-overlay-schema` — the overlay document and anchor types in
+      `@coedithtml/protocol`, plus anchoring as pure functions: build an anchor
+      from a range, resolve one against a document, report orphans. Includes the
+      drift suite. No UI and no network, because this is the part that is
+      expensive to get wrong and cheap to test.
+      **`protocol/` stays dependency-free** — the runtime imports it directly,
+      so a Zod import there lands inside the injected script and breaks the
+      zero-dependency rule. Hand-written parsers live in `protocol/`; the Zod
+      schemas the worker needs for its own request bodies wrap them on the
+      worker side
+- [ ] `23-runtime-selection` — bridge protocol v2; the runtime captures
+      selections, builds anchors, paints highlights in its shadow root, and
+      re-resolves on mutation. Fails open exactly as Phase 1 does
+- [ ] `24-doc-room` — the Doc room Durable Object: websocket transport with
+      reconnect and backoff, presence, and the comment log in DO SQLite, with
+      concurrency and reconnect tests
+- [ ] `25-comment-rail` — the rail on the app origin: threads, reply, resolve,
+      reopen, unresolved count, self-declared names, and the honest treatment of
+      off-screen and orphaned targets
+- [ ] `26-reupload-reanchor` — re-upload as its own screen, new revision, the
+      re-anchor report, and dragging orphans back into place
+- [ ] `27-overlay-export` — **Copy feedback for your AI tool**, overlay to
+      markdown. Small, and it closes the regeneration loop
+- [ ] `28-notify-dashboard` — opt-in email on new comment, owner dashboard with
+      unresolved counts
 
 ---
 
@@ -287,7 +349,7 @@ The undo story has to exist before the thing that needs undoing.
 
 - [ ] Revisions are overlay snapshots, not artifact copies — cheap, since the
       artifact bytes never change within a revision
-- [ ] Revision list with author, timestamp, and affected regions
+- [ ] Revision list with author, timestamp, and the passages each one touched
 - [ ] Restore-to-revision, working and tested, before `contenteditable` is
       switched on anywhere
 - [ ] Rendered diff between two revisions — show the artifact, not the source
@@ -315,11 +377,13 @@ artifact in exactly the way the whole design forbids.
 
 ### Concurrency
 
-- [ ] Region-level soft locks held in the Doc room
+- [ ] Soft locks held in the Doc room, scoped to the element being edited —
+      there are no sections to lock, so the lock unit is whatever node the
+      caret is in
 - [ ] Locks expire on a TTL — a closed laptop must not freeze a document
 - [ ] Lock state visible on the artifact and in the comment rail
-- [ ] Last-write-wins per region, with the collision surfaced to both people
-      rather than resolved silently
+- [ ] Last-write-wins per locked element, with the collision surfaced to both
+      people rather than resolved silently
 - [ ] Edit tokens enforced server-side; a view token cannot mutate, and there is
       a test that tries
 
