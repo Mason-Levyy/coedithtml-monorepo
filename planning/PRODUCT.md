@@ -3,9 +3,9 @@
 ## What it is
 
 coeditHTML takes a single-file HTML artifact — the kind Claude, ChatGPT, or v0
-produces — and turns it into a link. Anyone who opens the link reads it as a
-deck: one section on stage, thumbnails along the bottom. Later they can comment
-on it and edit it. No account, no install, no build step.
+produces — and turns it into a link. Anyone who opens the link sees the artifact
+running exactly as its author built it. Later they can comment on it and edit
+it. No account, no install, no build step.
 
 The user is someone who generated a good-looking artifact and now needs three
 non-technical people to react to it. Today they screenshot it into Slack or
@@ -14,8 +14,8 @@ version where the artifact stays the artifact.
 
 ## The non-negotiable constraint
 
-**We never modify the uploaded HTML.** Not on upload, not on serve, not to make
-slides, not to apply an edit. The file is stored byte-for-byte and returned
+**We never modify the uploaded HTML.** Not on upload, not on serve, not to
+apply an edit. The file is stored byte-for-byte and returned
 byte-for-byte with one script tag appended **after `</html>`** — a pure append,
 never a search-and-replace. Browsers hoist it correctly, and it avoids the
 failure mode where an artifact has no literal closing body tag or contains the
@@ -34,7 +34,7 @@ what makes the constraint survivable rather than merely aspirational.
 
 Two origins, always:
 
-- **App origin** (`coedithtml.com`) — the chrome. Filmstrip, stage controls,
+- **App origin** (`coedithtml.com`) — the chrome. Title bar, share controls,
   comment rail, dashboard. Holds the session cookie.
 - **Sandbox origin** (`artifact-sandbox.net`) — serves artifacts inside a
   cross-origin `<iframe>`. Never receives a credential and shares nothing with
@@ -50,66 +50,44 @@ artifact and zero access to us. It talks to the chrome over `postMessage` with
 strict origin checks in both directions and a versioned message schema.
 
 ```
-[ app origin ]  chrome, filmstrip, comment rail
+[ app origin ]  chrome, share bar, comment rail
       |  postMessage (origin-checked, versioned)
 [ sandbox origin ]  iframe: artifact HTML + injected runtime
       |  websocket
 [ durable object ]  doc room: presence, comments, revisions
 ```
 
-## Segmentation — how HTML becomes slides
+## The artifact runs itself
 
-This is the hardest problem in the product and the place to spend real effort.
+The artifact is an application, not a document to be taken apart. It arrives
+with its own layout, its own navigation, its own key handling — increasingly it
+arrives as a working deck, dashboard, or tool that already knows how it wants to
+be read. We host it and frame it. We do not segment it, group it, or decide
+where its slides begin.
 
-**Run after scripts, not before.** Many artifacts render nothing until their JS
-executes. The runtime waits for `load`, then for a short quiet period with no
-DOM mutations, and only then segments. Parsing the raw HTML string server-side
-is wrong and will fail on every JS-driven artifact.
+This was not the original plan. The first design put a segmentation cascade in
+the runtime — explicit markers, then semantic breaks, then a layout heuristic,
+then a single-slide fallback — and rendered a filmstrip from whatever it found.
+It was the largest and most delicate part of Phase 1, and it was wrong in a way
+that got worse as artifacts got better: a self-driving pitch deck with seven
+sections in a stage wrapper was read as three "pages", so the chrome and the
+artifact disagreed about what the reader was looking at, on screen, at the same
+time. Every artifact shape that did not match the heuristics was a bug report,
+and the space of shapes is unbounded.
 
-**Cascade of strategies, first confident match wins:**
+What is left is smaller and does not degrade:
 
-1. **Explicit markers.** `[data-slide]` elements, or `<section>` elements as
-   direct children of `body` / `main` / the primary container. Two or more hits
-   means done. Highest confidence.
-2. **Semantic breaks.** `<hr>` elements, or heading-led grouping: find the
-   shallowest heading level occurring three or more times at consistent depth,
-   and start a new slide at each occurrence.
-3. **Layout heuristic.** Walk the direct children of the primary scroll
-   container and accumulate them into groups at a **fixed virtual height**
-   (900px), never the actual viewport. Using the real viewport would give a
-   phone and a laptop different slide counts for the same link, so two people
-   discussing "slide 4" would be looking at different content.
-4. **Single slide.** The artifact is an application, not a document — a
-   calculator, a dashboard, a game. This is a correct result, not a failure. The
-   filmstrip collapses and the UI says so plainly rather than inventing
-   divisions.
+- Store the bytes. Serve the bytes. Frame them on a sandbox origin.
+- Append one script tag after `</html>` — a pure append, never a
+  search-and-replace — so there is a seam to build on.
+- The injected runtime reports that the frame came up and what the document
+  calls itself. Nothing else.
+- The chrome is a thin bar: the title and a way to copy the link.
 
-**A slide is a range, never a wrapper.** The output is
-`{ index, startChild, endChild, label }` referencing existing children of the
-container. Rendering a slide means scrolling to it, not moving it.
-
-**Two view modes.** *Flow* is the default and is always safe: the artifact
-scrolls normally and the filmstrip acts as scroll-spy plus jump navigation.
-*Stage* shows one slide and hides the rest; it is opt-in because hiding siblings
-can break sticky headers and absolute positioning. When the runtime detects
-`position: sticky` or `fixed` in the artifact, Stage is offered with a warning
-rather than made default.
-
-**Re-segmentation.** A debounced `MutationObserver` watches the container. Only
-structural changes to top-level children trigger re-segmentation; text changes
-do not. Slide indices are recomputed and the filmstrip updates without losing
-the reader's position.
-
-**Reading profiles.** The cascade produces a guess, and the guess is shown, not
-hidden: the viewer carries a small `Reading as: Slides ▾` control offering
-Slides, Pages, and App. Do not ask at upload — guessing and offering a
-correction is the same outcome with none of the friction, and the uploader often
-does not know yet how it will be read.
-
-The profile is a property of the link, not a viewer preference, so everyone sees
-identical slide numbers. Slides is the default and the priority case: favor
-explicit markers and semantic breaks, Stage mode available. Pages assumes a long
-scroll and stays in Flow. App skips segmentation and renders one frame.
+Later phases add commenting and editing **on top of** the artifact, anchored to
+what the reader selects rather than to a structure we inferred. Anchoring to a
+selection is a smaller problem than segmenting a document, and it fails visibly
+rather than silently.
 
 ## The overlay document
 
@@ -118,7 +96,7 @@ immutable bytes; the overlay is everything humans added, kept entirely separate
 and fully serializable:
 
 ```
-{ artifactRevision, profile, entries: [ { anchor, kind, body, author, status } ] }
+{ artifactRevision, entries: [ { anchor, kind, body, author, status } ] }
 ```
 
 `kind` covers comments, replies, and later text edits. One structure does three
@@ -140,8 +118,8 @@ edge case.
 
 The deliberately low-tech version ships first and may be all that is ever
 needed: a **Copy feedback for your AI tool** button that dumps the overlay as
-markdown — slide labels, quoted text, and the comments against each. No
-integration, no API key, works with every model and with copy-paste. Anything
+markdown — quoted text and the comments against each. No integration, no API
+key, works with every model and with copy-paste. Anything
 more automated is a Phase 4 decision, and the tooling in this space will have
 changed twice by then. Build the export; stay uncommitted about the rest.
 
@@ -177,19 +155,18 @@ Highest-risk code in the repo. It runs inside someone else's document.
 - Zero dependencies, vanilla DOM, 20KB minified ceiling.
 - All of its own UI inside a shadow root so styles cannot collide either way.
 - One namespaced global.
-- **Fails open.** If segmentation throws or the socket dies, the artifact must
-  still render and read correctly. A broken filmstrip is acceptable; a broken
-  document is not.
+- **Fails open.** If the runtime throws or the socket dies, the artifact must
+  still run correctly. Broken chrome is acceptable; a broken artifact is not.
 
 ## Feature set
 
-**Phase 1 — Serve.** Upload a single HTML file, get a link. Filmstrip viewer
-with keyboard navigation and a reading profile control. View and edit tokens.
-Optional password. Anonymous viewers, no sign-in.
+**Phase 1 — Serve.** Upload a single HTML file, get a link. The artifact runs
+as itself inside a sandboxed frame, under a thin bar carrying the title and the
+link. View and edit tokens. Optional password. Anonymous viewers, no sign-in.
 
-**Phase 2 — Mark.** Comments anchored to slides and text ranges, kept in the
-overlay. Live presence. Resolve and reply. Unresolved counts badged on the
-filmstrip. Re-upload with re-anchoring, and overlay export for the regeneration
+**Phase 2 — Mark.** Comments anchored to what the reader selects, kept in the
+overlay. Live presence. Resolve and reply. Unresolved counts in the comment
+rail. Re-upload with re-anchoring, and overlay export for the regeneration
 loop.
 
 **Phase 3 — Edit.** Text editable in place, section-level locks, and a full

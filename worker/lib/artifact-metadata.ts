@@ -1,17 +1,11 @@
 import { z } from "zod";
 import { artifactMetadataKey } from "./storage-keys";
 
-export const readingProfileSchema = z.enum(["slides", "pages", "app"]);
-
 export const artifactMetadataSchema = z.object({
   fileName: z.string().min(1),
   size: z.number().int().positive(),
   uploadedAt: z.string().datetime(),
   passwordHash: z.string().optional(),
-  // A property of the link, not of the reader: absent means "whatever the
-  // runtime's cascade decides", and everyone opening the link sees the same
-  // answer either way.
-  profile: readingProfileSchema.optional(),
 });
 
 export type ArtifactMetadata = z.infer<typeof artifactMetadataSchema>;

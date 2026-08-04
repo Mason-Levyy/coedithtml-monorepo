@@ -1,37 +1,13 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  parseRuntimeToAppMessage,
-  type ReadingProfile,
-  type ScrollToSlideCommand,
-  type SetProfileCommand,
-  type SetStageSlideCommand,
-  type Slide,
-} from "@/lib/bridge-messages";
+import { useEffect, useState } from "react";
+import { parseRuntimeToAppMessage } from "@/lib/bridge-messages";
 
 export type ArtifactBridgeState =
-  | { status: "loading" }
-  | {
-      status: "ready";
-      slides: Slide[];
-      profile: ReadingProfile;
-      hasStickyOrFixed: boolean;
-      activeSlideIndex: number;
-    };
+  { status: "loading" } | { status: "ready"; title: string };
 
-export type ArtifactBridgeCommand =
-  ScrollToSlideCommand | SetStageSlideCommand | SetProfileCommand;
-
-export type ArtifactBridge = {
-  state: ArtifactBridgeState;
-  frameRef: React.RefObject<HTMLIFrameElement | null>;
-  sendCommand: (command: ArtifactBridgeCommand) => void;
-};
-
-export function useArtifactBridge(sandboxOrigin: string): ArtifactBridge {
+export function useArtifactBridge(sandboxOrigin: string): ArtifactBridgeState {
   const [state, setState] = useState<ArtifactBridgeState>({
     status: "loading",
   });
-  const frameRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     setState({ status: "loading" });
@@ -44,33 +20,12 @@ export function useArtifactBridge(sandboxOrigin: string): ArtifactBridge {
       if (message === null) {
         return;
       }
-
-      if (message.type === "activeSlide") {
-        setState((previous) =>
-          previous.status === "ready"
-            ? { ...previous, activeSlideIndex: message.index }
-            : previous,
-        );
-        return;
-      }
-
-      setState({
-        status: "ready",
-        slides: message.slides,
-        profile: message.profile,
-        hasStickyOrFixed: message.hasStickyOrFixed,
-        activeSlideIndex:
-          message.type === "resegmented" ? message.activeSlideIndex : 0,
-      });
+      setState({ status: "ready", title: message.title });
     }
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [sandboxOrigin]);
 
-  function sendCommand(command: ArtifactBridgeCommand): void {
-    frameRef.current?.contentWindow?.postMessage(command, sandboxOrigin);
-  }
-
-  return { state, frameRef, sendCommand };
+  return state;
 }
