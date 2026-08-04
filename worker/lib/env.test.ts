@@ -32,6 +32,7 @@ describe("parseWorkerEnv", () => {
     expect(invalidBindingsOf(result)).toEqual([
       "ARTIFACT_STORE",
       "ARTIFACT_METADATA",
+      "ASSETS",
       "APP_HOST",
       "SANDBOX_HOST",
       "REDIRECT_HOSTS",
@@ -64,6 +65,15 @@ describe("parseWorkerEnv", () => {
     });
 
     expect(invalidBindingsOf(result)).toEqual(["ARTIFACT_METADATA"]);
+  });
+
+  it("rejects an ASSETS binding with no fetch method", () => {
+    const result = parseWorkerEnv({
+      ...fakeWorkerEnv(),
+      ASSETS: {},
+    });
+
+    expect(invalidBindingsOf(result)).toEqual(["ASSETS"]);
   });
 
   it("rejects a null binding", () => {

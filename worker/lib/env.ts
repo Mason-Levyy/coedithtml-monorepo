@@ -23,10 +23,15 @@ const artifactMetadataSchema = z.custom<KVNamespace>(
   { message: "ARTIFACT_METADATA is not bound to a KV namespace" },
 );
 
+const assetsSchema = z.custom<Fetcher>((value) => exposes(value, ["fetch"]), {
+  message: "ASSETS is not bound to a static assets directory",
+});
+
 export const workerEnvSchema = z
   .object({
     ARTIFACT_STORE: artifactStoreSchema,
     ARTIFACT_METADATA: artifactMetadataSchema,
+    ASSETS: assetsSchema,
     ...originConfigShape,
   })
   .refine(hostsAreDistinct, {

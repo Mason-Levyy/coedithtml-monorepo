@@ -1,6 +1,7 @@
 node_modules/
 dist/
 build/
+worker/public/
 .next/
 out/
 .wrangler/
@@ -13,3 +14,4 @@ out/
 coverage/
 *.tsbuildinfo
 worker/worker-configuration.d.ts
+.claude/scheduled_tasks.lock

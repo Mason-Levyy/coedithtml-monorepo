@@ -5,10 +5,14 @@
   "scripts": {
     "dev": "node build.mjs --watch",
     "build": "node build.mjs",
+    "check-size": "node check-bundle-size.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
     "esbuild": "^0.24.0"
+  },
+  "dependencies": {
+    "@coedithtml/protocol": "workspace:*"
   }
 }
