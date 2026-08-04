@@ -8,6 +8,7 @@ import {
   testWorkerEnv,
 } from "@/lib/fakes";
 import { hashArtifactPassword } from "@/lib/password";
+import { handleGetArtifact } from "./artifact";
 import { handleUnlockArtifact } from "./unlock";
 
 const ARTIFACT_ID = "a".repeat(32);
@@ -130,6 +131,35 @@ describe("handleUnlockArtifact", () => {
       );
       expect(response.status).toBe(200);
     }
+  });
+
+  // The app parses both responses with one schema, so a field present on only
+  // one of them is a runtime failure the route tests would each still pass.
+  it("answers with the same shape the metadata route does", async () => {
+    const env = await envWithPassword();
+    const unlocked = await handleUnlockArtifact(
+      VIEW_TOKEN,
+      unlockRequest({ password: PASSWORD }),
+      env,
+    );
+    const grant = new URL(
+      ((await unlocked.json()) as { artifactUrl: string }).artifactUrl,
+    ).searchParams.get("u");
+
+    const metadata = await handleGetArtifact(
+      VIEW_TOKEN,
+      new Request(`https://app.test/api/artifacts/${VIEW_TOKEN}?u=${grant}`),
+      env,
+    );
+
+    const unlockedAgain = await handleUnlockArtifact(
+      VIEW_TOKEN,
+      unlockRequest({ password: PASSWORD }),
+      env,
+    );
+    expect(Object.keys((await unlockedAgain.json()) as object).sort()).toEqual(
+      Object.keys((await metadata.json()) as object).sort(),
+    );
   });
 
   it("returns 404 for a token that does not exist", async () => {
