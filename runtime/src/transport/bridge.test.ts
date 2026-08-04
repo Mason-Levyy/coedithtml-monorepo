@@ -1,0 +1,58 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { sendToApp } from "./bridge";
+import { readyMessage } from "./messages";
+
+afterEach(() => {
+  delete window.__coedit__;
+});
+
+describe("sendToApp", () => {
+  it("posts the message to the resolved app origin", () => {
+    window.__coedit__ = {
+      version: "test",
+      config: { appOrigin: "https://app.example.com" },
+    };
+    const postMessage = vi.fn();
+    vi.stubGlobal("parent", { postMessage });
+
+    const message = readyMessage("Q3 Review");
+    sendToApp(message);
+
+    expect(postMessage).toHaveBeenCalledWith(
+      message,
+      "https://app.example.com",
+    );
+
+    vi.unstubAllGlobals();
+  });
+
+  it("does not send when running at the top level (window.parent === window)", () => {
+    window.__coedit__ = {
+      version: "test",
+      config: { appOrigin: "https://app.example.com" },
+    };
+    const postMessage = vi.fn();
+    vi.stubGlobal("parent", window);
+
+    sendToApp(readyMessage("Q3 Review"));
+
+    expect(postMessage).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it("does not send when no app origin can be resolved", () => {
+    const postMessage = vi.fn();
+    vi.stubGlobal("parent", { postMessage });
+    Object.defineProperty(document, "referrer", {
+      value: "",
+      configurable: true,
+    });
+
+    sendToApp(readyMessage("Q3 Review"));
+
+    expect(postMessage).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+});

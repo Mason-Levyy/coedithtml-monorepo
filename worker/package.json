@@ -4,12 +4,14 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "build": "wrangler deploy --dry-run --outdir dist",
+    "build": "node assemble-assets.mjs && wrangler deploy --dry-run --outdir dist",
     "types": "wrangler types",
     "typecheck": "wrangler types && tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
+    "@coedithtml/app": "workspace:*",
+    "@coedithtml/runtime": "workspace:*",
     "wrangler": "^4.112.0"
   },
   "dependencies": {

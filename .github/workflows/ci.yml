@@ -40,3 +40,6 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Runtime bundle size budget
+        run: pnpm --filter runtime run check-size

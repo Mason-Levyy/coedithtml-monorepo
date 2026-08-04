@@ -31,6 +31,30 @@ describe("checkHtmlDocument", () => {
     );
   });
 
+  it("accepts a module script importing from a CDN, which a browser runs as-is", () => {
+    const withModuleScript = `<!doctype html>
+<html lang="en">
+  <body>
+    <canvas id="scene"></canvas>
+    <script type="module">
+      import * as THREE from "https://cdn.skypack.dev/three";
+      export default null;
+      const scene = new THREE.Scene();
+      console.log(scene);
+    </script>
+  </body>
+</html>`;
+    expect(checkHtmlDocument(withModuleScript).ok).toBe(true);
+  });
+
+  it("still rejects a bare module source file that only looks like markup", () => {
+    const source = `import { render } from "./render";
+export default function Deck() {
+  return null;
+}`;
+    expect(reasonFor(source)).toBe("needs-build-step");
+  });
+
   it("rejects JSX, which needs a build step", () => {
     const jsx = `import React from "react";
 export default function Deck() {
@@ -58,5 +82,25 @@ export default function Deck() {
     expect(reasonFor("<html><body><MyWidget /></body></html>")).toBe(
       "needs-build-step",
     );
+  });
+
+  it("rejects a document that ships its own CSP meta tag", () => {
+    const source = `<html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'"></head><body>hi</body></html>`;
+    expect(reasonFor(source)).toBe("has-own-csp");
+  });
+
+  it("rejects a CSP meta tag regardless of attribute order or quote style", () => {
+    const source = `<html><head><meta content='default-src self' http-equiv='content-security-policy'></head><body>hi</body></html>`;
+    expect(reasonFor(source)).toBe("has-own-csp");
+  });
+
+  it("accepts a report-only CSP meta tag, which cannot break the runtime", () => {
+    const source = `<html><head><meta http-equiv="Content-Security-Policy-Report-Only" content="default-src 'none'"></head><body>hi</body></html>`;
+    expect(checkHtmlDocument(source).ok).toBe(true);
+  });
+
+  it("rejects a CSP meta tag with an unquoted http-equiv value", () => {
+    const source = `<html><head><meta http-equiv=Content-Security-Policy content="default-src 'none'"></head><body>hi</body></html>`;
+    expect(reasonFor(source)).toBe("has-own-csp");
   });
 });

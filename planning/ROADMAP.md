@@ -1,6 +1,6 @@
 # coeditHTML — Roadmap
 
-Two phases. Check the phase box only when every task under it is done and the
+Four phases. Check the phase box only when every task under it is done and the
 exit criteria hold. Read `PRODUCT.md` first — it explains why several of these
 tasks look stranger than they need to.
 
@@ -8,12 +8,12 @@ tasks look stranger than they need to.
 
 ## Phase 1 — Serve
 
-**Goal:** upload a single HTML file, get a link, read it as a filmstrip deck.
-No comments, no editing, no realtime.
+**Goal:** upload a single HTML file, get a link, open it and use the artifact
+exactly as its author built it. No comments, no editing, no realtime.
 
 **Exit criteria:** you can hand the link to someone who has never heard of the
-product, on their phone, and they can read the whole artifact without asking a
-question.
+product, on their phone, and the artifact works for them the way it works for
+you — its own layout, its own navigation — without asking a question.
 
 - [ ] **Phase 1 complete**
 
@@ -28,57 +28,41 @@ question.
 
 - [x] Upload endpoint: single `.html` only, size cap, content sniffing, reject
       anything that is not a complete HTML document
-- [~] Artifact stored in R2 byte-for-byte; metadata in KV still to come
-- [ ] Serve handler appends exactly one script tag **after `</html>`** — a pure
+- [x] Artifact stored in R2 byte-for-byte, metadata in KV with a read path
+- [x] Serve handler appends exactly one script tag **after `</html>`** — a pure
       append, never a search-and-replace — and changes nothing else, verified by
       a byte-diff test
-- [ ] Detect artifacts shipping their own restrictive CSP meta tag and show an
+- [x] Detect artifacts shipping their own restrictive CSP meta tag and show an
       honest error rather than a silently dead viewer
-- [ ] CSP on artifact responses: external resources allowed, credentialed
+- [x] CSP on artifact responses: external resources allowed, credentialed
       same-origin requests blocked
-- [ ] View and edit tokens, unguessable, independently revocable
-- [ ] Optional password gate on a link
-- [ ] Rate limits and abuse ceiling on upload
+- [x] View and edit tokens, unguessable, independently revocable
+- [x] Optional password gate on a link
+- [x] Rate limits and abuse ceiling on upload
 
-### Segmentation engine
+### Viewer
 
-The core of the phase. Budget more time here than feels reasonable.
-
-- [ ] Runtime waits for `load` plus a mutation-quiet period before segmenting
-- [ ] Strategy 1: explicit `[data-slide]` and top-level `<section>` detection
-- [ ] Strategy 2: `<hr>` and heading-level grouping
-- [ ] Strategy 3: accumulation over container children at a **fixed 900px
-      virtual height**, never the real viewport
-- [ ] Strategy 4: single-slide fallback, surfaced honestly in the UI
-- [ ] Slides emitted as index ranges — no DOM restructuring anywhere in the path
-- [ ] Slide labels derived from the first heading or first text in the range
-- [ ] Debounced `MutationObserver` triggers re-segmentation on structural change
-      only, preserving reader position
-- [ ] Reading profiles — Slides, Pages, App — auto-detected, surfaced as a
-      `Reading as ▾` control, stored on the link rather than per viewer
-- [ ] Corpus of 20+ real artifacts checked into `fixtures/`, spanning documents,
-      dashboards, games, and long-scroll pages
-- [ ] Snapshot test asserting expected slide counts across the whole corpus
-
-### Viewer — filmstrip
-
-- [ ] Chrome on app origin, artifact in cross-origin iframe with correct sandbox
+- [x] Chrome on app origin, artifact in cross-origin iframe with correct sandbox
       attributes and no top-navigation or popups
-- [ ] `postMessage` bridge: versioned schema, origin checked both directions
-- [ ] Flow mode: natural scroll, filmstrip as scroll-spy and jump navigation
-- [ ] Stage mode: one slide visible, opt-in, warned when sticky or fixed
-      positioning is detected
-- [ ] Thumbnails generated from live slide ranges, not screenshots
-- [ ] Keyboard navigation: arrows, home, end, and a visible focus ring
-- [ ] Mobile layout: filmstrip collapses to a swipe strip
-- [ ] Runtime fails open — kill the socket and the bridge in a test and confirm
-      the artifact still reads correctly
-- [ ] Runtime build stays under 20KB minified, enforced by a hook
+- [x] `postMessage` bridge: versioned schema, origin checked on send (explicit
+      target origin, never `"*"`) and on receipt (`event.origin` matched
+      exactly, shape validated before use)
+- [x] Injected runtime reports that the frame came up and what the document
+      calls itself — and nothing else — 21
+- [x] Thin share bar: the artifact's title and a way to copy the link — 21
+- [x] Artifact fills the frame and keeps its own layout, navigation, and key
+      handling — 21
+- [x] Runtime fails open — kill the bridge in a test and confirm the artifact
+      still runs, with its markup byte-identical — 21
+- [x] Runtime build stays under 20KB minified, enforced in CI (currently
+      0.5KB) — 21
 
 ### Ship
 
-- [ ] Landing page explaining the product in one screen
-- [ ] Upload → link flow with no account required
+- [x] Landing page explaining the product in one screen — 18
+- [x] Upload → link flow with no account required — 18; the share link opens
+      the app's viewer at `/a/<token>`, not the raw sandbox URL — 20
+- [x] App build served on the app origin — the open question flagged on 14 — 20
 - [ ] Ten real artifacts from ten real people uploaded and read
 
 ### Delivery stack
@@ -99,34 +83,135 @@ to the task group above it belongs to.
         every push
   - [x] `05-domain-layout` — app on app.coedithtml.com, apex freed for the
         marketing site, www 301s to the apex
-- [ ] **Storage and serving**
+- [x] **Storage and serving**
   - [x] `06-upload-endpoint` — Zod-validated upload route, single `.html`
         only, size cap, content sniffing, stored to R2 byte-for-byte
-  - [ ] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
+  - [x] `07-r2-kv-storage` — artifact metadata to KV and a read path; the R2
         write and storage-key helpers landed with 06
-  - [ ] `08-serve-append-handler` — append-after-`</html>` serve handler,
+  - [x] `08-serve-append-handler` — append-after-`</html>` serve handler,
         byte-diff test
-  - [ ] `09-csp-tokens` — CSP meta-tag detection/error, CSP headers, view/edit
-        tokens, password gate, rate limits
-- [ ] **Segmentation engine**
-  - [ ] `10-segmentation-load-wait` — wait for `load` + mutation-quiet period
-  - [ ] `11-segmentation-strategies-markers-semantic` — explicit markers, then
-        `<hr>`/heading-grouping
-  - [ ] `12-segmentation-layout-fallback` — fixed-900px virtual-height
-        accumulation, single-slide fallback, index-range output + labels
-  - [ ] `13-segmentation-fixtures-tests` — 20+ fixture corpus, snapshot tests,
-        `MutationObserver` re-segmentation, reading-profile control
-- [ ] **Viewer — filmstrip**
-  - [ ] `14-viewer-iframe-bridge` — sandboxed cross-origin iframe, versioned
-        origin-checked `postMessage` bridge
-  - [ ] `15-viewer-flow-stage` — Flow scroll-spy, Stage mode with sticky/fixed
-        warning, thumbnails from live ranges
-  - [ ] `16-viewer-keyboard-mobile` — keyboard nav + focus ring, mobile swipe
-        strip
-  - [ ] `17-viewer-fail-open-budget` — fail-open test, runtime-size-budget
-        hook wired into CI
+  - [x] `09-csp-tokens` — CSP meta-tag detection/error, CSP response headers
+        (`frame-ancestors` locked to the app origin), view/edit tokens minted
+        on upload and required by both read routes. Split into three branches
+        rather than one (password gate and rate limits are separable
+        concerns, and bundled would have pushed well past the ~1000-line
+        guideline) — numbering kept as 09/09b/09c so 10-18 didn't need to
+        shift:
+    - [x] `09-csp-tokens` — this entry
+    - [x] `09b-password-gate` — optional password gate backend (hash + verify
+          + password-attempt rate limiting); no prompt UI yet, since the
+          viewer page it belongs on doesn't exist until stack C. Password is
+          passed as a `?password=` query param on the sandbox origin, since a
+          plain `<iframe src>` navigation can't carry a custom header and the
+          sandbox origin is architecturally barred from ever holding a
+          cookie — flagged for review since query strings land in browser
+          history and any access logs
+    - [x] `09c-upload-rate-limits` — general upload abuse ceiling, reusing
+          09b's rate-limit primitive
+    - [x] `09d-serve-runtime-bundle` — replaces the `/__coedit/runtime.js`
+          404 placeholder with the real esbuild output, served via Cloudflare
+          Workers Static Assets (`assets.directory` pointed straight at
+          `runtime/dist`, `run_worker_first: true` so origin classification
+          and CSP still apply to it). Injects `window.__coedit_config__ =
+          {appOrigin}` ahead of the bundle so the not-yet-built postMessage
+          bridge (stack C) has a safe `postMessage` target origin, since the
+          runtime can't otherwise read the parent's origin from inside a
+          cross-origin iframe. Added as its own branch once it became clear
+          branch 14 (viewer, rooted on the segmentation stack off `main`)
+          has no ancestry containing this worker code and can't touch it
+          directly — this stays on stack A instead
+- [x] **Integration and audit** — `20-phase-1-integration`
+  - [x] Phase 1 had been built as two stacks that both branched from `main`
+        and never met (07-09d/18 for storage and serving, 10-19 for
+        segmentation and the viewer), with `15b-design-system` committed once
+        on each side. Neither was Phase 1 alone; this merges them and
+        resolves the four conflicting files by union
+  - [x] The app build was never served: the only assets binding pointed at
+        `runtime/dist` and every non-API path on the app origin answered with
+        the string "Coedit app origin", so the filmstrip built across 14-19
+        had no consumer at all. `assemble-assets.mjs` stages the app build
+        and the runtime bundle into one directory (Wrangler allows a single
+        assets tree per Worker) and origin classification still decides what
+        each host may read
+  - [x] Fixes found in the end-of-phase audit:
+        segmentation measured rendered heights, so slide counts still
+        differed per device and the corpus could not catch it (its layout
+        fixtures carried `data-test-height` attributes the test read back as
+        stubbed geometry — removed, and those five fixtures rewritten at a
+        realistic length); the password gate charged a correct password
+        against its own attempt budget, locking readers out after roughly
+        five views; uploads using `<script type="module">` with CDN imports
+        were rejected as needing a build step; `resolveAppOrigin` fell back
+        to `document.referrer`, making any page that could frame an artifact
+        a trusted command origin; Stage mode never reported back, was not
+        re-applied after resegmentation, and fought the scroll-spy over
+        zero-height hidden elements; and the resegmentation watcher ran the
+        strategies inside its own timer, outside `start()`'s error handling —
+        the same fail-open gap 17 and 19 each fixed one layer up
+  - [x] Password handling reworked: PBKDF2 rather than one SHA-256 round, and
+        the password is POSTed to an unlock route and exchanged for a
+        short-lived artifact-scoped grant instead of riding in a query string
+        the artifact's own scripts could read back
+  - [x] Upload caps the body while reading it rather than after; token
+        revocation reachable at `DELETE /api/artifacts/:token`, which the
+        roadmap had already claimed while the helper had no caller
+  - [x] `@coedithtml/protocol` — the bridge schema had been maintained by
+        hand in two mirrored copies, one per package
+- [x] **Host, don't parse** — `21-host-dont-parse`
+  - [x] Deletes the segmentation engine, the viewer's slide machinery, and the
+        filmstrip: `runtime/src/segmentation/`, `runtime/src/viewer/`, the
+        20-artifact fixture corpus, `Filmstrip`, `ArtifactStatusBar`,
+        `StickyWarning`, `ReadingProfilePicker`, the reading-profile field and
+        its `PATCH` route — about 3,700 lines
+  - [x] The artifact is an application, not a document to take apart. It has
+        its own layout, navigation, and key handling, and the heuristics were
+        wrong in a way that got worse as artifacts got better: the project's
+        own pitch deck — seven `<section>`s inside a stage wrapper, with its
+        own nav and arrow keys — was read as three "pages", so the chrome and
+        the artifact disagreed on screen about what the reader was looking at
+  - [x] What survives is the part that was never about parsing: two origins,
+        the byte-for-byte append, the origin-checked bridge, fail-open, tokens,
+        the password gate, rate limits. The runtime now reports `ready` with
+        the document title and nothing else; the bundle went 8.0KB to 0.5KB
+  - [x] Phase 2 anchors comments to what the reader selects rather than to a
+        structure we inferred — a smaller problem, and one that fails visibly
+        instead of silently
 - [ ] **Ship**
-  - [ ] `18-landing-upload-flow` — landing page, upload→link flow, no account
+  - [x] `18-landing-upload-flow` — independent stack (Stack D), rooted on this
+        stack's own tip (`09d`) rather than the segmentation/viewer stack,
+        since the real dependency here is the upload/token/serving contract
+        those branches built, not the viewer UI. Cherry-picked `15b`'s
+        design-system commit from the other stack onto this one (same
+        content, duplicated on purpose — reconciled when the user merges
+        both stacks) so the landing page uses the same tokens rather than
+        inventing new ones. `worker/src/routes/upload.ts` now returns
+        fully-qualified `viewUrl`/`editUrl` (not just raw tokens) computed
+        server-side via a new shared `originFor()` helper in
+        `worker/lib/origins.ts`, also used by `sandbox.ts` — the frontend
+        has no other way to know the sandbox host without duplicating worker
+        config. `app/`: `useUploadArtifact` (TanStack Query mutation) +
+        `UploadDropzone` (drag/drop, client-side `.html`/size validation) +
+        `ShareLinkResult` (copy-to-clipboard) + `LandingPage` composing them
+        with one-screen explanatory copy. Added a Vite dev proxy for `/api`
+        so the app dev server can reach the worker locally; hit and fixed a
+        real gotcha along the way — Node's DNS resolver doesn't special-case
+        `*.localhost` the way browsers do, so the proxy target has to be
+        `127.0.0.1` with the `Host` header set by hand, not
+        `app.localhost:8787` directly. Browser-verified for real, not
+        against a demo harness: ran the actual worker (`wrangler dev`) and
+        app dev servers together, uploaded a real file through the UI,
+        confirmed the returned link resolves and serves the artifact
+        byte-for-byte with the runtime injected (`window.__coedit__`
+        present). Flagged for the end-of-phase audit: the link this flow
+        hands back opens the **raw sandboxed artifact directly** — no
+        Filmstrip/Flow/Stage chrome, because that lives in `ArtifactViewer`
+        on the other, currently-unmerged stack, and wiring an app-origin
+        "reader" route through it needs the two stacks integrated first
+        (the user's own merge step). Separately, and more fundamentally,
+        *how `app/`'s own build output gets served in production at all* is
+        still the same open question flagged back on branch 14 — until
+        that's resolved, there's no production URL for this landing page to
+        live at regardless of the reader-route question
   - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
 
 ---
@@ -141,46 +226,110 @@ simultaneously, see each other, and disagree in writing.
 
 - [ ] **Phase 2 complete**
 
+### What the pivot changed here
+
+Phase 1 stopped inferring structure, so Phase 2 cannot lean on any. Three
+consequences, each of which shapes the tasks below:
+
+- **Anchors hang off the reader's selection**, not off a unit we chose. There
+  is no section to attach a comment to and no filmstrip to hang a count on.
+- **The artifact decides what is on screen.** It is a running application: it
+  changes slides, opens tabs, and re-renders whenever it likes. A comment's
+  target may be present but hidden, or absent until the reader navigates to it.
+  The rail has to say so rather than guess a position.
+- **Highlights are drawn, not inserted.** Wrapping a selection in a `<mark>`
+  would edit somebody else's live document and fight its own rendering. The
+  runtime paints highlights in its shadow-root overlay from
+  `Range.getClientRects()`; the artifact's own DOM is not touched in this phase
+  at all.
+
 ### Overlay and anchoring
 
-- [ ] Overlay document defined and versioned: artifact revision, profile, and
-      entries of anchor + kind + body + author + status
+- [ ] Overlay document defined and versioned: artifact revision and entries of
+      anchor + kind + body + author + status
 - [ ] Author shape carries `source: "anonymous"` from day one so accounts are a
       new value later, not a migration
-- [ ] Anchor format: structural path + normalized text hash + revision id
-- [ ] Resolution order: path, then hash, then orphan
+- [ ] Anchor format: selected text + a short run of context either side +
+      `nth-of-type` path from `<body>` + revision id
+- [ ] Resolution order: text first, then the path to choose between duplicate
+      matches, then orphan. Text before structure is deliberate and the reason
+      is in `PRODUCT.md` — regeneration rewrites markup and keeps wording
 - [ ] Orphaned anchors displayed as unplaced — never guessed, never dropped
+- [ ] Anchors re-resolved when the artifact mutates its own DOM
+- [ ] Targets that resolve but are off screen are reported as such, and the rail
+      offers to reveal them rather than placing them wrongly
 - [ ] Re-upload is a first-class screen: new revision, re-anchor, and a plain
       report — "14 comments, 11 re-placed, 3 need review"
 - [ ] Orphans can be dragged back into place or dismissed by the owner
-- [ ] Test suite covering drift: reordered sections, edited text, deleted nodes
+- [ ] Test suite covering drift against regenerated artifacts rather than
+      hand-edited ones: rewritten markup around identical wording, edited
+      wording, deleted passages, and the same sentence appearing twice
 
 ### Realtime
 
 - [ ] Doc room Durable Object, one per artifact
 - [ ] Websocket transport with reconnect and backoff
-- [ ] Presence: who is here, which slide they are on
+- [ ] Presence: who is here
 - [ ] Comment log persisted to DO SQLite
 - [ ] Concurrent-connection and reconnect tests against the DO
 
 ### Comment UI
 
-- [ ] Select text in the artifact, leave a comment — selection handled inside
-      the runtime and reported up
-- [ ] Slide-level comments for artifacts with no selectable text
-- [ ] Comment rail beside the stage, threads anchored to their slide
-- [ ] Unresolved count badged on the filmstrip thumbnail
+- [ ] Select text in the artifact, leave a comment — selection captured inside
+      the runtime and reported up over the bridge
+- [ ] Highlights painted in the runtime's shadow root and repositioned on
+      scroll, resize, and mutation — never written into the artifact
+- [ ] Element-level comments for artifacts with no selectable text, anchored to
+      the element the reader clicked
+- [ ] Comment rail beside the artifact, threads anchored to their selection
+- [ ] Unresolved count shown in the rail
 - [ ] Reply, resolve, and reopen
 - [ ] Commenter names are self-declared and stored locally — still no accounts
+- [ ] Bridge protocol goes to version 2: selection, anchor resolution, and
+      highlight geometry. Phase 1 left it at one message, `ready`
+- [ ] Runtime still under 20KB minified with selection, highlights, and the
+      socket included — it enters this phase at 0.5KB
 
 ### Ship
 
 - [ ] **Copy feedback for your AI tool** — overlay rendered to markdown with
-      slide labels, quoted text, and comments against each
+      quoted text and the comments against each
 - [ ] Email notification on new comment, opt-in per link
 - [ ] Owner dashboard listing artifacts, links, and unresolved counts
 - [ ] One full regeneration loop: share, collect, export, regenerate, re-upload,
       re-anchor — run with people who are not you
+
+### Delivery stack
+
+One stack this time, rooted on merged `main`. Phase 1's split into two stacks
+that never met cost an integration branch and a duplicated commit; the ordering
+below keeps each branch dependent only on the one before it.
+
+- [ ] `22-overlay-schema` — the overlay document and anchor types in
+      `@coedithtml/protocol`, plus anchoring as pure functions: build an anchor
+      from a range, resolve one against a document, report orphans. Includes the
+      drift suite. No UI and no network, because this is the part that is
+      expensive to get wrong and cheap to test.
+      **`protocol/` stays dependency-free** — the runtime imports it directly,
+      so a Zod import there lands inside the injected script and breaks the
+      zero-dependency rule. Hand-written parsers live in `protocol/`; the Zod
+      schemas the worker needs for its own request bodies wrap them on the
+      worker side
+- [ ] `23-runtime-selection` — bridge protocol v2; the runtime captures
+      selections, builds anchors, paints highlights in its shadow root, and
+      re-resolves on mutation. Fails open exactly as Phase 1 does
+- [ ] `24-doc-room` — the Doc room Durable Object: websocket transport with
+      reconnect and backoff, presence, and the comment log in DO SQLite, with
+      concurrency and reconnect tests
+- [ ] `25-comment-rail` — the rail on the app origin: threads, reply, resolve,
+      reopen, unresolved count, self-declared names, and the honest treatment of
+      off-screen and orphaned targets
+- [ ] `26-reupload-reanchor` — re-upload as its own screen, new revision, the
+      re-anchor report, and dragging orphans back into place
+- [ ] `27-overlay-export` — **Copy feedback for your AI tool**, overlay to
+      markdown. Small, and it closes the regeneration loop
+- [ ] `28-notify-dashboard` — opt-in email on new comment, owner dashboard with
+      unresolved counts
 
 ---
 
@@ -200,10 +349,10 @@ The undo story has to exist before the thing that needs undoing.
 
 - [ ] Revisions are overlay snapshots, not artifact copies — cheap, since the
       artifact bytes never change within a revision
-- [ ] Revision list with author, timestamp, and affected slides
+- [ ] Revision list with author, timestamp, and the passages each one touched
 - [ ] Restore-to-revision, working and tested, before `contenteditable` is
       switched on anywhere
-- [ ] Rendered diff between two revisions — show the deck, not the source
+- [ ] Rendered diff between two revisions — show the artifact, not the source
 - [ ] Retention policy for revisions, and a storage cost estimate per artifact
 
 ### Edit surface
@@ -215,8 +364,7 @@ artifact in exactly the way the whole design forbids.
 
 - [ ] `contenteditable` on text nodes only — attributes, structure, and scripts
       stay untouched
-- [ ] Editing writes into existing nodes and never inserts wrappers, same
-      constraint as segmentation
+- [ ] Editing writes into existing nodes and never inserts wrappers
 - [ ] Paste is sanitized to plain text by default, since pasted rich HTML is the
       fastest way to destroy an artifact's styling
 - [ ] Each commit appends a patch entry — anchor plus replacement text — to the
@@ -229,11 +377,13 @@ artifact in exactly the way the whole design forbids.
 
 ### Concurrency
 
-- [ ] Section-level soft locks held in the Doc room
+- [ ] Soft locks held in the Doc room, scoped to the element being edited —
+      there are no sections to lock, so the lock unit is whatever node the
+      caret is in
 - [ ] Locks expire on a TTL — a closed laptop must not freeze a document
-- [ ] Lock state visible on the stage and on the filmstrip thumbnail
-- [ ] Last-write-wins per section, with the collision surfaced to both people
-      rather than resolved silently
+- [ ] Lock state visible on the artifact and in the comment rail
+- [ ] Last-write-wins per locked element, with the collision surfaced to both
+      people rather than resolved silently
 - [ ] Edit tokens enforced server-side; a view token cannot mutate, and there is
       a test that tries
 
@@ -277,10 +427,9 @@ dead product.
 - [ ] **Gated sharing.** Password, email-domain allowlist, and link expiry. The
       middle tier between fully public and org-only that nobody currently
       offers. Cheapest item here and the most defensible.
-- [ ] **PPTX and PDF export.** From the section tree, since slides are already
-      the unit. Most requested in interviews, least used in practice — believe
+- [ ] **PPTX and PDF export.** Rendered from the artifact itself. Most requested in interviews, least used in practice — believe
       the second half of that sentence.
-- [ ] **Per-node CRDT.** True simultaneous editing inside one section. Roughly a
+- [ ] **Per-node CRDT.** True simultaneous editing inside one region. Roughly a
       month. Only worth it if locks are demonstrably losing you users.
 - [ ] **Custom domains and white label.** Serve artifacts from a client's own
       domain. Mostly DNS and certificate plumbing, plus a second sandbox origin
