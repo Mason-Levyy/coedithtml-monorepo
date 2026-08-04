@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { copyLabel, useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
 type ShareBarProps = {
   title: string;
@@ -7,12 +7,7 @@ type ShareBarProps = {
 };
 
 export function ShareBar({ title, fileName }: ShareBarProps) {
-  const [copied, setCopied] = useState(false);
-
-  async function handleCopy(): Promise<void> {
-    await navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-  }
+  const clipboard = useCopyToClipboard();
 
   return (
     <div className="flex items-center gap-3 border-b-2 border-ink bg-card px-3 py-1.5">
@@ -29,9 +24,9 @@ export function ShareBar({ title, fileName }: ShareBarProps) {
         variant="outline"
         size="sm"
         className="ml-auto flex-none"
-        onClick={() => void handleCopy()}
+        onClick={() => clipboard.copy(window.location.href)}
       >
-        {copied ? "Copied" : "Copy link"}
+        {copyLabel(clipboard.state)}
       </Button>
     </div>
   );

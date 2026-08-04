@@ -29,6 +29,18 @@ describe("ShareLinkResult", () => {
     expect(writeText).toHaveBeenCalledWith(VIEW_URL);
   });
 
+  it("tells the reader to copy by hand when the clipboard is denied", async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error("denied"));
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+
+    render(<ShareLinkResult viewUrl={VIEW_URL} onUploadAnother={() => {}} />);
+
+    fireEvent.click(screen.getByText("Copy link"));
+    await vi.waitFor(() => {
+      expect(() => screen.getByText("Press Ctrl+C")).not.toThrow();
+    });
+  });
+
   it("calls onUploadAnother when clicked", () => {
     const onUploadAnother = vi.fn();
     render(

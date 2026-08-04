@@ -114,8 +114,7 @@ describe("handleUpload", () => {
     expect(body.viewToken).not.toBe(body.editToken);
   });
 
-  // The shared link must open the app's viewer, not the artifact by itself:
-  // the sandbox URL renders the bare document with no filmstrip around it.
+  // The sandbox URL opens untrusted markup top-level, without the sandbox attrs.
   it("reports distinct view and edit URLs on the app origin", async () => {
     const { body } = await upload([{ name: "deck.html", body: VALID_HTML }]);
 
