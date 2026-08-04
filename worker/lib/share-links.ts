@@ -5,9 +5,8 @@ export const VIEWER_PATH_PREFIX = "/a/";
 
 export const UNLOCK_QUERY_PARAM = "u";
 
-// The link handed to a reader points at the app origin, never straight at the
-// sandbox: the sandbox URL renders the bare artifact with no filmstrip, and
-// opening untrusted markup top-level gives up the iframe's sandbox attributes.
+// Points at the app origin, never the sandbox: opening untrusted markup
+// top-level gives up the iframe's sandbox attributes.
 export function viewerUrl(
   request: Request,
   env: WorkerEnv,

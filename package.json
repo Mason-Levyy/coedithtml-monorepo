@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "pnpm --parallel --filter runtime --filter app --filter worker run dev",
     "build": "pnpm -r run build",
+    "deploy": "pnpm build && pnpm --filter @coedithtml/worker run deploy",
     "test": "pnpm -r --if-present run test",
     "typecheck": "pnpm -r run typecheck",
     "lint": "eslint . && prettier --check ."

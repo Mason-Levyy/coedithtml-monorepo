@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { copyLabel, useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
 type ShareLinkResultProps = {
   viewUrl: string;
@@ -10,12 +10,7 @@ export function ShareLinkResult({
   viewUrl,
   onUploadAnother,
 }: ShareLinkResultProps) {
-  const [copied, setCopied] = useState(false);
-
-  async function handleCopy(): Promise<void> {
-    await navigator.clipboard.writeText(viewUrl);
-    setCopied(true);
-  }
+  const clipboard = useCopyToClipboard();
 
   return (
     <div className="flex flex-col gap-3 border-2 border-ink bg-card p-6">
@@ -26,8 +21,8 @@ export function ShareLinkResult({
         <span className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
           {viewUrl}
         </span>
-        <Button type="button" size="sm" onClick={() => void handleCopy()}>
-          {copied ? "Copied" : "Copy link"}
+        <Button type="button" size="sm" onClick={() => clipboard.copy(viewUrl)}>
+          {copyLabel(clipboard.state)}
         </Button>
       </div>
       <div>
