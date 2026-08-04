@@ -26,9 +26,10 @@ requires understanding the user's markup, it is probably the wrong change.
 - Input format is a **single HTML file** with inline CSS and JS. Reject JSX,
   multi-file uploads, and anything needing a build step at the boundary — do not
   add a bundler to accommodate them.
-- The editable unit is a top-level `<section>`. Sections drive navigation,
-  presence, soft locks, comment anchors, and version diffs. Anything operating on
-  a smaller granularity needs a good reason.
+- **We do not parse the artifact.** It is somebody else's application and it
+  runs exactly as its author built it — its own layout, navigation, and key
+  handling. We host it, share it, and frame it. Anything that needs to
+  understand the artifact's structure to work is the wrong feature.
 
 ## Code Standards
 
@@ -62,8 +63,8 @@ homes for it:
 - `app/src/hooks/` — anything stateful and reusable: `useArtifact`,
   `usePresence`, `useShareLink`. Components should not contain fetch logic,
   websocket wiring, or debounce timers.
-- `runtime/src/` — DOM walking, section resolution, and transport each stay in
-  their own module. The entry file wires them together and nothing else.
+- `runtime/src/` — transport lives in its own module. The entry file wires it
+  together and nothing else.
 
 **Budgets.** A file past ~200 lines or a function past ~50 wants splitting. A
 function taking more than four positional arguments wants an options object.

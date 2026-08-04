@@ -1,12 +1,9 @@
 import { z } from "zod";
-import type { ReadingProfile } from "@coedithtml/protocol";
 import { readErrorMessage } from "@/lib/api-error";
 
 const unavailable = "Could not load the file. Try again.";
 
 const lockedSchema = z.object({ requiresPassword: z.literal(true) });
-
-const readingProfileSchema = z.enum(["slides", "pages", "app"]);
 
 const unlockedSchema = z.object({
   requiresPassword: z.literal(false),
@@ -14,7 +11,6 @@ const unlockedSchema = z.object({
   fileName: z.string(),
   size: z.number(),
   uploadedAt: z.string(),
-  profile: readingProfileSchema.nullable(),
   sandboxOrigin: z.string(),
   artifactUrl: z.string(),
 });
@@ -41,23 +37,6 @@ async function parseArtifact(response: Response): Promise<Artifact> {
 
 export async function fetchArtifact(token: string): Promise<Artifact> {
   return parseArtifact(await fetch(artifactPath(token)));
-}
-
-export async function setArtifactProfile(
-  token: string,
-  profile: ReadingProfile,
-): Promise<ReadingProfile> {
-  const response = await fetch(artifactPath(token), {
-    method: "PATCH",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ profile }),
-  });
-  if (!response.ok) {
-    throw new Error(
-      await readErrorMessage(response, "Could not save the reading profile."),
-    );
-  }
-  return profile;
 }
 
 export async function unlockArtifact(

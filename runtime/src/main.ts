@@ -4,6 +4,4 @@ import { start, VERSION } from "./index";
 // global before the bundle runs, and assigning a fresh object would drop it.
 window.__coedit__ = { ...window.__coedit__, version: VERSION };
 
-start().catch((error: unknown) => {
-  console.error("[coedit] runtime failed to start", error);
-});
+start();
