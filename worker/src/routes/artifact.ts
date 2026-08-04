@@ -1,9 +1,9 @@
 import type { WorkerEnv } from "@/lib/env";
-import { originFor } from "@/lib/origins";
+import { unlockedArtifactPayload } from "@/lib/artifact-payload";
 import { checkPasswordGate } from "@/lib/password-gate";
 import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { jsonError, jsonResponse } from "@/lib/responses";
-import { artifactUrl, UNLOCK_QUERY_PARAM } from "@/lib/share-links";
+import { UNLOCK_QUERY_PARAM } from "@/lib/share-links";
 
 const UNAVAILABLE = "Could not load the file. Try again.";
 
@@ -39,16 +39,7 @@ export async function handleGetArtifact(
   }
 
   return jsonResponse(
-    {
-      artifactId,
-      fileName: metadata.fileName,
-      size: metadata.size,
-      uploadedAt: metadata.uploadedAt,
-      profile: metadata.profile ?? null,
-      requiresPassword: false,
-      sandboxOrigin: originFor(request, env.SANDBOX_HOST),
-      artifactUrl: artifactUrl(request, env, resolved.artifact.token, grant),
-    },
+    unlockedArtifactPayload(request, env, resolved.artifact, grant),
     200,
   );
 }

@@ -1,12 +1,11 @@
+import { unlockedArtifactPayload } from "@/lib/artifact-payload";
 import type { WorkerEnv } from "@/lib/env";
-import { originFor } from "@/lib/origins";
 import { verifyArtifactPassword } from "@/lib/password";
 import { isWithinRateLimit, recordRateLimitedAttempt } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
 import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { jsonError, jsonResponse } from "@/lib/responses";
 import { unlockRequestSchema } from "@/lib/schemas/artifact";
-import { artifactUrl } from "@/lib/share-links";
 import { mintUnlockGrant } from "@/lib/unlock-grants";
 
 const ATTEMPT_LIMIT = 10;
@@ -76,20 +75,7 @@ export async function handleUnlockArtifact(
   }
 
   return jsonResponse(
-    {
-      artifactId,
-      fileName: metadata.fileName,
-      size: metadata.size,
-      uploadedAt: metadata.uploadedAt,
-      requiresPassword: false,
-      sandboxOrigin: originFor(request, env.SANDBOX_HOST),
-      artifactUrl: artifactUrl(
-        request,
-        env,
-        resolved.artifact.token,
-        minted.grant,
-      ),
-    },
+    unlockedArtifactPayload(request, env, resolved.artifact, minted.grant),
     200,
   );
 }
