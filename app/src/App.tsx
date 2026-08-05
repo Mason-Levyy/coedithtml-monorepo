@@ -9,7 +9,7 @@ export function App() {
     return <LandingPage />;
   }
   return (
-    <div className="h-dvh">
+    <div className="min-h-dvh">
       <ArtifactPage token={token} />
     </div>
   );
