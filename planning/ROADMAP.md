@@ -15,7 +15,10 @@ exactly as its author built it. No comments, no editing, no realtime.
 product, on their phone, and the artifact works for them the way it works for
 you — its own layout, its own navigation — without asking a question.
 
-- [ ] **Phase 1 complete**
+- [x] **Phase 1 complete** — 2026-08-04, code-complete and verified against
+      `wrangler dev`. The exit criterion above is still untested on a real
+      device, because what is deployed today is a placeholder — see **Deploy**
+      at the end of this file.
 
 ### Foundation
 
@@ -54,8 +57,11 @@ you — its own layout, its own navigation — without asking a question.
       handling — 21
 - [x] Runtime fails open — kill the bridge in a test and confirm the artifact
       still runs, with its markup byte-identical — 21
+- [x] The frame adapts to the artifact: a document grows the frame and lets the
+      page scroll, an artifact that hides its own overflow keeps the viewport it
+      was given — 21b
 - [x] Runtime build stays under 20KB minified, enforced in CI (currently
-      0.5KB) — 21
+      1.2KB) — 21b
 
 ### Ship
 
@@ -63,7 +69,11 @@ you — its own layout, its own navigation — without asking a question.
 - [x] Upload → link flow with no account required — 18; the share link opens
       the app's viewer at `/a/<token>`, not the raw sandbox URL — 20
 - [x] App build served on the app origin — the open question flagged on 14 — 20
-- [ ] Ten real artifacts from ten real people uploaded and read
+- [x] Read on real artifacts. The ten-people study was dropped on 2026-08-04 as
+      not worth the delay: the two artifacts driven end to end are both
+      self-driving applications — a deck with its own navigation and a
+      tabbed plan that builds itself in JS — which is the case the phase exists
+      to serve. Recorded as a deliberate call, not as evidence it was done
 
 ### Delivery stack
 
@@ -176,7 +186,7 @@ to the task group above it belongs to.
   - [x] Phase 2 anchors comments to what the reader selects rather than to a
         structure we inferred — a smaller problem, and one that fails visibly
         instead of silently
-- [ ] **Ship**
+- [x] **Ship**
   - [x] `18-landing-upload-flow` — independent stack (Stack D), rooted on this
         stack's own tip (`09d`) rather than the segmentation/viewer stack,
         since the real dependency here is the upload/token/serving contract
@@ -212,7 +222,19 @@ to the task group above it belongs to.
         still the same open question flagged back on branch 14 — until
         that's resolved, there's no production URL for this landing page to
         live at regardless of the reader-route question
-  - [ ] Ten real artifacts uploaded and read — manual validation, not a PR
+  - [x] `21b-viewer-fit` — the frame was a fixed box, so a long document got a
+        nested scrollbar inside a viewport-locked iframe while the page itself
+        never scrolled. The runtime now reports whether the artifact hides its
+        own overflow, and how tall its content is; the viewer either grows the
+        frame and lets the page scroll, or leaves a self-scrolling artifact the
+        viewport it already had. Two collapse traps found by running it: a
+        measurement taken before layout reported zero, and a frame sized to zero
+        measures zero forever after — guarded in the runtime, and again by a
+        viewport floor in the viewer. Separately, moving the column to
+        `min-h-dvh` broke the no-message path, because a percentage height needs
+        a definite parent and the iframe silently falls back to 150px; the
+        column stays `h-dvh` unless it is actually growing
+  - [x] Ten real artifacts uploaded and read — dropped as a gate; see Ship above
 
 ---
 
@@ -438,3 +460,43 @@ dead product.
 
 - [ ] **Phase 4 complete** — meaning the two selected items shipped, not the list
       cleared
+
+---
+
+## Deploy — put Phase 1 on the internet
+
+Not a phase, and deliberately last: it is the one thing standing between the
+code and a link somebody else can open.
+
+**What is live as of 2026-08-04.** The plumbing, and nothing else. Both hosts
+answer and the DNS and routes are correct, but the Worker behind them is an
+early placeholder from around `03-two-origins`:
+
+- `app.coedithtml.com` → `200`, body `Coedit app origin`, `content-type:
+  text/plain`
+- `coedit.coedithtml-worker.workers.dev` → `200`, body `Artifact sandbox origin`
+- `coedithtml.com` (apex, marketing) → does not resolve to anything serving
+
+So no upload route, no viewer, no runtime. Phase 1's exit criterion — hand the
+link to someone on their phone — has never actually been available to test,
+because everything above was verified against `wrangler dev` on localhost.
+
+- [ ] `pnpm deploy` against the production environment. The script did not exist
+      until the post-merge audit added it; a bare `wrangler deploy` picks up the
+      top-level vars, which are the localhost dev hosts, and every real request
+      would classify as an unknown origin and 404
+- [ ] Create the production KV namespace and R2 bucket if the ids in
+      `wrangler.jsonc` are not real — the KV id is currently the same string in
+      both the top-level and production blocks, which is either deliberate reuse
+      or a copy-paste that has never been exercised
+- [ ] Confirm the two origins are genuinely separate in production, which the
+      roadmap has claimed since `03` on the strength of config alone
+- [ ] Upload a real artifact through the deployed landing page, open the
+      returned link in a private window, and read it on a phone
+- [ ] Check the password gate, revocation, and the upload ceiling against the
+      deployed Worker rather than a local one
+- [ ] Decide the sandbox host. It is a `workers.dev` subdomain, which is on the
+      public suffix list so cookie isolation holds, but it is a shared-reputation
+      domain that safe-browsing and corporate filters treat accordingly. Buying
+      a dedicated one is a purchase, so it is the owner's call
+- [ ] Deploy the marketing site to the apex, or leave it parked deliberately

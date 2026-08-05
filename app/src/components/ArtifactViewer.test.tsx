@@ -26,6 +26,25 @@ function announceReady(title: string, origin = SANDBOX_ORIGIN): void {
   });
 }
 
+function announceFit(mode: string, contentHeight: number): void {
+  act(() => {
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        origin: SANDBOX_ORIGIN,
+        data: { version: 1, type: "fit", mode, contentHeight },
+      }),
+    );
+  });
+}
+
+function frameHeight(): string {
+  return screen.getByTitle("q3-review.html").style.height;
+}
+
+function viewerColumnClasses(): string {
+  return document.querySelector("div.flex.flex-col")?.className ?? "";
+}
+
 describe("ArtifactViewer", () => {
   it("frames the artifact at the given source", () => {
     renderViewer();
@@ -62,5 +81,81 @@ describe("ArtifactViewer", () => {
     expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual([
       "Copy link",
     ]);
+  });
+
+  it("fills the frame until the artifact says how it wants to be sized", () => {
+    renderViewer();
+
+    expect(frameHeight()).toBe("100%");
+  });
+
+  // Without a definite parent height a percentage resolves to the 150px default.
+  it("gives the frame a definite height to fill when nothing is reported", () => {
+    renderViewer();
+
+    expect(viewerColumnClasses()).toContain("h-dvh");
+    expect(viewerColumnClasses()).not.toContain("min-h-dvh");
+  });
+
+  it("stops constraining the column once the frame grows to content", () => {
+    renderViewer();
+
+    announceFit("grows-to-content", 4200);
+
+    expect(viewerColumnClasses()).toContain("min-h-dvh");
+  });
+
+  it("grows the frame to a document that wants the page to scroll", () => {
+    renderViewer();
+
+    announceFit("grows-to-content", 4200);
+
+    expect(frameHeight()).toBe("4200px");
+  });
+
+  // Growing a self-scrolling artifact would strand its footer below the fold.
+  it("leaves an artifact that scrolls itself filling the frame", () => {
+    renderViewer();
+
+    announceFit("scrolls-itself", 4200);
+
+    expect(frameHeight()).toBe("100%");
+  });
+
+  it("clamps a height that runs away", () => {
+    renderViewer();
+
+    announceFit("grows-to-content", 10_000_000);
+
+    expect(frameHeight()).toBe("10000px");
+  });
+
+  // A collapsed frame measures its own content as collapsed, so it never recovers.
+  it("never collapses the frame on a degenerate height", () => {
+    renderViewer();
+
+    announceFit("grows-to-content", 0);
+
+    expect(frameHeight()).toBe(`${window.innerHeight}px`);
+  });
+
+  it("ignores a fit message from any other origin", () => {
+    renderViewer();
+
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          origin: "https://evil.example",
+          data: {
+            version: 1,
+            type: "fit",
+            mode: "grows-to-content",
+            contentHeight: 4200,
+          },
+        }),
+      );
+    });
+
+    expect(frameHeight()).toBe("100%");
   });
 });

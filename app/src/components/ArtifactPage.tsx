@@ -8,7 +8,7 @@ type ArtifactPageProps = {
 
 function Notice({ children }: { children: string }) {
   return (
-    <div className="flex h-full items-center justify-center p-8">
+    <div className="flex min-h-dvh items-center justify-center p-8">
       <p className="font-mono text-sm text-muted-foreground">{children}</p>
     </div>
   );

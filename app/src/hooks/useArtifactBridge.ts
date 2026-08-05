@@ -1,16 +1,21 @@
-import { useEffect, useState } from "react";
-import { parseRuntimeToAppMessage } from "@/lib/bridge-messages";
+import { useLayoutEffect, useState } from "react";
+import { parseRuntimeToAppMessage, type FitMode } from "@/lib/bridge-messages";
 
-export type ArtifactBridgeState =
-  { status: "loading" } | { status: "ready"; title: string };
+export type ArtifactFit = { mode: FitMode; contentHeight: number };
+
+export type ArtifactBridgeState = {
+  title: string | null;
+  fit: ArtifactFit | null;
+};
+
+const NOTHING_REPORTED: ArtifactBridgeState = { title: null, fit: null };
 
 export function useArtifactBridge(sandboxOrigin: string): ArtifactBridgeState {
-  const [state, setState] = useState<ArtifactBridgeState>({
-    status: "loading",
-  });
+  const [state, setState] = useState<ArtifactBridgeState>(NOTHING_REPORTED);
 
-  useEffect(() => {
-    setState({ status: "loading" });
+  // Layout effect: a cached frame can post before a deferred effect attaches.
+  useLayoutEffect(() => {
+    setState(NOTHING_REPORTED);
 
     function handleMessage(event: MessageEvent): void {
       if (event.origin !== sandboxOrigin) {
@@ -20,7 +25,17 @@ export function useArtifactBridge(sandboxOrigin: string): ArtifactBridgeState {
       if (message === null) {
         return;
       }
-      setState({ status: "ready", title: message.title });
+      setState((previous) =>
+        message.type === "ready"
+          ? { ...previous, title: message.title }
+          : {
+              ...previous,
+              fit: {
+                mode: message.mode,
+                contentHeight: message.contentHeight,
+              },
+            },
+      );
     }
 
     window.addEventListener("message", handleMessage);
