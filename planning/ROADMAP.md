@@ -293,11 +293,20 @@ consequences, each of which shapes the tasks below:
 
 ### Realtime
 
-- [ ] Doc room Durable Object, one per artifact
-- [ ] Websocket transport with reconnect and backoff
-- [ ] Presence: who is here
-- [ ] Comment log persisted to DO SQLite
-- [ ] Concurrent-connection and reconnect tests against the DO
+- [x] Doc room Durable Object, one per artifact — keyed by artifact id, so both
+      of an artifact's tokens land in the same room
+- [x] Websocket transport with reconnect and backoff — full jitter, and messages
+      written while the socket is down are queued and flushed on open
+- [x] Presence: who is here, keyed by reader rather than socket so two tabs are
+      one person
+- [x] Comment log persisted to DO SQLite
+- [~] Concurrent-connection and reconnect tests against the DO — the **state
+      transitions** are covered (`worker/lib/overlay-log.test.ts`: idempotent
+      re-add on reconnect, reply before parent, cascade delete, both caps) and
+      so is **socket reconnect** (`app/src/lib/room-socket.test.ts`). What is
+      not covered is two live sockets against a real DO: the worker package runs
+      on plain vitest, and that needs `@cloudflare/vitest-pool-workers`. Adding
+      the pool is its own change and belongs with the deploy work
 
 ### How a reader marks up an artifact
 
@@ -335,16 +344,25 @@ sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arro
 - [x] Element-level marks for artifacts with no selectable text, anchored to the
       element the reader clicked
 - [x] Stickies and callouts painted, coloured, and tailed in the shadow root
-- [ ] Composer UI: drop a sticky, pick a colour, drag it, drag its tail
-- [ ] Comment rail beside the artifact, threads anchored to their selection
-- [ ] Unresolved count shown in the rail
-- [ ] Reply, resolve, and reopen
-- [ ] Commenter names are self-declared and stored locally — still no accounts
+- [~] Composer UI: drop a sticky, pick a colour, drag it, drag its tail —
+      dropping and colouring are done. **Dragging is not.** Placing a sticky
+      arms a tool in the runtime, and the next click on the artifact is
+      swallowed and answered with a region anchor; moving one afterwards needs
+      pointer handling inside the shadow root, which is its own piece of work.
+      `offsetX/offsetY` and `tail` already exist and are patchable, so dragging
+      is wiring, not schema
+- [x] Comment rail beside the artifact, threads anchored to their selection
+- [x] Unresolved count shown in the rail
+- [x] Reply, resolve, and reopen
+- [x] Commenter names are self-declared and stored locally — still no accounts
+- [x] Orphans are named in the rail rather than hidden — the runtime reports
+      which marks it could not place, and the rail says so against the thread
 - [x] Bridge protocol gains `selection`, `mark-activated`, and `render-marks`.
       No version bump: an unknown type already parses to `null`, so a new
       message is backward-compatible by construction
-- [x] Runtime still under 20KB minified with selection and highlights included —
-      14.1KB with the socket still to come
+- [x] Runtime still under 20KB minified — 15.4KB with selection, highlights,
+      stickies, tails, and the placement tool. The socket never lands here: the
+      room is the app's connection, not the artifact's
 
 ### Ship
 
@@ -386,14 +404,35 @@ below keeps each branch dependent only on the one before it.
       host every mark is drawn into. Phase 1's "adds nothing" test became "adds
       one inert host and leaves the author's markup byte-identical", which is
       the invariant that actually matters. 14.1KB of the 20KB budget
-- [ ] `24-doc-room` — the Doc room Durable Object: websocket transport with
-      reconnect and backoff, presence, and the comment log in DO SQLite, with
-      concurrency and reconnect tests
-- [ ] `25-comment-rail` — the rail on the app origin: threads, reply, resolve,
-      reopen, unresolved count, self-declared names, and the honest treatment of
-      off-screen and orphaned targets
+- [x] `24-doc-room` — the Doc room Durable Object: websocket transport with
+      reconnect and backoff, presence, and the comment log in DO SQLite.
+      The room is **authorised at the worker, never at the DO**: the route
+      resolves the token, checks the password gate, and refuses any upgrade
+      whose `Origin` is not the app — the sandbox included, because an artifact
+      script that could open the room would read and write every reader's
+      comments. **A view token connects read-only**; the write capability rides
+      a header the route sets, which is trustworthy precisely because a DO stub
+      is unreachable from outside our own worker.
+      The DO stamps `createdAt` itself (client clocks lie, and the rail orders
+      by it) and a re-sent entry resolves to the stored one, so a reconnecting
+      client cannot double-post. Caps: 500 entries a room, 4000 characters a
+      body, 64 connections
+- [x] `25-comment-rail` — the rail on the app origin: threads, reply, resolve,
+      reopen, unresolved count, self-declared names, and orphans named rather
+      than hidden. Off-screen targets are still untreated — the rail does not
+      yet scroll the frame to a mark, which needs a scroll-to message
+      Anchors, colours, and the room protocol moved into `@coedithtml/protocol`
+      so the rail and the runtime cannot disagree about them. The worker now
+      depends on it too, which is what let `UNLOCK_QUERY_PARAM` stop being
+      spelled twice
 - [ ] `26-reupload-reanchor` — re-upload as its own screen, new revision, the
-      re-anchor report, and dragging orphans back into place
+      re-anchor report, and dragging orphans back into place.
+      **There is no real revision yet.** The room stamps its overlay with the
+      artifact id and the runtime stamps anchors with whatever
+      `window.__coedit__.config.revision` says, which is `"unknown"` because
+      nothing sets it. Nothing compares the two today, so nothing is broken —
+      but re-anchoring is the feature that makes revisions mean something, and
+      both should become one content hash here
 - [ ] `27-overlay-export` — **Copy feedback for your AI tool**, overlay to
       markdown. Small, and it closes the regeneration loop
 - [ ] `28-notify-dashboard` — opt-in email on new comment, owner dashboard with

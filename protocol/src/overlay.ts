@@ -86,6 +86,49 @@ export function repliesTo(
   );
 }
 
+export type EntryPatch = {
+  body?: string;
+  color?: MarkColor;
+  status?: EntryStatus;
+  offsetX?: number;
+  offsetY?: number;
+  tail?: Anchor | null;
+};
+
+function movesOrPoints(patch: EntryPatch): boolean {
+  return (
+    patch.offsetX !== undefined ||
+    patch.offsetY !== undefined ||
+    patch.tail !== undefined
+  );
+}
+
+// An absent field means untouched, so `tail: null` stays available as "retract".
+export function patchEntry(
+  entry: OverlayEntry,
+  patch: EntryPatch,
+): OverlayEntry | null {
+  const body = patch.body ?? entry.body;
+  const color = patch.color ?? entry.color;
+  const status = patch.status ?? entry.status;
+
+  if (isFloating(entry)) {
+    return {
+      ...entry,
+      body,
+      color,
+      status,
+      offsetX: patch.offsetX ?? entry.offsetX,
+      offsetY: patch.offsetY ?? entry.offsetY,
+      tail: patch.tail === undefined ? entry.tail : patch.tail,
+    };
+  }
+  if (movesOrPoints(patch)) {
+    return null;
+  }
+  return { ...entry, body, color, status };
+}
+
 export type Point = { x: number; y: number };
 
 export type Box = Point & { width: number; height: number };

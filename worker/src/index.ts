@@ -3,6 +3,8 @@ import { classifyRequestOrigin, redirectTargetFor } from "@/lib/origins";
 import { handleAppRequest } from "@/routes/app";
 import { handleSandboxRequest } from "@/routes/sandbox";
 
+export { DocRoom } from "@/doc-room";
+
 export default {
   async fetch(request, env): Promise<Response> {
     const parsed = parseWorkerEnv(env);

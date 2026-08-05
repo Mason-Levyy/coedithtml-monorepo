@@ -20,11 +20,11 @@ import {
 
 const ENTRY_STATUSES: readonly EntryStatus[] = ["open", "resolved"];
 
-function isEntryStatus(value: unknown): value is EntryStatus {
+export function isEntryStatus(value: unknown): value is EntryStatus {
   return ENTRY_STATUSES.some((status) => status === value);
 }
 
-function isMarkColor(value: unknown): value is MarkColor {
+export function isMarkColor(value: unknown): value is MarkColor {
   return MARK_COLORS.some((color) => color === value);
 }
 
