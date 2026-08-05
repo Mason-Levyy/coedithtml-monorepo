@@ -1,9 +1,10 @@
+import { UNLOCK_QUERY_PARAM } from "@coedithtml/protocol";
 import type { WorkerEnv } from "@/lib/env";
 import { originFor } from "@/lib/origins";
 
 export const VIEWER_PATH_PREFIX = "/a/";
 
-export const UNLOCK_QUERY_PARAM = "u";
+export { UNLOCK_QUERY_PARAM };
 
 // Points at the app origin, never the sandbox: opening untrusted markup
 // top-level gives up the iframe's sandbox attributes.

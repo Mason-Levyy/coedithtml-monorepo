@@ -267,50 +267,112 @@ consequences, each of which shapes the tasks below:
 
 ### Overlay and anchoring
 
-- [ ] Overlay document defined and versioned: artifact revision and entries of
-      anchor + kind + body + author + status
-- [ ] Author shape carries `source: "anonymous"` from day one so accounts are a
-      new value later, not a migration
-- [ ] Anchor format: selected text + a short run of context either side +
-      `nth-of-type` path from `<body>` + revision id
-- [ ] Resolution order: text first, then the path to choose between duplicate
+- [x] Overlay document defined and versioned: artifact revision and entries of
+      anchor + kind + body + author + status — 22
+- [x] Author shape carries `source: "anonymous"` from day one so accounts are a
+      new value later, not a migration — 22
+- [x] Anchor format: selected text + a short run of context either side +
+      `nth-of-type` path from `<body>` + revision id — 22. Context is capped, so
+      an anchor cannot grow with the document it points into
+- [x] Resolution order: text first, then the path to choose between duplicate
       matches, then orphan. Text before structure is deliberate and the reason
-      is in `PRODUCT.md` — regeneration rewrites markup and keeps wording
-- [ ] Orphaned anchors displayed as unplaced — never guessed, never dropped
-- [ ] Anchors re-resolved when the artifact mutates its own DOM
+      is in `PRODUCT.md` — regeneration rewrites markup and keeps wording.
+      22 did text and context, returning `ambiguous` with the candidates rather
+      than guessing; 23 broke that tie with the path once there was a DOM to
+      walk. A tie the path cannot break stays an orphan — 22, 23
+- [x] Orphaned anchors displayed as unplaced — never guessed, never dropped.
+      The runtime reports what it could not place and the rail says so against
+      the thread — 25
+- [x] Anchors re-resolved when the artifact mutates its own DOM — a
+      MutationObserver on `<body>` rebuilds the text index and repaints, which
+      is what makes marks survive an artifact changing its own slide — 23
 - [ ] Targets that resolve but are off screen are reported as such, and the rail
       offers to reveal them rather than placing them wrongly
 - [ ] Re-upload is a first-class screen: new revision, re-anchor, and a plain
       report — "14 comments, 11 re-placed, 3 need review"
-- [ ] Orphans can be dragged back into place or dismissed by the owner
-- [ ] Test suite covering drift against regenerated artifacts rather than
+- [~] Orphans can be dragged back into place or dismissed by the owner —
+      dismissal exists (an edit link can delete a thread, and its replies go
+      with it). Dragging one back into place needs the same pointer handling
+      the sticky drag needs, and lands with it
+- [x] Test suite covering drift against regenerated artifacts rather than
       hand-edited ones: rewritten markup around identical wording, edited
-      wording, deleted passages, and the same sentence appearing twice
+      wording, deleted passages, and the same sentence appearing twice — 22
 
 ### Realtime
 
-- [ ] Doc room Durable Object, one per artifact
-- [ ] Websocket transport with reconnect and backoff
-- [ ] Presence: who is here
-- [ ] Comment log persisted to DO SQLite
-- [ ] Concurrent-connection and reconnect tests against the DO
+- [x] Doc room Durable Object, one per artifact — keyed by artifact id, so both
+      of an artifact's tokens land in the same room
+- [x] Websocket transport with reconnect and backoff — full jitter, and messages
+      written while the socket is down are queued and flushed on open
+- [x] Presence: who is here, keyed by reader rather than socket so two tabs are
+      one person
+- [x] Comment log persisted to DO SQLite
+- [~] Concurrent-connection and reconnect tests against the DO — the **state
+      transitions** are covered (`worker/lib/overlay-log.test.ts`: idempotent
+      re-add on reconnect, reply before parent, cascade delete, both caps) and
+      so is **socket reconnect** (`app/src/lib/room-socket.test.ts`). What is
+      not covered is two live sockets against a real DO: the worker package runs
+      on plain vitest, and that needs `@cloudflare/vitest-pool-workers`. Adding
+      the pool is its own change and belongs with the deploy work
+
+### How a reader marks up an artifact
+
+Three ways, and they are **two** shapes underneath.
+
+A **comment** anchors to selected text, paints a highlight, and lives in the
+rail. A **sticky** is a coloured box that floats over the artifact, pinned to
+whatever it was dropped on — the consulting habit, and the reason colour is a
+first-class field rather than a theme.
+
+A **callout is not a third kind.** It is a sticky whose `tail` is set. The
+default sticky has `tail: null`, which is literally "no pointy thing"; drag the
+tip out and it points, drag it back inside the box and it retracts to `null`.
+PowerPoint's gesture, kept because it is one degree of freedom instead of a mode
+toggle — but PowerPoint stores the tip as a coordinate, and a coordinate is
+meaningless the moment the artifact reflows. **The tip is a second anchor**, so
+a callout still points at the right chart after a regeneration.
+
+Anchors therefore had to become a union. A text anchor is a quote plus context;
+a **region anchor** is an element path plus a _fractional_ point inside its box.
+Fractional, not pixel, so it survives the element being laid out at a different
+width. Without it, marks could only attach to prose, and the first thing anyone
+does to a deck is circle a bar on a chart.
+
+Deliberately not built yet, both cheap once the above exists: **stamps** (a
+sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arrows**
+(a sticky with a tail and an empty body, which needs no new code at all).
 
 ### Comment UI
 
-- [ ] Select text in the artifact, leave a comment — selection captured inside
+- [x] Select text in the artifact, leave a comment — selection captured inside
       the runtime and reported up over the bridge
-- [ ] Highlights painted in the runtime's shadow root and repositioned on
+- [x] Highlights painted in the runtime's shadow root and repositioned on
       scroll, resize, and mutation — never written into the artifact
-- [ ] Element-level comments for artifacts with no selectable text, anchored to
-      the element the reader clicked
-- [ ] Comment rail beside the artifact, threads anchored to their selection
-- [ ] Unresolved count shown in the rail
-- [ ] Reply, resolve, and reopen
-- [ ] Commenter names are self-declared and stored locally — still no accounts
-- [ ] Bridge protocol goes to version 2: selection, anchor resolution, and
-      highlight geometry. Phase 1 left it at one message, `ready`
-- [ ] Runtime still under 20KB minified with selection, highlights, and the
-      socket included — it enters this phase at 0.5KB
+- [x] Element-level marks for artifacts with no selectable text, anchored to the
+      element the reader clicked
+- [x] Stickies and callouts painted, coloured, and tailed in the shadow root
+- [~] Composer UI: drop a sticky, pick a colour, drag it, drag its tail —
+      dropping and colouring are done. **Dragging is not.** Placing a sticky
+      arms a tool in the runtime, and the next click on the artifact is
+      swallowed and answered with a region anchor; moving one afterwards needs
+      pointer handling inside the shadow root, which is its own piece of work.
+      `offsetX/offsetY` and `tail` already exist and are patchable, so dragging
+      is wiring, not schema. The retract predicate (tip dropped back inside the
+      box ⇒ `tail: null`) was written and then deleted as dead code — it is four
+      lines, and it belongs in the commit that can actually call it
+- [x] Comment rail beside the artifact, threads anchored to their selection
+- [x] Unresolved count shown in the rail
+- [x] Reply, resolve, and reopen
+- [x] Commenter names are self-declared and stored locally — still no accounts
+- [x] Orphans are named in the rail rather than hidden — the runtime reports
+      which marks it could not place, and the rail says so against the thread
+- [x] Bridge protocol gains `selection`, `mark-activated`, `render-marks`,
+      `set-tool`, `placement`, and `orphans`. No version bump across any of
+      them: an unknown type already parses to `null`, so a new message is
+      backward-compatible by construction
+- [x] Runtime still under 20KB minified — 15.4KB with selection, highlights,
+      stickies, tails, and the placement tool. The socket never lands here: the
+      room is the app's connection, not the artifact's
 
 ### Ship
 
@@ -327,7 +389,7 @@ One stack this time, rooted on merged `main`. Phase 1's split into two stacks
 that never met cost an integration branch and a duplicated commit; the ordering
 below keeps each branch dependent only on the one before it.
 
-- [ ] `22-overlay-schema` — the overlay document and anchor types in
+- [x] `22-overlay-schema` — the overlay document and anchor types in
       `@coedithtml/protocol`, plus anchoring as pure functions: build an anchor
       from a range, resolve one against a document, report orphans. Includes the
       drift suite. No UI and no network, because this is the part that is
@@ -336,18 +398,51 @@ below keeps each branch dependent only on the one before it.
       so a Zod import there lands inside the injected script and breaks the
       zero-dependency rule. Hand-written parsers live in `protocol/`; the Zod
       schemas the worker needs for its own request bodies wrap them on the
-      worker side
-- [ ] `23-runtime-selection` — bridge protocol v2; the runtime captures
+      worker side.
+      Landed DOM-free as well as dependency-free: `protocol/` resolves anchors
+      against **text**, which is what makes it testable under the node runner
+      and keeps the same code usable from the worker. Mapping a DOM range to and
+      from a text offset needs a document, so it belongs to 23
+- [x] `23-runtime-selection` — bridge protocol v2; the runtime captures
       selections, builds anchors, paints highlights in its shadow root, and
-      re-resolves on mutation. Fails open exactly as Phase 1 does
-- [ ] `24-doc-room` — the Doc room Durable Object: websocket transport with
-      reconnect and backoff, presence, and the comment log in DO SQLite, with
-      concurrency and reconnect tests
-- [ ] `25-comment-rail` — the rail on the app origin: threads, reply, resolve,
-      reopen, unresolved count, self-declared names, and the honest treatment of
-      off-screen and orphaned targets
+      re-resolves on mutation. Fails open exactly as Phase 1 does.
+      The DOM↔text mapping 22 deferred lands here as `dom/text-index`, and with
+      it the **path tie-break**: resolution is now genuinely text first, path
+      second. A block boundary emits a separating space, because `</p><p>` puts
+      no whitespace in the DOM but a reader sees two blocks.
+      The runtime now appends **one** element to `<body>` — the closed shadow
+      host every mark is drawn into. Phase 1's "adds nothing" test became "adds
+      one inert host and leaves the author's markup byte-identical", which is
+      the invariant that actually matters. 14.1KB of the 20KB budget
+- [x] `24-doc-room` — the Doc room Durable Object: websocket transport with
+      reconnect and backoff, presence, and the comment log in DO SQLite.
+      The room is **authorised at the worker, never at the DO**: the route
+      resolves the token, checks the password gate, and refuses any upgrade
+      whose `Origin` is not the app — the sandbox included, because an artifact
+      script that could open the room would read and write every reader's
+      comments. **A view token connects read-only**; the write capability rides
+      a header the route sets, which is trustworthy precisely because a DO stub
+      is unreachable from outside our own worker.
+      The DO stamps `createdAt` itself (client clocks lie, and the rail orders
+      by it) and a re-sent entry resolves to the stored one, so a reconnecting
+      client cannot double-post. Caps: 500 entries a room, 4000 characters a
+      body, 64 connections
+- [x] `25-comment-rail` — the rail on the app origin: threads, reply, resolve,
+      reopen, unresolved count, self-declared names, and orphans named rather
+      than hidden. Off-screen targets are still untreated — the rail does not
+      yet scroll the frame to a mark, which needs a scroll-to message
+      Anchors, colours, and the room protocol moved into `@coedithtml/protocol`
+      so the rail and the runtime cannot disagree about them. The worker now
+      depends on it too, which is what let `UNLOCK_QUERY_PARAM` stop being
+      spelled twice
 - [ ] `26-reupload-reanchor` — re-upload as its own screen, new revision, the
-      re-anchor report, and dragging orphans back into place
+      re-anchor report, and dragging orphans back into place.
+      **There is no real revision yet.** The room stamps its overlay with the
+      artifact id and the runtime stamps anchors with whatever
+      `window.__coedit__.config.revision` says, which is `"unknown"` because
+      nothing sets it. Nothing compares the two today, so nothing is broken —
+      but re-anchoring is the feature that makes revisions mean something, and
+      both should become one content hash here
 - [ ] `27-overlay-export` — **Copy feedback for your AI tool**, overlay to
       markdown. Small, and it closes the regeneration loop
 - [ ] `28-notify-dashboard` — opt-in email on new comment, owner dashboard with
@@ -491,6 +586,11 @@ because everything above was verified against `wrangler dev` on localhost.
       or a copy-paste that has never been exercised
 - [ ] Confirm the two origins are genuinely separate in production, which the
       roadmap has claimed since `03` on the strength of config alone
+- [ ] The first deploy now also carries a Durable Object. `migrations` tag `v1`
+      declares `DocRoom` as a `new_sqlite_classes` entry, and that migration has
+      never been applied to a real account — a deploy that fails here fails
+      before the Worker is replaced, so Phase 1's routes are not at risk, but it
+      does mean the room is unexercised outside tests
 - [ ] Upload a real artifact through the deployed landing page, open the
       returned link in a private window, and read it on a phone
 - [ ] Check the password gate, revocation, and the upload ceiling against the

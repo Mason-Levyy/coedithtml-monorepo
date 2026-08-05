@@ -31,6 +31,22 @@
     }
   ],
 
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "DOC_ROOM",
+        "class_name": "DocRoom"
+      }
+    ]
+  },
+
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DocRoom"]
+    }
+  ],
+
   // Staged by assemble-assets.mjs: the app build plus the runtime bundle.
   "assets": {
     "directory": "./public",
@@ -76,6 +92,14 @@
           "id": "c2a45fd936ac4d798f9c3251e813020f"
         }
       ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "DOC_ROOM",
+            "class_name": "DocRoom"
+          }
+        ]
+      },
       "assets": {
         "directory": "./public",
         "binding": "ASSETS",

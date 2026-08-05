@@ -27,11 +27,17 @@ const assetsSchema = z.custom<Fetcher>((value) => exposes(value, ["fetch"]), {
   message: "ASSETS is not bound to a static assets directory",
 });
 
+const docRoomSchema = z.custom<DurableObjectNamespace>(
+  (value) => exposes(value, ["get", "idFromName"]),
+  { message: "DOC_ROOM is not bound to a Durable Object namespace" },
+);
+
 export const workerEnvSchema = z
   .object({
     ARTIFACT_STORE: artifactStoreSchema,
     ARTIFACT_METADATA: artifactMetadataSchema,
     ASSETS: assetsSchema,
+    DOC_ROOM: docRoomSchema,
     ...originConfigShape,
   })
   .refine(hostsAreDistinct, {
