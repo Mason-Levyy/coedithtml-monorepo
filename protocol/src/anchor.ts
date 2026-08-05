@@ -1,6 +1,7 @@
 export const CONTEXT_LENGTH = 32;
 
-export type Anchor = {
+export type TextAnchor = {
+  kind: "text";
   quote: string;
   prefix: string;
   suffix: string;
@@ -8,8 +9,18 @@ export type Anchor = {
   revision: string;
 };
 
-// Markup carries whitespace that rendering collapses, and a regenerated
-// artifact rarely reproduces the original's line breaks.
+// A chart carries no text to quote, and a fraction survives the box resizing.
+export type RegionAnchor = {
+  kind: "region";
+  path: string;
+  fractionX: number;
+  fractionY: number;
+  revision: string;
+};
+
+export type Anchor = TextAnchor | RegionAnchor;
+
+// Rendering collapses whitespace that markup carries, line breaks included.
 export function normalizeAnchorText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -20,7 +31,7 @@ export function anchorFromText(options: {
   end: number;
   path: string;
   revision: string;
-}): Anchor | null {
+}): TextAnchor | null {
   const { text, start, end, path, revision } = options;
   if (start < 0 || end > text.length || end <= start) {
     return null;
@@ -30,12 +41,30 @@ export function anchorFromText(options: {
     return null;
   }
   return {
+    kind: "text",
     quote,
     prefix: text.slice(Math.max(0, start - CONTEXT_LENGTH), start),
     suffix: text.slice(end, end + CONTEXT_LENGTH),
     path,
     revision,
   };
+}
+
+function isFraction(value: number): boolean {
+  return Number.isFinite(value) && value >= 0 && value <= 1;
+}
+
+export function regionAnchor(options: {
+  path: string;
+  fractionX: number;
+  fractionY: number;
+  revision: string;
+}): RegionAnchor | null {
+  const { path, fractionX, fractionY, revision } = options;
+  if (path.length === 0 || !isFraction(fractionX) || !isFraction(fractionY)) {
+    return null;
+  }
+  return { kind: "region", path, fractionX, fractionY, revision };
 }
 
 export type AnchorResolution =
@@ -79,7 +108,7 @@ function sharedHeadLength(a: string, b: string): number {
   return shared;
 }
 
-function contextScore(text: string, at: number, anchor: Anchor): number {
+function contextScore(text: string, at: number, anchor: TextAnchor): number {
   const before = text.slice(Math.max(0, at - anchor.prefix.length), at);
   const afterAt = at + anchor.quote.length;
   const after = text.slice(afterAt, afterAt + anchor.suffix.length);
@@ -89,11 +118,10 @@ function contextScore(text: string, at: number, anchor: Anchor): number {
   );
 }
 
-// Text first, path second, and never a guess: a model regenerating an artifact
-// rewrites the markup and keeps the wording.
+// Text first and never a guess: regeneration rewrites markup, keeping wording.
 export function resolveAnchorInText(
   text: string,
-  anchor: Anchor,
+  anchor: TextAnchor,
 ): AnchorResolution {
   const matches = occurrencesOf(text, anchor.quote);
   if (matches.length === 0) {

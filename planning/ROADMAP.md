@@ -299,22 +299,52 @@ consequences, each of which shapes the tasks below:
 - [ ] Comment log persisted to DO SQLite
 - [ ] Concurrent-connection and reconnect tests against the DO
 
+### How a reader marks up an artifact
+
+Three ways, and they are **two** shapes underneath.
+
+A **comment** anchors to selected text, paints a highlight, and lives in the
+rail. A **sticky** is a coloured box that floats over the artifact, pinned to
+whatever it was dropped on — the consulting habit, and the reason colour is a
+first-class field rather than a theme.
+
+A **callout is not a third kind.** It is a sticky whose `tail` is set. The
+default sticky has `tail: null`, which is literally "no pointy thing"; drag the
+tip out and it points, drag it back inside the box and it retracts to `null`.
+PowerPoint's gesture, kept because it is one degree of freedom instead of a mode
+toggle — but PowerPoint stores the tip as a coordinate, and a coordinate is
+meaningless the moment the artifact reflows. **The tip is a second anchor**, so
+a callout still points at the right chart after a regeneration.
+
+Anchors therefore had to become a union. A text anchor is a quote plus context;
+a **region anchor** is an element path plus a _fractional_ point inside its box.
+Fractional, not pixel, so it survives the element being laid out at a different
+width. Without it, marks could only attach to prose, and the first thing anyone
+does to a deck is circle a bar on a chart.
+
+Deliberately not built yet, both cheap once the above exists: **stamps** (a
+sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arrows**
+(a sticky with a tail and an empty body, which needs no new code at all).
+
 ### Comment UI
 
-- [ ] Select text in the artifact, leave a comment — selection captured inside
+- [x] Select text in the artifact, leave a comment — selection captured inside
       the runtime and reported up over the bridge
-- [ ] Highlights painted in the runtime's shadow root and repositioned on
+- [x] Highlights painted in the runtime's shadow root and repositioned on
       scroll, resize, and mutation — never written into the artifact
-- [ ] Element-level comments for artifacts with no selectable text, anchored to
-      the element the reader clicked
+- [x] Element-level marks for artifacts with no selectable text, anchored to the
+      element the reader clicked
+- [x] Stickies and callouts painted, coloured, and tailed in the shadow root
+- [ ] Composer UI: drop a sticky, pick a colour, drag it, drag its tail
 - [ ] Comment rail beside the artifact, threads anchored to their selection
 - [ ] Unresolved count shown in the rail
 - [ ] Reply, resolve, and reopen
 - [ ] Commenter names are self-declared and stored locally — still no accounts
-- [ ] Bridge protocol goes to version 2: selection, anchor resolution, and
-      highlight geometry. Phase 1 left it at one message, `ready`
-- [ ] Runtime still under 20KB minified with selection, highlights, and the
-      socket included — it enters this phase at 0.5KB
+- [x] Bridge protocol gains `selection`, `mark-activated`, and `render-marks`.
+      No version bump: an unknown type already parses to `null`, so a new
+      message is backward-compatible by construction
+- [x] Runtime still under 20KB minified with selection and highlights included —
+      14.1KB with the socket still to come
 
 ### Ship
 
@@ -345,9 +375,17 @@ below keeps each branch dependent only on the one before it.
       against **text**, which is what makes it testable under the node runner
       and keeps the same code usable from the worker. Mapping a DOM range to and
       from a text offset needs a document, so it belongs to 23
-- [ ] `23-runtime-selection` — bridge protocol v2; the runtime captures
+- [x] `23-runtime-selection` — bridge protocol v2; the runtime captures
       selections, builds anchors, paints highlights in its shadow root, and
-      re-resolves on mutation. Fails open exactly as Phase 1 does
+      re-resolves on mutation. Fails open exactly as Phase 1 does.
+      The DOM↔text mapping 22 deferred lands here as `dom/text-index`, and with
+      it the **path tie-break**: resolution is now genuinely text first, path
+      second. A block boundary emits a separating space, because `</p><p>` puts
+      no whitespace in the DOM but a reader sees two blocks.
+      The runtime now appends **one** element to `<body>` — the closed shadow
+      host every mark is drawn into. Phase 1's "adds nothing" test became "adds
+      one inert host and leaves the author's markup byte-identical", which is
+      the invariant that actually matters. 14.1KB of the 20KB budget
 - [ ] `24-doc-room` — the Doc room Durable Object: websocket transport with
       reconnect and backoff, presence, and the comment log in DO SQLite, with
       concurrency and reconnect tests
