@@ -23,7 +23,7 @@ export function PasswordPrompt({
   }
 
   return (
-    <div className="flex h-full items-center justify-center p-6">
+    <div className="flex min-h-dvh items-center justify-center p-6">
       <form
         onSubmit={handleSubmit}
         className="flex w-full max-w-sm flex-col gap-3 border-2 border-ink bg-card p-6"
