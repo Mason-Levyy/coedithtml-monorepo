@@ -1,6 +1,10 @@
-import type { OverlayEntry, StickyEntry } from "@coedithtml/protocol";
+import {
+  MARK_EDGE,
+  MARK_FILL,
+  type OverlayEntry,
+  type StickyEntry,
+} from "@coedithtml/protocol";
 import type { TextIndex } from "../dom/text-index";
-import { MARK_EDGE, MARK_FILL } from "./colors";
 import {
   pointForAnchor,
   rectsForAnchor,

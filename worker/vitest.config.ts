@@ -4,13 +4,16 @@ import { defineConfig } from "vitest/config";
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 
-// Mirrors the paths in tsconfig.json. `@/lib` is listed first because aliases
-// match by prefix in order, and `@` would otherwise swallow it.
+// Mirrors tsconfig.json. `@/lib` comes first because these match in order, and
+// the trailing slash keeps `@/` off scoped packages like `@coedithtml/protocol`.
 export default defineConfig({
   resolve: {
     alias: [
-      { find: /^@\/lib/, replacement: path.resolve(packageRoot, "lib") },
-      { find: /^@/, replacement: path.resolve(packageRoot, "src") },
+      {
+        find: /^@\/lib\//,
+        replacement: `${path.resolve(packageRoot, "lib")}/`,
+      },
+      { find: /^@\//, replacement: `${path.resolve(packageRoot, "src")}/` },
     ],
   },
 });

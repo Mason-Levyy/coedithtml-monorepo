@@ -1,13 +1,18 @@
 import type { TextAnchor } from "./anchor";
 import {
   BRIDGE_VERSION,
+  MARK_TOOLS,
   fitMessage,
   markActivatedMessage,
+  orphansMessage,
+  placementMessage,
   readyMessage,
   renderMarksMessage,
   selectionMessage,
+  setToolMessage,
   type AppToRuntimeMessage,
   type FitMode,
+  type MarkTool,
   type RuntimeToAppMessage,
   type ViewportRect,
 } from "./messages";
@@ -90,20 +95,33 @@ export function parseRuntimeToAppMessage(
       : null;
   }
 
+  if (candidate.type === "placement") {
+    const anchor = parseAnchor(candidate.anchor);
+    return anchor === null ? null : placementMessage(anchor);
+  }
+
+  if (candidate.type === "orphans") {
+    if (!Array.isArray(candidate.markIds)) {
+      return null;
+    }
+    return candidate.markIds.every((id) => typeof id === "string")
+      ? orphansMessage(candidate.markIds)
+      : null;
+  }
+
   return null;
 }
 
-export function parseAppToRuntimeMessage(
-  value: unknown,
+function isMarkTool(value: unknown): value is MarkTool {
+  return MARK_TOOLS.some((tool) => tool === value);
+}
+
+function parseRenderMarks(
+  candidate: Record<string, unknown>,
 ): AppToRuntimeMessage | null {
-  const candidate = versionedRecord(value);
-  if (candidate === null || candidate.type !== "render-marks") {
-    return null;
-  }
   if (!Array.isArray(candidate.marks)) {
     return null;
   }
-
   const marks: OverlayEntry[] = [];
   for (const raw of candidate.marks) {
     const mark = parseOverlayEntry(raw);
@@ -113,4 +131,23 @@ export function parseAppToRuntimeMessage(
     marks.push(mark);
   }
   return renderMarksMessage(marks);
+}
+
+export function parseAppToRuntimeMessage(
+  value: unknown,
+): AppToRuntimeMessage | null {
+  const candidate = versionedRecord(value);
+  if (candidate === null) {
+    return null;
+  }
+  if (candidate.type === "render-marks") {
+    return parseRenderMarks(candidate);
+  }
+  if (candidate.type === "set-tool") {
+    if (candidate.tool === null || candidate.tool === undefined) {
+      return setToolMessage(null);
+    }
+    return isMarkTool(candidate.tool) ? setToolMessage(candidate.tool) : null;
+  }
+  return null;
 }

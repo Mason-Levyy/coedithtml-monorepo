@@ -1,11 +1,12 @@
 import { useLayoutEffect, useState } from "react";
 import {
   parseRuntimeToAppMessage,
+  type Anchor,
   type FitMode,
   type RuntimeToAppMessage,
   type TextAnchor,
   type ViewportRect,
-} from "@/lib/bridge-messages";
+} from "@/lib/protocol";
 
 export type ArtifactFit = { mode: FitMode; contentHeight: number };
 
@@ -15,17 +16,23 @@ export type ArtifactSelection = {
 };
 
 export type ArtifactBridgeState = {
+  ready: boolean;
   title: string | null;
   fit: ArtifactFit | null;
   selection: ArtifactSelection | null;
   activatedMarkId: string | null;
+  placement: Anchor | null;
+  orphanedMarkIds: string[];
 };
 
 const NOTHING_REPORTED: ArtifactBridgeState = {
+  ready: false,
   title: null,
   fit: null,
   selection: null,
   activatedMarkId: null,
+  placement: null,
+  orphanedMarkIds: [],
 };
 
 function applyMessage(
@@ -34,7 +41,7 @@ function applyMessage(
 ): ArtifactBridgeState {
   switch (message.type) {
     case "ready":
-      return { ...previous, title: message.title };
+      return { ...previous, ready: true, title: message.title };
     case "fit":
       return {
         ...previous,
@@ -50,6 +57,10 @@ function applyMessage(
       };
     case "mark-activated":
       return { ...previous, activatedMarkId: message.markId };
+    case "placement":
+      return { ...previous, placement: message.anchor };
+    case "orphans":
+      return { ...previous, orphanedMarkIds: message.markIds };
   }
 }
 

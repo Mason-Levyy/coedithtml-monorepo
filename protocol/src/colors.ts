@@ -1,4 +1,4 @@
-import type { MarkColor } from "@coedithtml/protocol";
+import type { MarkColor } from "./overlay";
 
 export const MARK_FILL: Record<MarkColor, string> = {
   yellow: "#fff3a3",

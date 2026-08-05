@@ -5,6 +5,7 @@ import {
   type RegionAnchor,
   type TextAnchor,
 } from "@coedithtml/protocol";
+import { OVERLAY_HOST_ATTRIBUTE } from "./constants";
 import { elementForPath, pathToElement, sharedPathDepth } from "./element-path";
 import { offsetsForRange, rangeForOffsets, type TextIndex } from "./text-index";
 
@@ -90,7 +91,8 @@ export function regionAnchorAtPoint(
   revision: string,
 ): RegionAnchor | null {
   const element = document.elementFromPoint(x, y);
-  if (element === null) {
+  // Our own host is what a click on a painted mark reports through the shadow.
+  if (element === null || element.hasAttribute(OVERLAY_HOST_ATTRIBUTE)) {
     return null;
   }
   const box = element.getBoundingClientRect();

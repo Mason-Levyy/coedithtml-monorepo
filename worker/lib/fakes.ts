@@ -1,5 +1,7 @@
+import type { OverlayEntry } from "@coedithtml/protocol";
 import type { TokenRecord } from "./access-tokens";
 import { parseWorkerEnv, type WorkerEnv } from "./env";
+import type { EntryStore } from "./overlay-log";
 import {
   accessTokenKey,
   artifactMetadataKey,
@@ -145,8 +147,7 @@ export function liveKv(
   } as unknown as KVNamespace;
 }
 
-// Reads fall through the stores in order; writes go to the last one, so
-// passing a liveKv() last gives a merged store that can also be written to.
+// Pass a liveKv() last to get a seeded store that is still writable.
 export function mergeKv(...stores: KVNamespace[]): KVNamespace {
   const writable = stores.at(-1);
   return {
@@ -171,8 +172,7 @@ export function mergeKv(...stores: KVNamespace[]): KVNamespace {
   } as unknown as KVNamespace;
 }
 
-// Shaped like the real binding so it still passes env validation, but every
-// read throws — which is what the "does not leak the cause" tests exercise.
+// Shaped like the real binding so it passes env validation, but every read throws.
 export function failingKv(message: string): KVNamespace {
   const boom = () => {
     throw new Error(message);
@@ -195,6 +195,54 @@ export function failingArtifactStore(message: string): R2Bucket {
     head: () => Promise.resolve(null),
     delete: () => Promise.resolve(undefined),
   } as unknown as R2Bucket;
+}
+
+export function memoryEntryStore(seed: OverlayEntry[] = []): EntryStore {
+  const entries = new Map(seed.map((entry) => [entry.id, entry]));
+  return {
+    list: () => Array.from(entries.values()),
+    get: (id: string) => entries.get(id) ?? null,
+    put: (entry: OverlayEntry) => {
+      entries.set(entry.id, entry);
+    },
+    remove: (id: string) => {
+      entries.delete(id);
+    },
+    count: () => entries.size,
+  };
+}
+
+// Node's Response rejects 101, so the accepted upgrade is marked in a header.
+export const FAKE_ROOM_HEADER = "x-fake-room";
+
+function fakeRoomResponse(): Response {
+  return new Response(null, { headers: { [FAKE_ROOM_HEADER]: "connected" } });
+}
+
+export function fakeDocRoom(): Record<string, unknown> {
+  return {
+    get: () => ({ fetch: () => Promise.resolve(fakeRoomResponse()) }),
+    idFromName: (name: string) => ({ toString: () => name }),
+  };
+}
+
+export type RecordingDocRoom = {
+  connects: { name: string; request: Request }[];
+  namespace: DurableObjectNamespace;
+};
+
+export function recordingDocRoom(): RecordingDocRoom {
+  const connects: { name: string; request: Request }[] = [];
+  const namespace = {
+    idFromName: (name: string) => ({ toString: () => name }),
+    get: (id: { toString(): string }) => ({
+      fetch: (request: Request) => {
+        connects.push({ name: id.toString(), request });
+        return Promise.resolve(fakeRoomResponse());
+      },
+    }),
+  } as unknown as DurableObjectNamespace;
+  return { connects, namespace };
 }
 
 export function fakeAssets(): Record<string, unknown> {
@@ -233,6 +281,7 @@ export function fakeWorkerEnv(): Record<string, unknown> {
     ARTIFACT_STORE: fakeArtifactStore(),
     ARTIFACT_METADATA: fakeArtifactMetadata(),
     ASSETS: fakeAssets(),
+    DOC_ROOM: fakeDocRoom(),
     APP_HOST: FAKE_APP_HOST,
     SANDBOX_HOST: FAKE_SANDBOX_HOST,
     REDIRECT_HOSTS: FAKE_REDIRECT_HOST,
@@ -246,8 +295,7 @@ export function fakeWorkerEnvWithout(key: string): Record<string, unknown> {
   );
 }
 
-// Goes through the real schema rather than casting: a fake that drifts out of
-// shape should fail here, not in whichever handler happens to read the field.
+// Parses rather than casts so a drifted fake fails here, not in a handler.
 export function testWorkerEnv(
   overrides: Record<string, unknown> = {},
 ): WorkerEnv {
