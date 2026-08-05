@@ -1,59 +1,31 @@
-import type { Anchor } from "./anchor";
+import { parseAnchor, parseOptionalAnchor } from "./parse-anchor";
 import {
+  MARK_COLORS,
   OVERLAY_VERSION,
   type Author,
-  type EntryKind,
+  type CommentEntry,
   type EntryStatus,
+  type MarkColor,
   type OverlayDocument,
   type OverlayEntry,
+  type ReplyEntry,
+  type StickyEntry,
 } from "./overlay";
+import {
+  asFilledString,
+  asFiniteNumber,
+  asRecord,
+  asString,
+} from "./parse-values";
 
-const ENTRY_KINDS: readonly EntryKind[] = ["comment", "reply"];
 const ENTRY_STATUSES: readonly EntryStatus[] = ["open", "resolved"];
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return typeof value === "object" && value !== null
-    ? (value as Record<string, unknown>)
-    : null;
-}
-
-function asString(value: unknown): string | null {
-  return typeof value === "string" ? value : null;
-}
-
-function asFilledString(value: unknown): string | null {
-  const text = asString(value);
-  return text !== null && text.length > 0 ? text : null;
-}
-
-function isEntryKind(value: unknown): value is EntryKind {
-  return ENTRY_KINDS.some((kind) => kind === value);
-}
 
 function isEntryStatus(value: unknown): value is EntryStatus {
   return ENTRY_STATUSES.some((status) => status === value);
 }
 
-export function parseAnchor(value: unknown): Anchor | null {
-  const record = asRecord(value);
-  if (record === null) {
-    return null;
-  }
-  const quote = asFilledString(record.quote);
-  const prefix = asString(record.prefix);
-  const suffix = asString(record.suffix);
-  const path = asString(record.path);
-  const revision = asFilledString(record.revision);
-  if (
-    quote === null ||
-    prefix === null ||
-    suffix === null ||
-    path === null ||
-    revision === null
-  ) {
-    return null;
-  }
-  return { quote, prefix, suffix, path, revision };
+function isMarkColor(value: unknown): value is MarkColor {
+  return MARK_COLORS.some((color) => color === value);
 }
 
 function parseAuthor(value: unknown): Author | null {
@@ -69,30 +41,16 @@ function parseAuthor(value: unknown): Author | null {
   return { id, displayName, source: "anonymous" };
 }
 
-type ParsedParent = { ok: true; parentId: string | null } | { ok: false };
+type SharedFields = Omit<CommentEntry, "kind" | "parentId">;
 
-// Absent and malformed have to stay distinguishable, or a broken parentId
-// silently promotes a reply to a top-level comment.
-function parseParentId(value: unknown): ParsedParent {
-  if (value === null || value === undefined) {
-    return { ok: true, parentId: null };
-  }
-  const parentId = asFilledString(value);
-  return parentId === null ? { ok: false } : { ok: true, parentId };
-}
-
-export function parseOverlayEntry(value: unknown): OverlayEntry | null {
-  const record = asRecord(value);
-  if (record === null) {
-    return null;
-  }
-
+function parseSharedFields(
+  record: Record<string, unknown>,
+): SharedFields | null {
   const id = asFilledString(record.id);
   const body = asString(record.body);
   const createdAt = asFilledString(record.createdAt);
   const anchor = parseAnchor(record.anchor);
   const author = parseAuthor(record.author);
-  const parent = parseParentId(record.parentId);
 
   if (
     id === null ||
@@ -100,27 +58,83 @@ export function parseOverlayEntry(value: unknown): OverlayEntry | null {
     createdAt === null ||
     anchor === null ||
     author === null ||
-    !parent.ok ||
-    !isEntryKind(record.kind) ||
+    !isMarkColor(record.color) ||
     !isEntryStatus(record.status)
   ) {
     return null;
   }
-
   return {
     id,
-    parentId: parent.parentId,
     anchor,
-    kind: record.kind,
     body,
     author,
+    color: record.color,
     status: record.status,
     createdAt,
   };
 }
 
-// One bad entry fails the whole document: dropping it would silently lose
-// somebody's comment, which is worse than refusing to load.
+function isUnparented(value: unknown): boolean {
+  return value === null || value === undefined;
+}
+
+function parseReply(
+  record: Record<string, unknown>,
+  shared: SharedFields,
+): ReplyEntry | null {
+  const parentId = asFilledString(record.parentId);
+  return parentId === null ? null : { ...shared, kind: "reply", parentId };
+}
+
+function parseSticky(
+  record: Record<string, unknown>,
+  shared: SharedFields,
+): StickyEntry | null {
+  const offsetX = asFiniteNumber(record.offsetX);
+  const offsetY = asFiniteNumber(record.offsetY);
+  const tail = parseOptionalAnchor(record.tail);
+  if (
+    offsetX === null ||
+    offsetY === null ||
+    !tail.ok ||
+    !isUnparented(record.parentId)
+  ) {
+    return null;
+  }
+  return {
+    ...shared,
+    kind: "sticky",
+    parentId: null,
+    offsetX,
+    offsetY,
+    tail: tail.anchor,
+  };
+}
+
+export function parseOverlayEntry(value: unknown): OverlayEntry | null {
+  const record = asRecord(value);
+  if (record === null) {
+    return null;
+  }
+  const shared = parseSharedFields(record);
+  if (shared === null) {
+    return null;
+  }
+
+  if (record.kind === "reply") {
+    return parseReply(record, shared);
+  }
+  if (record.kind === "sticky") {
+    return parseSticky(record, shared);
+  }
+  // A parented comment is a reply whose kind was lost, not a top-level comment.
+  if (record.kind === "comment" && isUnparented(record.parentId)) {
+    return { ...shared, kind: "comment", parentId: null };
+  }
+  return null;
+}
+
+// Dropping one bad entry would silently lose somebody's comment.
 export function parseOverlayDocument(value: unknown): OverlayDocument | null {
   const record = asRecord(value);
   if (record === null || record.version !== OVERLAY_VERSION) {

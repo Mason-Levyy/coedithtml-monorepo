@@ -3,13 +3,14 @@ import {
   anchorFromText,
   CONTEXT_LENGTH,
   normalizeAnchorText,
+  regionAnchor,
   resolveAnchorInText,
-  type Anchor,
+  type TextAnchor,
 } from "./anchor";
 
 const REVISION = "rev-1";
 
-function anchorOn(text: string, quote: string): Anchor {
+function anchorOn(text: string, quote: string): TextAnchor {
   const start = text.indexOf(quote);
   const anchor = anchorFromText({
     text,
@@ -24,7 +25,7 @@ function anchorOn(text: string, quote: string): Anchor {
   return anchor;
 }
 
-function resolvedText(text: string, anchor: Anchor): string | null {
+function resolvedText(text: string, anchor: TextAnchor): string | null {
   const resolution = resolveAnchorInText(text, anchor);
   return resolution.ok ? text.slice(resolution.start, resolution.end) : null;
 }
@@ -76,6 +77,44 @@ describe("anchorFromText", () => {
     expect(anchorFromText({ ...base, start: 5, end: 4 })).toBeNull();
     expect(anchorFromText({ ...base, start: -1, end: 4 })).toBeNull();
     expect(anchorFromText({ ...base, start: 0, end: 9999 })).toBeNull();
+  });
+});
+
+describe("regionAnchor", () => {
+  const base = { path: "body/figure[1]/img[1]", revision: REVISION };
+
+  it("anchors a point on a chart that carries no quotable text", () => {
+    expect(regionAnchor({ ...base, fractionX: 0.25, fractionY: 0.8 })).toEqual({
+      kind: "region",
+      path: "body/figure[1]/img[1]",
+      fractionX: 0.25,
+      fractionY: 0.8,
+      revision: REVISION,
+    });
+  });
+
+  it("keeps the corners, which are where people circle things", () => {
+    expect(
+      regionAnchor({ ...base, fractionX: 0, fractionY: 1 }),
+    ).not.toBeNull();
+  });
+
+  it("refuses a point outside the element it claims to be inside", () => {
+    expect(
+      regionAnchor({ ...base, fractionX: 1.4, fractionY: 0.5 }),
+    ).toBeNull();
+    expect(regionAnchor({ ...base, fractionX: 0.5, fractionY: -0.1 })).toBe(
+      null,
+    );
+    expect(
+      regionAnchor({ ...base, fractionX: Number.NaN, fractionY: 0.5 }),
+    ).toBeNull();
+  });
+
+  it("refuses an anchor with no element to hang off", () => {
+    expect(
+      regionAnchor({ ...base, path: "", fractionX: 0.5, fractionY: 0.5 }),
+    ).toBeNull();
   });
 });
 
