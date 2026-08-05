@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BRIDGE_VERSION,
+  fitMessage,
   parseRuntimeToAppMessage,
   readyMessage,
 } from "./index";
@@ -43,5 +44,37 @@ describe("parseRuntimeToAppMessage", () => {
   it("rejects values that are not objects", () => {
     expect(parseRuntimeToAppMessage(null)).toBeNull();
     expect(parseRuntimeToAppMessage("ready")).toBeNull();
+  });
+
+  it("round-trips both fit modes", () => {
+    const scrolls = fitMessage("scrolls-itself", 800);
+    const grows = fitMessage("grows-to-content", 4200);
+
+    expect(parseRuntimeToAppMessage(scrolls)).toEqual(scrolls);
+    expect(parseRuntimeToAppMessage(grows)).toEqual(grows);
+  });
+
+  it("rejects a fit message with an unknown mode", () => {
+    expect(
+      parseRuntimeToAppMessage({
+        version: BRIDGE_VERSION,
+        type: "fit",
+        mode: "whatever",
+        contentHeight: 100,
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects a fit height that is not a usable number", () => {
+    for (const contentHeight of ["800", Number.NaN, Infinity, -1]) {
+      expect(
+        parseRuntimeToAppMessage({
+          version: BRIDGE_VERSION,
+          type: "fit",
+          mode: "grows-to-content",
+          contentHeight,
+        }),
+      ).toBeNull();
+    }
   });
 });
