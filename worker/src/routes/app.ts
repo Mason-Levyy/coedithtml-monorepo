@@ -3,11 +3,13 @@ import type { WorkerEnv } from "@/lib/env";
 import { jsonError } from "@/lib/responses";
 import { handleGetArtifact } from "./artifact";
 import { handleRevokeToken } from "./revoke";
+import { handleRoomConnect } from "./room";
 import { handleUnlockArtifact } from "./unlock";
 import { handleUpload } from "./upload";
 
 const ARTIFACT_TOKEN_PATH = /^\/api\/artifacts\/([^/]+)$/;
 const ARTIFACT_UNLOCK_PATH = /^\/api\/artifacts\/([^/]+)\/unlock$/;
+const ARTIFACT_ROOM_PATH = /^\/api\/artifacts\/([^/]+)\/room$/;
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
 // Sandbox origin never reaches this router, so artifact scripts can't call the upload API.
@@ -30,6 +32,14 @@ export function handleAppRequest(
       return jsonError("Method not allowed.", 405);
     }
     return handleUnlockArtifact(unlockMatch[1] ?? "", request, env);
+  }
+
+  const roomMatch = ARTIFACT_ROOM_PATH.exec(pathname);
+  if (roomMatch) {
+    if (request.method !== "GET") {
+      return jsonError("Method not allowed.", 405);
+    }
+    return handleRoomConnect(roomMatch[1] ?? "", request, env);
   }
 
   const tokenMatch = ARTIFACT_TOKEN_PATH.exec(pathname);

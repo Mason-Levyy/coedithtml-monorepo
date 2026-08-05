@@ -36,6 +36,7 @@ export function ArtifactPage({ token }: ArtifactPageProps) {
 
   return (
     <ArtifactViewer
+      token={token}
       src={artifact.data.artifactUrl}
       sandboxOrigin={artifact.data.sandboxOrigin}
       fileName={artifact.data.fileName}

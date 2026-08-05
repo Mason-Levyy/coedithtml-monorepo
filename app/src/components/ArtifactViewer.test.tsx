@@ -3,11 +3,13 @@ import { describe, expect, it } from "vitest";
 import { ArtifactViewer } from "./ArtifactViewer";
 
 const SANDBOX_ORIGIN = "https://sandbox.example.com";
-const SRC = `${SANDBOX_ORIGIN}/${"a".repeat(32)}`;
+const TOKEN = "a".repeat(32);
+const SRC = `${SANDBOX_ORIGIN}/${TOKEN}`;
 
 function renderViewer() {
   return render(
     <ArtifactViewer
+      token={TOKEN}
       src={SRC}
       sandboxOrigin={SANDBOX_ORIGIN}
       fileName="q3-review.html"
@@ -42,7 +44,7 @@ function frameHeight(): string {
 }
 
 function viewerColumnClasses(): string {
-  return document.querySelector("div.flex.flex-col")?.className ?? "";
+  return document.querySelector("div.flex")?.className ?? "";
 }
 
 describe("ArtifactViewer", () => {
@@ -74,12 +76,15 @@ describe("ArtifactViewer", () => {
     expect(screen.queryByText("Injected")).toBeNull();
   });
 
-  it("adds no navigation of its own, only the share control", () => {
+  it("adds no navigation of its own, only the share and naming controls", () => {
     renderViewer();
 
     expect(screen.queryByRole("tablist")).toBeNull();
+    expect(screen.queryByRole("navigation")).toBeNull();
+    expect(screen.queryByRole("menubar")).toBeNull();
     expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual([
       "Copy link",
+      "Save",
     ]);
   });
 

@@ -33,6 +33,7 @@ describe("parseWorkerEnv", () => {
       "ARTIFACT_STORE",
       "ARTIFACT_METADATA",
       "ASSETS",
+      "DOC_ROOM",
       "APP_HOST",
       "SANDBOX_HOST",
       "REDIRECT_HOSTS",

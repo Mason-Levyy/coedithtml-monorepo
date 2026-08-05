@@ -16,6 +16,7 @@
     "wrangler": "^4.112.0"
   },
   "dependencies": {
+    "@coedithtml/protocol": "workspace:*",
     "zod": "^4.4.3"
   }
 }
