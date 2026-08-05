@@ -267,15 +267,19 @@ consequences, each of which shapes the tasks below:
 
 ### Overlay and anchoring
 
-- [ ] Overlay document defined and versioned: artifact revision and entries of
-      anchor + kind + body + author + status
-- [ ] Author shape carries `source: "anonymous"` from day one so accounts are a
-      new value later, not a migration
-- [ ] Anchor format: selected text + a short run of context either side +
-      `nth-of-type` path from `<body>` + revision id
-- [ ] Resolution order: text first, then the path to choose between duplicate
+- [x] Overlay document defined and versioned: artifact revision and entries of
+      anchor + kind + body + author + status — 22
+- [x] Author shape carries `source: "anonymous"` from day one so accounts are a
+      new value later, not a migration — 22
+- [x] Anchor format: selected text + a short run of context either side +
+      `nth-of-type` path from `<body>` + revision id — 22. Context is capped, so
+      an anchor cannot grow with the document it points into
+- [~] Resolution order: text first, then the path to choose between duplicate
       matches, then orphan. Text before structure is deliberate and the reason
-      is in `PRODUCT.md` — regeneration rewrites markup and keeps wording
+      is in `PRODUCT.md` — regeneration rewrites markup and keeps wording.
+      **22 does text and context**; where context cannot separate two copies it
+      returns `ambiguous` with the candidates rather than guessing, and 23 breaks
+      that tie with the path once there is a DOM to walk
 - [ ] Orphaned anchors displayed as unplaced — never guessed, never dropped
 - [ ] Anchors re-resolved when the artifact mutates its own DOM
 - [ ] Targets that resolve but are off screen are reported as such, and the rail
@@ -283,9 +287,9 @@ consequences, each of which shapes the tasks below:
 - [ ] Re-upload is a first-class screen: new revision, re-anchor, and a plain
       report — "14 comments, 11 re-placed, 3 need review"
 - [ ] Orphans can be dragged back into place or dismissed by the owner
-- [ ] Test suite covering drift against regenerated artifacts rather than
+- [x] Test suite covering drift against regenerated artifacts rather than
       hand-edited ones: rewritten markup around identical wording, edited
-      wording, deleted passages, and the same sentence appearing twice
+      wording, deleted passages, and the same sentence appearing twice — 22
 
 ### Realtime
 
@@ -327,7 +331,7 @@ One stack this time, rooted on merged `main`. Phase 1's split into two stacks
 that never met cost an integration branch and a duplicated commit; the ordering
 below keeps each branch dependent only on the one before it.
 
-- [ ] `22-overlay-schema` — the overlay document and anchor types in
+- [x] `22-overlay-schema` — the overlay document and anchor types in
       `@coedithtml/protocol`, plus anchoring as pure functions: build an anchor
       from a range, resolve one against a document, report orphans. Includes the
       drift suite. No UI and no network, because this is the part that is
@@ -336,7 +340,11 @@ below keeps each branch dependent only on the one before it.
       so a Zod import there lands inside the injected script and breaks the
       zero-dependency rule. Hand-written parsers live in `protocol/`; the Zod
       schemas the worker needs for its own request bodies wrap them on the
-      worker side
+      worker side.
+      Landed DOM-free as well as dependency-free: `protocol/` resolves anchors
+      against **text**, which is what makes it testable under the node runner
+      and keeps the same code usable from the worker. Mapping a DOM range to and
+      from a text offset needs a document, so it belongs to 23
 - [ ] `23-runtime-selection` — bridge protocol v2; the runtime captures
       selections, builds anchors, paints highlights in its shadow root, and
       re-resolves on mutation. Fails open exactly as Phase 1 does
