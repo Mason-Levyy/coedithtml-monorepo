@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import type { ArtifactSelection } from "@/hooks/useArtifactBridge";
 import type { DocRoom } from "@/hooks/useDocRoom";
 import type { ReaderIdentity } from "@/hooks/useReaderIdentity";
-import type { OverlayEntry, ReplyEntry } from "@/lib/protocol";
+import {
+  repliesTo,
+  threadsIn,
+  unresolvedCount,
+  type RejectionReason,
+} from "@/lib/protocol";
 import type { RoomStatus } from "@/lib/room-socket";
 
 const STATUS_LABEL: Record<RoomStatus, string> = {
@@ -17,24 +22,13 @@ const STATUS_LABEL: Record<RoomStatus, string> = {
   closed: "Reconnecting…",
 };
 
-const REJECTION_LABEL: Record<string, string> = {
+const REJECTION_LABEL: Record<RejectionReason, string> = {
   "read-only": "This link can read comments but not write them.",
   malformed: "That change could not be applied.",
   "unknown-entry": "That comment is no longer here.",
   "limit-reached": "This artifact has all the comments it can hold.",
   "too-long": "That comment is too long.",
 };
-
-function topLevel(entries: OverlayEntry[]): OverlayEntry[] {
-  return entries.filter((entry) => entry.kind !== "reply");
-}
-
-function repliesFor(entries: OverlayEntry[], parentId: string): ReplyEntry[] {
-  return entries.filter(
-    (entry): entry is ReplyEntry =>
-      entry.kind === "reply" && entry.parentId === parentId,
-  );
-}
 
 type CommentRailProps = {
   room: DocRoom;
@@ -63,8 +57,8 @@ export function CommentRail({
   onReply,
   onDismissSelection,
 }: CommentRailProps) {
-  const threads = topLevel(room.entries);
-  const unresolved = threads.filter((entry) => entry.status === "open").length;
+  const threads = threadsIn(room.entries);
+  const unresolved = unresolvedCount(room.entries);
   const others = room.readers.filter(
     (reader) => reader.id !== identity.reader.id,
   );
@@ -129,7 +123,7 @@ export function CommentRail({
           <CommentThread
             key={entry.id}
             entry={entry}
-            replies={repliesFor(room.entries, entry.id)}
+            replies={repliesTo(room.entries, entry.id)}
             canWrite={room.canWrite}
             active={entry.id === activeMarkId}
             orphaned={orphanedMarkIds.includes(entry.id)}
