@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import {
-  OVERLAY_VERSION,
+  emptyOverlay,
   parseClientToRoomMessage,
   presenceMessage,
   rejectedMessage,
@@ -115,11 +115,7 @@ export class DocRoom extends DurableObject<Env> {
   }
 
   private overlay(artifactRevision: string): OverlayDocument {
-    return {
-      version: OVERLAY_VERSION,
-      artifactRevision,
-      entries: this.entries.list(),
-    };
+    return { ...emptyOverlay(artifactRevision), entries: this.entries.list() };
   }
 
   private sendTo(socket: WebSocket, message: RoomToClientMessage): void {

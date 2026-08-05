@@ -62,7 +62,7 @@ function parseReaderList(value: unknown): ReaderPresence[] | null {
 }
 
 // Absent stays absent: a patch that names no field must not clear the others.
-export function parseEntryPatch(value: unknown): EntryPatch | null {
+function parseEntryPatch(value: unknown): EntryPatch | null {
   const record = asRecord(value);
   if (record === null) {
     return null;

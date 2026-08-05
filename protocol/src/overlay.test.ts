@@ -2,9 +2,8 @@ import { describe, expect, it } from "vitest";
 import { anchorFromText, regionAnchor, type Anchor } from "./anchor";
 import {
   emptyOverlay,
-  hasTail,
   repliesTo,
-  tailIsRetracted,
+  threadsIn,
   unresolvedCount,
   type Author,
   type CommentEntry,
@@ -96,56 +95,53 @@ describe("emptyOverlay", () => {
   });
 });
 
+describe("threadsIn", () => {
+  it("keeps every kind that can start a thread, and no reply", () => {
+    const entries = [
+      comment({ id: "a" }),
+      reply({ id: "b", parentId: "a" }),
+      sticky({ id: "c" }),
+    ];
+
+    expect(threadsIn(entries).map((entry) => entry.id)).toEqual(["a", "c"]);
+  });
+});
+
 describe("unresolvedCount", () => {
   it("counts open marks of every kind, but never a reply", () => {
-    const overlay = {
-      ...emptyOverlay("rev-1"),
-      entries: [
-        comment({ id: "a" }),
-        comment({ id: "b", status: "resolved" }),
-        reply({ id: "c", parentId: "a" }),
-        sticky({ id: "d" }),
-      ],
-    };
+    const entries = [
+      comment({ id: "a" }),
+      comment({ id: "b", status: "resolved" }),
+      reply({ id: "c", parentId: "a" }),
+      sticky({ id: "d" }),
+    ];
 
-    expect(unresolvedCount(overlay)).toBe(2);
+    expect(unresolvedCount(entries)).toBe(2);
   });
 });
 
 describe("repliesTo", () => {
   it("gathers only the replies of the thread it was asked about", () => {
-    const overlay = {
-      ...emptyOverlay("rev-1"),
-      entries: [
-        comment({ id: "a" }),
-        reply({ id: "b", parentId: "a" }),
-        reply({ id: "c", parentId: "z" }),
-      ],
-    };
+    const entries = [
+      comment({ id: "a" }),
+      reply({ id: "b", parentId: "a" }),
+      reply({ id: "c", parentId: "z" }),
+    ];
 
-    expect(repliesTo(overlay, "a").map((entry) => entry.id)).toEqual(["b"]);
+    expect(repliesTo(entries, "a").map((entry) => entry.id)).toEqual(["b"]);
   });
 });
 
 describe("a callout is a sticky whose tail is set", () => {
   it("draws no pointer until a tail is given", () => {
-    expect(hasTail(sticky())).toBe(false);
-    expect(hasTail(sticky({ tail: chartAnchor() }))).toBe(true);
+    expect(sticky().tail).toBeNull();
+    expect(sticky({ tail: chartAnchor() }).tail).not.toBeNull();
   });
 
   it("points at a chart that carries no text of its own", () => {
     const callout = sticky({ tail: chartAnchor() });
 
     expect(roundTrip(callout)).toEqual(callout);
-  });
-
-  it("retracts the tail when its tip is dropped back inside the box", () => {
-    const box = { x: 100, y: 100, width: 200, height: 80 };
-
-    expect(tailIsRetracted(box, { x: 150, y: 140 })).toBe(true);
-    expect(tailIsRetracted(box, { x: 100, y: 100 })).toBe(true);
-    expect(tailIsRetracted(box, { x: 340, y: 140 })).toBe(false);
-    expect(tailIsRetracted(box, { x: 150, y: 400 })).toBe(false);
   });
 });
 

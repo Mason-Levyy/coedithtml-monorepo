@@ -8,7 +8,7 @@ import type {
   StickyEntry,
 } from "@/lib/protocol";
 
-export function authorFrom(reader: ReaderPresence): Author {
+function authorFrom(reader: ReaderPresence): Author {
   return {
     id: reader.id,
     displayName: reader.displayName,

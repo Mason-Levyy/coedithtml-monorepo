@@ -274,19 +274,26 @@ consequences, each of which shapes the tasks below:
 - [x] Anchor format: selected text + a short run of context either side +
       `nth-of-type` path from `<body>` + revision id — 22. Context is capped, so
       an anchor cannot grow with the document it points into
-- [~] Resolution order: text first, then the path to choose between duplicate
+- [x] Resolution order: text first, then the path to choose between duplicate
       matches, then orphan. Text before structure is deliberate and the reason
       is in `PRODUCT.md` — regeneration rewrites markup and keeps wording.
-      **22 does text and context**; where context cannot separate two copies it
-      returns `ambiguous` with the candidates rather than guessing, and 23 breaks
-      that tie with the path once there is a DOM to walk
-- [ ] Orphaned anchors displayed as unplaced — never guessed, never dropped
-- [ ] Anchors re-resolved when the artifact mutates its own DOM
+      22 did text and context, returning `ambiguous` with the candidates rather
+      than guessing; 23 broke that tie with the path once there was a DOM to
+      walk. A tie the path cannot break stays an orphan — 22, 23
+- [x] Orphaned anchors displayed as unplaced — never guessed, never dropped.
+      The runtime reports what it could not place and the rail says so against
+      the thread — 25
+- [x] Anchors re-resolved when the artifact mutates its own DOM — a
+      MutationObserver on `<body>` rebuilds the text index and repaints, which
+      is what makes marks survive an artifact changing its own slide — 23
 - [ ] Targets that resolve but are off screen are reported as such, and the rail
       offers to reveal them rather than placing them wrongly
 - [ ] Re-upload is a first-class screen: new revision, re-anchor, and a plain
       report — "14 comments, 11 re-placed, 3 need review"
-- [ ] Orphans can be dragged back into place or dismissed by the owner
+- [~] Orphans can be dragged back into place or dismissed by the owner —
+      dismissal exists (an edit link can delete a thread, and its replies go
+      with it). Dragging one back into place needs the same pointer handling
+      the sticky drag needs, and lands with it
 - [x] Test suite covering drift against regenerated artifacts rather than
       hand-edited ones: rewritten markup around identical wording, edited
       wording, deleted passages, and the same sentence appearing twice — 22
@@ -350,16 +357,19 @@ sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arro
       swallowed and answered with a region anchor; moving one afterwards needs
       pointer handling inside the shadow root, which is its own piece of work.
       `offsetX/offsetY` and `tail` already exist and are patchable, so dragging
-      is wiring, not schema
+      is wiring, not schema. The retract predicate (tip dropped back inside the
+      box ⇒ `tail: null`) was written and then deleted as dead code — it is four
+      lines, and it belongs in the commit that can actually call it
 - [x] Comment rail beside the artifact, threads anchored to their selection
 - [x] Unresolved count shown in the rail
 - [x] Reply, resolve, and reopen
 - [x] Commenter names are self-declared and stored locally — still no accounts
 - [x] Orphans are named in the rail rather than hidden — the runtime reports
       which marks it could not place, and the rail says so against the thread
-- [x] Bridge protocol gains `selection`, `mark-activated`, and `render-marks`.
-      No version bump: an unknown type already parses to `null`, so a new
-      message is backward-compatible by construction
+- [x] Bridge protocol gains `selection`, `mark-activated`, `render-marks`,
+      `set-tool`, `placement`, and `orphans`. No version bump across any of
+      them: an unknown type already parses to `null`, so a new message is
+      backward-compatible by construction
 - [x] Runtime still under 20KB minified — 15.4KB with selection, highlights,
       stickies, tails, and the placement tool. The socket never lands here: the
       room is the app's connection, not the artifact's
@@ -576,6 +586,11 @@ because everything above was verified against `wrangler dev` on localhost.
       or a copy-paste that has never been exercised
 - [ ] Confirm the two origins are genuinely separate in production, which the
       roadmap has claimed since `03` on the strength of config alone
+- [ ] The first deploy now also carries a Durable Object. `migrations` tag `v1`
+      declares `DocRoom` as a `new_sqlite_classes` entry, and that migration has
+      never been applied to a real account — a deploy that fails here fails
+      before the Worker is replaced, so Phase 1's routes are not at risk, but it
+      does mean the room is unexercised outside tests
 - [ ] Upload a real artifact through the deployed landing page, open the
       returned link in a private window, and read it on a phone
 - [ ] Check the password gate, revocation, and the upload ceiling against the

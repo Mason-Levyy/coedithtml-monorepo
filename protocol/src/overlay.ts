@@ -50,8 +50,6 @@ export type StickyEntry = EntryBase & {
 
 export type OverlayEntry = CommentEntry | ReplyEntry | StickyEntry;
 
-export type EntryKind = OverlayEntry["kind"];
-
 export type OverlayDocument = {
   version: typeof OVERLAY_VERSION;
   artifactRevision: string;
@@ -66,21 +64,19 @@ export function isFloating(entry: OverlayEntry): entry is StickyEntry {
   return entry.kind === "sticky";
 }
 
-export function hasTail(entry: OverlayEntry): boolean {
-  return isFloating(entry) && entry.tail !== null;
+export function threadsIn(entries: OverlayEntry[]): OverlayEntry[] {
+  return entries.filter((entry) => entry.kind !== "reply");
 }
 
-export function unresolvedCount(overlay: OverlayDocument): number {
-  return overlay.entries.filter(
-    (entry) => entry.kind !== "reply" && entry.status === "open",
-  ).length;
+export function unresolvedCount(entries: OverlayEntry[]): number {
+  return threadsIn(entries).filter((entry) => entry.status === "open").length;
 }
 
 export function repliesTo(
-  overlay: OverlayDocument,
+  entries: OverlayEntry[],
   parentId: string,
 ): ReplyEntry[] {
-  return overlay.entries.filter(
+  return entries.filter(
     (entry): entry is ReplyEntry =>
       entry.kind === "reply" && entry.parentId === parentId,
   );
@@ -127,18 +123,4 @@ export function patchEntry(
     return null;
   }
   return { ...entry, body, color, status };
-}
-
-export type Point = { x: number; y: number };
-
-export type Box = Point & { width: number; height: number };
-
-// PowerPoint's gesture: dragging the tip back inside the box retracts the tail.
-export function tailIsRetracted(box: Box, tip: Point): boolean {
-  return (
-    tip.x >= box.x &&
-    tip.x <= box.x + box.width &&
-    tip.y >= box.y &&
-    tip.y <= box.y + box.height
-  );
 }
