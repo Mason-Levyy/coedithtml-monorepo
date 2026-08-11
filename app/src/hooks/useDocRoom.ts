@@ -12,6 +12,8 @@ import {
 import { openRoom, type RoomSocket, type RoomStatus } from "@/lib/room-socket";
 import {
   EMPTY_ROOM,
+  applyLocalPatch,
+  applyLocalRemove,
   applyRoomMessage,
   type RoomContents,
 } from "@/lib/room-state";
@@ -73,12 +75,19 @@ export function useDocRoom(
     (entry: OverlayEntry) => send(addEntryMessage(entry)),
     [send],
   );
+  // Applied locally first, or a dragged sticky snaps back for the round trip.
   const patchEntry = useCallback(
-    (id: string, patch: EntryPatch) => send(patchEntryMessage(id, patch)),
+    (id: string, patch: EntryPatch) => {
+      setContents((previous) => applyLocalPatch(previous, id, patch));
+      send(patchEntryMessage(id, patch));
+    },
     [send],
   );
   const removeEntry = useCallback(
-    (id: string) => send(removeEntryMessage(id)),
+    (id: string) => {
+      setContents((previous) => applyLocalRemove(previous, id));
+      send(removeEntryMessage(id));
+    },
     [send],
   );
 

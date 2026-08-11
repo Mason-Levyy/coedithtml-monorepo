@@ -6,6 +6,7 @@ import {
   rangeForTextAnchor,
   regionAnchorAtPoint,
 } from "./anchor-dom";
+import { OVERLAY_HOST_ATTRIBUTE } from "./constants";
 import { buildTextIndex, rangeForOffsets, type TextIndex } from "./text-index";
 
 const REVISION = "rev-1";
@@ -139,6 +140,14 @@ describe("rangeForTextAnchor", () => {
 describe("region anchors", () => {
   const box = { left: 100, top: 50, width: 200, height: 100 };
 
+  // happy-dom has no elementsFromPoint, so it is assigned rather than spied on.
+  function stubStack(...stack: Element[]): void {
+    Object.defineProperty(document, "elementsFromPoint", {
+      configurable: true,
+      value: () => stack,
+    });
+  }
+
   function stubChart(): Element {
     document.body.innerHTML = `<figure><img alt="chart" /></figure>`;
     const chart = document.querySelector("img");
@@ -153,7 +162,7 @@ describe("region anchors", () => {
       y: box.top,
       toJSON: () => ({}),
     });
-    vi.spyOn(document, "elementFromPoint").mockReturnValue(chart);
+    stubStack(chart);
     return chart;
   }
 
@@ -188,5 +197,24 @@ describe("region anchors", () => {
     document.body.innerHTML = `<p>The chart was replaced by a table</p>`;
 
     expect(pointForRegionAnchor(anchor)).toBeNull();
+  });
+
+  it("anchors through a painted mark rather than onto our own host", () => {
+    const chart = stubChart();
+    const host = document.createElement("div");
+    host.setAttribute(OVERLAY_HOST_ATTRIBUTE, "");
+    document.body.appendChild(host);
+    stubStack(host, chart);
+
+    expect(regionAnchorAtPoint(150, 100, REVISION)?.path).toBe(
+      "figure[1]/img[1]",
+    );
+  });
+
+  it("refuses a point that only hits the document element", () => {
+    document.body.innerHTML = `<p>Body with a margin</p>`;
+    stubStack(document.documentElement);
+
+    expect(regionAnchorAtPoint(5, 5, REVISION)).toBeNull();
   });
 });

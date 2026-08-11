@@ -2,7 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const LIMIT_BYTES = 20 * 1024;
+const LIMIT_BYTES = 32 * 1024;
 const distDir = join(dirname(fileURLToPath(import.meta.url)), "dist");
 
 const jsFiles = readdirSync(distDir).filter((file) => file.endsWith(".js"));
@@ -24,7 +24,7 @@ for (const { file, size } of sizes) {
 const oversized = sizes.filter(({ size }) => size > LIMIT_BYTES);
 if (oversized.length > 0) {
   console.error(
-    `\nruntime/ bundle exceeds the 20KB minified budget (CLAUDE.md):\n${oversized
+    `\nruntime/ bundle exceeds the 32KB minified budget (CLAUDE.md):\n${oversized
       .map(({ file, size }) => `  ${file}: ${(size / 1024).toFixed(1)}KB`)
       .join("\n")}\nReduce bundle size or justify the increase in the PR.`,
   );

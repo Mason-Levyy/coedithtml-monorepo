@@ -48,6 +48,11 @@ async function serveRuntimeScript(
   for (const [name, value] of headers) {
     merged.set(name, value);
   }
+  // The asset's validators describe the body before the config was prepended,
+  // and the path is unhashed, so a stale bundle would outlive a deploy.
+  merged.delete("etag");
+  merged.delete("last-modified");
+  merged.set("cache-control", "no-cache");
   return new Response(configured, { status: 200, headers: merged });
 }
 

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { anchorFromText, regionAnchor, type Anchor } from "./anchor";
 import {
+  MAX_STICKY_HEIGHT,
+  MAX_STICKY_WIDTH,
+  MIN_STICKY_HEIGHT,
+  MIN_STICKY_WIDTH,
   emptyOverlay,
+  patchEntry,
   repliesTo,
   threadsIn,
   unresolvedCount,
@@ -58,6 +63,7 @@ function comment(overrides: Partial<CommentEntry> = {}): CommentEntry {
     body: "Is this net or gross?",
     author: AUTHOR,
     color: "yellow",
+    fill: null,
     status: "open",
     createdAt: WHEN,
     ...overrides,
@@ -76,6 +82,8 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
     color: "pink",
     offsetX: 24,
     offsetY: -12,
+    width: null,
+    height: null,
     tail: null,
     ...overrides,
   };
@@ -84,6 +92,95 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
 function roundTrip(entry: OverlayEntry): OverlayEntry | null {
   return parseOverlayEntry(JSON.parse(JSON.stringify(entry)));
 }
+
+// One unparseable entry fails the whole document, so this empties live rooms.
+describe("entries stored before fill and sizing existed", () => {
+  function stripped(entry: OverlayEntry, ...fields: string[]): unknown {
+    const record = JSON.parse(JSON.stringify(entry)) as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(record).filter(([field]) => !fields.includes(field)),
+    );
+  }
+
+  it("reads a comment that carries no fill", () => {
+    expect(parseOverlayEntry(stripped(comment(), "fill"))).toMatchObject({
+      fill: null,
+    });
+  });
+
+  it("reads a sticky that carries no size", () => {
+    const parsed = parseOverlayEntry(
+      stripped(sticky(), "fill", "width", "height"),
+    );
+
+    expect(parsed).toMatchObject({ width: null, height: null });
+  });
+
+  it("reads a whole document of them", () => {
+    const document = {
+      version: 1,
+      artifactRevision: "rev-1",
+      entries: [
+        stripped(comment(), "fill"),
+        stripped(sticky(), "fill", "width", "height"),
+      ],
+    };
+
+    expect(parseOverlayDocument(document)?.entries).toHaveLength(2);
+  });
+
+  it("still refuses a fill that is not a colour", () => {
+    expect(parseOverlayEntry({ ...comment(), fill: "chartreuse" })).toBeNull();
+    expect(parseOverlayEntry({ ...sticky(), width: "wide" })).toBeNull();
+  });
+});
+
+describe("sticky sizing", () => {
+  it("clamps a size the reader could drag past on the way in", () => {
+    expect(
+      parseOverlayEntry({ ...sticky(), width: 4, height: 9 }),
+    ).toMatchObject({ width: MIN_STICKY_WIDTH, height: MIN_STICKY_HEIGHT });
+    expect(
+      parseOverlayEntry({ ...sticky(), width: 99999, height: 99999 }),
+    ).toMatchObject({ width: MAX_STICKY_WIDTH, height: MAX_STICKY_HEIGHT });
+  });
+
+  it("clamps a resize the same way the runtime previewed it", () => {
+    expect(patchEntry(sticky(), { width: 10_000 })).toMatchObject({
+      width: MAX_STICKY_WIDTH,
+    });
+  });
+
+  it("lets a size go back to sizing itself", () => {
+    expect(patchEntry(sticky({ width: 300 }), { width: null })).toMatchObject({
+      width: null,
+    });
+  });
+
+  // Silently dropping it would broadcast an entry-patched that changed nothing.
+  it("refuses to size anything that does not float", () => {
+    expect(patchEntry(comment(), { width: 300 })).toBeNull();
+    expect(patchEntry(comment(), { height: 300 })).toBeNull();
+  });
+});
+
+describe("fill", () => {
+  it("recolours a mark without disturbing its named colour", () => {
+    expect(patchEntry(comment(), { fill: "#0b1f4d" })).toMatchObject({
+      color: "yellow",
+      fill: "#0b1f4d",
+    });
+  });
+
+  it("distinguishes clearing the fill from leaving it alone", () => {
+    const filled = comment({ fill: "#0b1f4d" });
+
+    expect(patchEntry(filled, { fill: null })).toMatchObject({ fill: null });
+    expect(patchEntry(filled, { body: "Still blue" })).toMatchObject({
+      fill: "#0b1f4d",
+    });
+  });
+});
 
 describe("emptyOverlay", () => {
   it("starts versioned and pinned to a revision", () => {
@@ -135,13 +232,20 @@ describe("repliesTo", () => {
 describe("a callout is a sticky whose tail is set", () => {
   it("draws no pointer until a tail is given", () => {
     expect(sticky().tail).toBeNull();
-    expect(sticky({ tail: chartAnchor() }).tail).not.toBeNull();
+    expect(sticky({ tail: { x: 40, y: 120 } }).tail).not.toBeNull();
   });
 
-  it("points at a chart that carries no text of its own", () => {
-    const callout = sticky({ tail: chartAnchor() });
+  it("keeps the tip it was given, measured from its own corner", () => {
+    const callout = sticky({ tail: { x: -30, y: 80 } });
 
     expect(roundTrip(callout)).toEqual(callout);
+  });
+
+  // The tail used to anchor into the artifact; that shape must not blank a room.
+  it("drops a tail stored in the old anchor shape instead of refusing it", () => {
+    const parsed = parseOverlayEntry({ ...sticky(), tail: chartAnchor() });
+
+    expect(parsed).toMatchObject({ kind: "sticky", tail: null });
   });
 });
 
@@ -197,10 +301,11 @@ describe("parseOverlayEntry", () => {
     expect(parseOverlayEntry(withoutOffset)).toBeNull();
   });
 
-  it("rejects a malformed tail rather than dropping the pointer", () => {
+  // Refusing it would take the whole document down with one unreadable tip.
+  it("drops a tip it cannot read rather than refusing the sticky", () => {
     expect(
-      parseOverlayEntry({ ...sticky(), tail: { kind: "region", path: "x" } }),
-    ).toBeNull();
+      parseOverlayEntry({ ...sticky(), tail: { x: "far", y: 2 } }),
+    ).toMatchObject({ kind: "sticky", tail: null });
   });
 
   it("accepts an absent tail as a plain sticky", () => {
@@ -246,7 +351,7 @@ describe("parseOverlayDocument", () => {
       entries: [
         comment({ id: "a" }),
         reply({ id: "b", parentId: "a" }),
-        sticky({ id: "c", tail: chartAnchor() }),
+        sticky({ id: "c", tail: { x: 40, y: 120 } }),
       ],
     };
 

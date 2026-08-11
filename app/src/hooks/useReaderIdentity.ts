@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ReaderPresence } from "@/lib/protocol";
 
 const STORAGE_KEY = "coedit:reader";
@@ -46,12 +46,13 @@ export function useReaderIdentity(): ReaderIdentity {
     () => readStored() ?? { id: newReaderId(), displayName: "" },
   );
 
+  // Written before naming too, or a reload makes a reader a second person.
+  useEffect(() => {
+    writeStored(reader);
+  }, [reader]);
+
   const rename = useCallback((displayName: string) => {
-    setReader((previous) => {
-      const next = { ...previous, displayName: displayName.trim() };
-      writeStored(next);
-      return next;
-    });
+    setReader((previous) => ({ ...previous, displayName: displayName.trim() }));
   }, []);
 
   return { reader, named: reader.displayName.length > 0, rename };

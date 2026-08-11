@@ -1,5 +1,7 @@
-import { parseAnchor, parseOptionalAnchor } from "./parse-anchor";
+import { normalizeHex } from "./colors";
+import { parseAnchor } from "./parse-anchor";
 import {
+  clampStickySize,
   MARK_COLORS,
   OVERLAY_VERSION,
   type Author,
@@ -10,6 +12,7 @@ import {
   type OverlayEntry,
   type ReplyEntry,
   type StickyEntry,
+  type TailTip,
 } from "./overlay";
 import {
   asFilledString,
@@ -41,6 +44,11 @@ function parseAuthor(value: unknown): Author | null {
   return { id, displayName, source: "anonymous" };
 }
 
+// Absent is the old shape, not a bad one: rejecting it would blank a stored room.
+export function parseOptionalFill(value: unknown): string | null {
+  return value === undefined || value === null ? null : normalizeHex(value);
+}
+
 type SharedFields = Omit<CommentEntry, "kind" | "parentId">;
 
 function parseSharedFields(
@@ -51,6 +59,7 @@ function parseSharedFields(
   const createdAt = asFilledString(record.createdAt);
   const anchor = parseAnchor(record.anchor);
   const author = parseAuthor(record.author);
+  const fill = parseOptionalFill(record.fill);
 
   if (
     id === null ||
@@ -58,6 +67,7 @@ function parseSharedFields(
     createdAt === null ||
     anchor === null ||
     author === null ||
+    (record.fill !== undefined && record.fill !== null && fill === null) ||
     !isMarkColor(record.color) ||
     !isEntryStatus(record.status)
   ) {
@@ -69,6 +79,7 @@ function parseSharedFields(
     body,
     author,
     color: record.color,
+    fill,
     status: record.status,
     createdAt,
   };
@@ -86,17 +97,37 @@ function parseReply(
   return parentId === null ? null : { ...shared, kind: "reply", parentId };
 }
 
+// Defaulted, not required: a stored sticky predates sizing and must still parse.
+export function parseOptionalSide(value: unknown): number | null {
+  return value === undefined || value === null ? null : asFiniteNumber(value);
+}
+
+// A tail stored as an anchor is dropped, not refused: one bad entry blanks a room.
+export function parseTailTip(value: unknown): TailTip | null {
+  const record = asRecord(value);
+  if (record === null) {
+    return null;
+  }
+  const x = asFiniteNumber(record.x);
+  const y = asFiniteNumber(record.y);
+  return x === null || y === null ? null : { x, y };
+}
+
 function parseSticky(
   record: Record<string, unknown>,
   shared: SharedFields,
 ): StickyEntry | null {
   const offsetX = asFiniteNumber(record.offsetX);
   const offsetY = asFiniteNumber(record.offsetY);
-  const tail = parseOptionalAnchor(record.tail);
+  const width = parseOptionalSide(record.width);
+  const height = parseOptionalSide(record.height);
   if (
     offsetX === null ||
     offsetY === null ||
-    !tail.ok ||
+    (record.width !== undefined && record.width !== null && width === null) ||
+    (record.height !== undefined &&
+      record.height !== null &&
+      height === null) ||
     !isUnparented(record.parentId)
   ) {
     return null;
@@ -107,7 +138,8 @@ function parseSticky(
     parentId: null,
     offsetX,
     offsetY,
-    tail: tail.anchor,
+    ...clampStickySize({ width, height }),
+    tail: parseTailTip(record.tail),
   };
 }
 

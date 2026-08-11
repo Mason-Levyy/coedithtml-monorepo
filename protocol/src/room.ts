@@ -76,6 +76,8 @@ export type RejectionReason = (typeof REJECTION_REASONS)[number];
 export type RoomRejectedMessage = Versioned & {
   type: "rejected";
   reason: RejectionReason;
+  // Names the entry when the room knows it, so a client can put the entry back.
+  id: string | null;
 };
 
 export type RoomToClientMessage =
@@ -133,6 +135,9 @@ export function presenceMessage(
   return { version: ROOM_VERSION, type: "presence", readers };
 }
 
-export function rejectedMessage(reason: RejectionReason): RoomRejectedMessage {
-  return { version: ROOM_VERSION, type: "rejected", reason };
+export function rejectedMessage(
+  reason: RejectionReason,
+  id: string | null = null,
+): RoomRejectedMessage {
+  return { version: ROOM_VERSION, type: "rejected", reason, id };
 }

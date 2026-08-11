@@ -38,6 +38,7 @@ function comment(overrides: Partial<CommentEntry> = {}): CommentEntry {
     body: "Is this net or gross?",
     author: { id: "reader-1", displayName: "Sam", source: "anonymous" },
     color: "yellow",
+    fill: null,
     status: "open",
     createdAt: EARLIER,
     ...overrides,
@@ -61,6 +62,8 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
     id: "s1",
     offsetX: 12,
     offsetY: 24,
+    width: null,
+    height: null,
     tail: null,
     ...overrides,
   };
@@ -153,7 +156,7 @@ describe("applyClientMessage", () => {
   });
 
   it("retracts a tail when the patch names it as null", () => {
-    const store = memoryEntryStore([sticky({ tail: ANCHOR })]);
+    const store = memoryEntryStore([sticky({ tail: { x: 320, y: 50 } })]);
     apply(store, patchEntryMessage("s1", { tail: null }));
 
     expect(store.get("s1")).toMatchObject({ tail: null });
@@ -165,6 +168,22 @@ describe("applyClientMessage", () => {
     const outcome = apply(store, patchEntryMessage("c1", { offsetX: 40 }));
 
     expect(outcome).toMatchObject({ ok: false, reason: "malformed" });
+  });
+
+  // Without the id the client cannot tell which optimistic change to undo.
+  it("names the entry it refused", () => {
+    const store = memoryEntryStore([comment(), sticky()]);
+
+    expect(
+      apply(store, patchEntryMessage("c1", { offsetX: 40 })),
+    ).toMatchObject({ ok: false, id: "c1" });
+    expect(apply(store, removeEntryMessage("ghost"))).toMatchObject({
+      ok: false,
+      id: "ghost",
+    });
+    expect(
+      apply(store, addEntryMessage(reply({ id: "r9", parentId: "nobody" }))),
+    ).toMatchObject({ ok: false, id: "r9" });
   });
 
   it("refuses to patch an entry that is not there", () => {

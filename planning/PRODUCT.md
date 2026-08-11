@@ -164,7 +164,7 @@ is then a new value, not a migration.
 
 Highest-risk code in the repo. It runs inside someone else's document.
 
-- Zero dependencies, vanilla DOM, 20KB minified ceiling.
+- Zero dependencies, vanilla DOM, 32KB minified ceiling.
 - All of its own UI inside a shadow root so styles cannot collide either way.
 - One namespaced global.
 - **Fails open.** If the runtime throws or the socket dies, the artifact must

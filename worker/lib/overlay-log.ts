@@ -23,10 +23,10 @@ export type EntryStore = {
 
 export type LogOutcome =
   | { ok: true; broadcast: RoomToClientMessage }
-  | { ok: false; reason: RejectionReason };
+  | { ok: false; reason: RejectionReason; id: string | null };
 
-function rejected(reason: RejectionReason): LogOutcome {
-  return { ok: false, reason };
+function rejected(reason: RejectionReason, id: string | null): LogOutcome {
+  return { ok: false, reason, id };
 }
 
 function addEntry(
@@ -40,13 +40,13 @@ function addEntry(
     return { ok: true, broadcast: entryAddedMessage(existing) };
   }
   if (entry.body.length > MAX_BODY_LENGTH) {
-    return rejected("too-long");
+    return rejected("too-long", entry.id);
   }
   if (store.count() >= MAX_ENTRIES_PER_ROOM) {
-    return rejected("limit-reached");
+    return rejected("limit-reached", entry.id);
   }
   if (entry.kind === "reply" && store.get(entry.parentId) === null) {
-    return rejected("unknown-entry");
+    return rejected("unknown-entry", entry.id);
   }
 
   const stamped: OverlayEntry = { ...entry, createdAt: now };
@@ -61,18 +61,18 @@ function patchStoredEntry(
 ): LogOutcome {
   const existing = store.get(id);
   if (existing === null) {
-    return rejected("unknown-entry");
+    return rejected("unknown-entry", id);
   }
   if (
     message.patch.body !== undefined &&
     message.patch.body.length > MAX_BODY_LENGTH
   ) {
-    return rejected("too-long");
+    return rejected("too-long", id);
   }
 
   const patched = patchEntry(existing, message.patch);
   if (patched === null) {
-    return rejected("malformed");
+    return rejected("malformed", id);
   }
   store.put(patched);
   return { ok: true, broadcast: entryPatchedMessage(patched) };
@@ -80,7 +80,7 @@ function patchStoredEntry(
 
 function removeEntry(store: EntryStore, id: string): LogOutcome {
   if (store.get(id) === null) {
-    return rejected("unknown-entry");
+    return rejected("unknown-entry", id);
   }
   for (const entry of store.list()) {
     if (entry.kind === "reply" && entry.parentId === id) {
@@ -89,6 +89,18 @@ function removeEntry(store: EntryStore, id: string): LogOutcome {
   }
   store.remove(id);
   return { ok: true, broadcast: entryRemovedMessage(id) };
+}
+
+export function entryIdIn(message: ClientToRoomMessage): string | null {
+  switch (message.type) {
+    case "hello":
+      return null;
+    case "add-entry":
+      return message.entry.id;
+    case "patch-entry":
+    case "remove-entry":
+      return message.id;
+  }
 }
 
 export function applyClientMessage(

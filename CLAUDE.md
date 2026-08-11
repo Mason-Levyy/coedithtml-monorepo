@@ -86,7 +86,7 @@ Local UI state stays in components.
 else's document.
 
 - **Zero dependencies.** No React, no Yjs, no npm packages. Vanilla DOM.
-- **Size budget: 20KB minified.** A PR that exceeds it needs justification.
+- **Size budget: 32KB minified.** A PR that exceeds it needs justification.
 - **Never leak.** One namespaced global. All UI in a shadow root so our styles
   cannot touch the artifact and theirs cannot touch ours.
 - **Fail open.** If the websocket dies or the runtime throws, the artifact must

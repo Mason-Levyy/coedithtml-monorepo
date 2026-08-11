@@ -43,6 +43,18 @@ function frameHeight(): string {
   return screen.getByTitle("q3-review.html").style.height;
 }
 
+function watchRuntimeMessages(): { type: unknown }[] {
+  const posted: { type: unknown }[] = [];
+  const frame = screen.getByTitle("q3-review.html") as HTMLIFrameElement;
+  Object.defineProperty(frame, "contentWindow", {
+    configurable: true,
+    value: {
+      postMessage: (message: { type: unknown }) => posted.push(message),
+    },
+  });
+  return posted;
+}
+
 function viewerColumnClasses(): string {
   return document.querySelector("div.flex")?.className ?? "";
 }
@@ -66,6 +78,16 @@ describe("ArtifactViewer", () => {
     announceReady("Make artifacts work like documents");
 
     expect(screen.getByText("Make artifacts work like documents")).toBeTruthy();
+  });
+
+  // A frame that has not booted has no listener, and the post is lost for good.
+  it("waits for the frame before telling it what the reader may do", () => {
+    renderViewer();
+    const posted = watchRuntimeMessages();
+
+    announceReady("Pitch");
+
+    expect(posted.map((message) => message.type)).toContain("set-capabilities");
   });
 
   it("ignores a ready message from any other origin", () => {

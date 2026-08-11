@@ -11,8 +11,10 @@ import { newComment, newReply, newSticky } from "@/lib/new-entry";
 import {
   DEFAULT_MARK_COLOR,
   renderMarksMessage,
+  setCapabilitiesMessage,
   setToolMessage,
   type Anchor,
+  type EntryPatch,
 } from "@/lib/protocol";
 import { roomUrl } from "@/lib/room-url";
 
@@ -43,7 +45,14 @@ export function ArtifactViewer({
   fileName,
 }: ArtifactViewerProps) {
   const frame = useRef<HTMLIFrameElement>(null);
-  const bridge = useArtifactBridge(sandboxOrigin);
+  // Held in a ref: the bridge subscribes once, and the room arrives after it.
+  const patchMark = useRef((markId: string, patch: EntryPatch) => {
+    void markId;
+    void patch;
+  });
+  const bridge = useArtifactBridge(sandboxOrigin, (markId, patch) =>
+    patchMark.current(markId, patch),
+  );
   const sendToRuntime = useRuntimeChannel(frame, sandboxOrigin);
   const identity = useReaderIdentity();
 
@@ -57,15 +66,26 @@ export function ArtifactViewer({
   const [dismissedQuote, setDismissedQuote] = useState<string | null>(null);
   const [placingSticky, setPlacingSticky] = useState(false);
 
+  const canMarkUp = room.canWrite && identity.named;
+
   useEffect(() => {
     if (bridge.ready) {
       sendToRuntime(renderMarksMessage(room.entries));
     }
   }, [bridge.ready, room.entries, sendToRuntime]);
 
+  // Gated like the marks: a frame that has not booted drops what it is sent.
   useEffect(() => {
-    sendToRuntime(setToolMessage(placingSticky ? "sticky" : null));
-  }, [placingSticky, sendToRuntime]);
+    if (bridge.ready) {
+      sendToRuntime(setToolMessage(placingSticky ? "sticky" : null));
+    }
+  }, [bridge.ready, placingSticky, sendToRuntime]);
+
+  useEffect(() => {
+    if (bridge.ready) {
+      sendToRuntime(setCapabilitiesMessage(canMarkUp));
+    }
+  }, [bridge.ready, canMarkUp, sendToRuntime]);
 
   useEffect(() => {
     if (bridge.activatedMarkId !== null) {
@@ -73,11 +93,20 @@ export function ArtifactViewer({
     }
   }, [bridge.activatedMarkId]);
 
+  patchMark.current = (markId, patch) => {
+    if (canMarkUp) {
+      room.patchEntry(markId, patch);
+    }
+  };
+
   // Depending on the room here would drop a second sticky on the next entry.
   const dropSticky = useRef((anchor: Anchor) => {
     void anchor;
   });
   dropSticky.current = (anchor: Anchor) => {
+    if (!canMarkUp) {
+      return;
+    }
     room.addEntry(
       newSticky({
         anchor,
@@ -115,7 +144,7 @@ export function ArtifactViewer({
       : null;
 
   function comment(mark: ComposedMark): void {
-    if (selection === null) {
+    if (selection === null || !canMarkUp) {
       return;
     }
     room.addEntry(
@@ -124,6 +153,7 @@ export function ArtifactViewer({
         body: mark.body,
         reader: identity.reader,
         color: mark.color,
+        fill: mark.fill,
       }),
     );
     setDismissedQuote(selection.anchor.quote);
@@ -131,7 +161,7 @@ export function ArtifactViewer({
 
   function reply(parentId: string, body: string): void {
     const parent = room.entries.find((entry) => entry.id === parentId);
-    if (parent === undefined) {
+    if (parent === undefined || !canMarkUp) {
       return;
     }
     room.addEntry(
@@ -141,6 +171,7 @@ export function ArtifactViewer({
         body,
         reader: identity.reader,
         color: parent.color,
+        fill: parent.fill,
       }),
     );
   }

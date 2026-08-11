@@ -252,7 +252,12 @@ export function fakeAssets(): Record<string, unknown> {
 }
 
 export function stubAssets(
-  files: { path: string; body: string; contentType?: string }[],
+  files: {
+    path: string;
+    body: string;
+    contentType?: string;
+    headers?: Record<string, string>;
+  }[],
 ): Fetcher {
   const entries = new Map(files.map((file) => [file.path, file]));
   return {
@@ -262,7 +267,7 @@ export function stubAssets(
       if (!file) {
         return Promise.resolve(new Response("Not found", { status: 404 }));
       }
-      const headers = new Headers();
+      const headers = new Headers(file.headers);
       if (file.contentType) {
         headers.set("content-type", file.contentType);
       }

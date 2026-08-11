@@ -85,14 +85,22 @@ function clampFraction(value: number): number {
   return Math.min(Math.max(value, 0), 1);
 }
 
+// `html` is excluded because a body-relative path walks past it and never resolves.
+function isAnchorable(candidate: Element): boolean {
+  return (
+    !candidate.hasAttribute(OVERLAY_HOST_ATTRIBUTE) &&
+    document.body.contains(candidate)
+  );
+}
+
 export function regionAnchorAtPoint(
   x: number,
   y: number,
   revision: string,
 ): RegionAnchor | null {
-  const element = document.elementFromPoint(x, y);
-  // Our own host is what a click on a painted mark reports through the shadow.
-  if (element === null || element.hasAttribute(OVERLAY_HOST_ATTRIBUTE)) {
+  // The stack, not the top: a painted mark reports our host through the shadow.
+  const element = document.elementsFromPoint(x, y).find(isAnchorable) ?? null;
+  if (element === null) {
     return null;
   }
   const box = element.getBoundingClientRect();

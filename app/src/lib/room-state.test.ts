@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
-import type { CommentEntry, OverlayEntry, ReplyEntry } from "@/lib/protocol";
-import { EMPTY_ROOM, applyRoomMessage } from "@/lib/room-state";
+import type {
+  CommentEntry,
+  OverlayEntry,
+  RejectionReason,
+  ReplyEntry,
+  StickyEntry,
+} from "@/lib/protocol";
+import {
+  EMPTY_ROOM,
+  applyLocalPatch,
+  applyLocalRemove,
+  applyRoomMessage,
+} from "@/lib/room-state";
 
 const ANCHOR = {
   kind: "text" as const,
@@ -20,6 +31,7 @@ function comment(overrides: Partial<CommentEntry> = {}): CommentEntry {
     body: "Net or gross?",
     author: { id: "reader-1", displayName: "Sam", source: "anonymous" },
     color: "yellow",
+    fill: null,
     status: "open",
     createdAt: "2026-08-04T12:00:00.000Z",
     ...overrides,
@@ -49,6 +61,101 @@ function snapshot(entries: OverlayEntry[], canWrite = true) {
 function idsOf(entries: OverlayEntry[]): string[] {
   return entries.map((entry) => entry.id);
 }
+
+function rejection(reason: RejectionReason, id: string | null) {
+  return { version: 1 as const, type: "rejected" as const, reason, id };
+}
+
+function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
+  return {
+    ...comment(),
+    kind: "sticky",
+    id: "s1",
+    parentId: null,
+    offsetX: 0,
+    offsetY: 0,
+    width: null,
+    height: null,
+    tail: null,
+    ...overrides,
+  };
+}
+
+// The whole point of the local apply: a drag must land before the socket answers.
+describe("changes made locally while the room catches up", () => {
+  function loadedWith(entries: OverlayEntry[]) {
+    return applyRoomMessage(EMPTY_ROOM, snapshot(entries));
+  }
+
+  it("moves a sticky the moment the reader lets go", () => {
+    const state = applyLocalPatch(loadedWith([sticky()]), "s1", {
+      offsetX: 120,
+      offsetY: 40,
+    });
+
+    expect(state.entries[0]).toMatchObject({ offsetX: 120, offsetY: 40 });
+  });
+
+  it("puts the sticky back where it was when the room refuses", () => {
+    const moved = applyLocalPatch(loadedWith([sticky()]), "s1", {
+      offsetX: 120,
+    });
+    const state = applyRoomMessage(moved, rejection("read-only", "s1"));
+
+    expect(state.entries[0]).toMatchObject({ offsetX: 0 });
+    expect(state.rejection).toBe("read-only");
+  });
+
+  it("undoes to where the drag started, not to where it paused", () => {
+    const first = applyLocalPatch(loadedWith([sticky()]), "s1", {
+      offsetX: 120,
+    });
+    const second = applyLocalPatch(first, "s1", { offsetX: 300 });
+    const state = applyRoomMessage(second, rejection("read-only", "s1"));
+
+    expect(state.entries[0]).toMatchObject({ offsetX: 0 });
+  });
+
+  it("forgets the undo once the room confirms the move", () => {
+    const moved = applyLocalPatch(loadedWith([sticky()]), "s1", {
+      offsetX: 120,
+    });
+    const confirmed = applyRoomMessage(moved, {
+      version: 1,
+      type: "entry-patched",
+      entry: sticky({ offsetX: 120 }),
+    });
+    const state = applyRoomMessage(confirmed, rejection("malformed", "s1"));
+
+    expect(state.entries[0]).toMatchObject({ offsetX: 120 });
+  });
+
+  it("restores a deleted thread and its replies together", () => {
+    const removed = applyLocalRemove(loadedWith([comment(), reply()]), "c1");
+    const state = applyRoomMessage(removed, rejection("read-only", "c1"));
+
+    expect(idsOf(removed.entries)).toEqual([]);
+    expect(idsOf(state.entries).sort()).toEqual(["c1", "r1"]);
+  });
+
+  // An older room names no entry, so there is nothing to roll back to.
+  it("still reports a rejection that names no entry", () => {
+    const moved = applyLocalPatch(loadedWith([sticky()]), "s1", {
+      offsetX: 120,
+    });
+    const state = applyRoomMessage(moved, rejection("read-only", null));
+
+    expect(state.rejection).toBe("read-only");
+    expect(state.entries[0]).toMatchObject({ offsetX: 120 });
+  });
+
+  it("ignores a local change to an entry the room never had", () => {
+    const loaded = loadedWith([sticky()]);
+
+    expect(applyLocalPatch(loaded, "gone", { offsetX: 1 })).toBe(loaded);
+    expect(applyLocalRemove(loaded, "gone")).toBe(loaded);
+  });
+});
 
 describe("applyRoomMessage", () => {
   it("orders a snapshot oldest first", () => {
@@ -117,6 +224,7 @@ describe("applyRoomMessage", () => {
       version: 1,
       type: "rejected",
       reason: "read-only",
+      id: null,
     });
     const state = applyRoomMessage(rejected, snapshot([]));
 

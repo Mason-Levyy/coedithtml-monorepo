@@ -60,8 +60,9 @@ you — its own layout, its own navigation — without asking a question.
 - [x] The frame adapts to the artifact: a document grows the frame and lets the
       page scroll, an artifact that hides its own overflow keeps the viewport it
       was given — 21b
-- [x] Runtime build stays under 20KB minified, enforced in CI (currently
-      1.2KB) — 21b
+- [x] Runtime build stays under the minified budget, enforced in CI — 21b. The
+      budget was 20KB through Phase 2 and rose to 32KB when direct manipulation
+      landed
 
 ### Ship
 

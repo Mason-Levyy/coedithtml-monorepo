@@ -1,7 +1,8 @@
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   parseRuntimeToAppMessage,
   type Anchor,
+  type EntryPatch,
   type FitMode,
   type RuntimeToAppMessage,
   type TextAnchor,
@@ -61,11 +62,21 @@ function applyMessage(
       return { ...previous, placement: message.anchor };
     case "orphans":
       return { ...previous, orphanedMarkIds: message.markIds };
+    case "patch-mark":
+      return previous;
   }
 }
 
-export function useArtifactBridge(sandboxOrigin: string): ArtifactBridgeState {
+export type PatchMark = (markId: string, patch: EntryPatch) => void;
+
+// Callback, not state: a second drag of one sticky would look like a re-render.
+export function useArtifactBridge(
+  sandboxOrigin: string,
+  onPatchMark?: PatchMark,
+): ArtifactBridgeState {
   const [state, setState] = useState<ArtifactBridgeState>(NOTHING_REPORTED);
+  const patch = useRef<PatchMark | undefined>(onPatchMark);
+  patch.current = onPatchMark;
 
   // Layout effect: a cached frame can post before a deferred effect attaches.
   useLayoutEffect(() => {
@@ -77,6 +88,10 @@ export function useArtifactBridge(sandboxOrigin: string): ArtifactBridgeState {
       }
       const message = parseRuntimeToAppMessage(event.data);
       if (message === null) {
+        return;
+      }
+      if (message.type === "patch-mark") {
+        patch.current?.(message.markId, message.patch);
         return;
       }
       setState((previous) => applyMessage(previous, message));

@@ -35,6 +35,7 @@ const ENTRY = {
   body: "Net or gross?",
   author: { id: "reader-1", displayName: "Sam", source: "anonymous" as const },
   color: "yellow" as const,
+  fill: null,
   status: "open" as const,
   createdAt: "2026-08-04T12:00:00.000Z",
 };

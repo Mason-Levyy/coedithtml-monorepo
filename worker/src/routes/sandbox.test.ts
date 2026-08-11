@@ -146,6 +146,28 @@ describe("handleSandboxRequest", () => {
     expect(directivePrologue.trim()).toBe('"use strict";');
   });
 
+  it("drops the asset's validators, which describe the body before the config", async () => {
+    const assets = stubAssets([
+      {
+        path: "/runtime.js",
+        body: "console.log(1);",
+        contentType: "text/javascript",
+        headers: {
+          etag: '"unprefixed-bundle"',
+          "last-modified": "Tue, 04 Aug 2026 00:00:00 GMT",
+        },
+      },
+    ]);
+    const response = await handleSandboxRequest(
+      request(RUNTIME_SCRIPT_PATH),
+      envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([])), assets),
+    );
+
+    expect(response.headers.get("etag")).toBeNull();
+    expect(response.headers.get("last-modified")).toBeNull();
+    expect(response.headers.get("cache-control")).toBe("no-cache");
+  });
+
   it("returns 404 for the runtime script path when no bundle asset exists", async () => {
     const response = await handleSandboxRequest(
       request(RUNTIME_SCRIPT_PATH),
