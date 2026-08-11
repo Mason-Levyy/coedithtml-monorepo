@@ -2,12 +2,12 @@ import { Button } from "@/components/ui/button";
 import { copyLabel, useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 
 type ShareLinkResultProps = {
-  viewUrl: string;
+  shareUrl: string;
   onUploadAnother: () => void;
 };
 
 export function ShareLinkResult({
-  viewUrl,
+  shareUrl,
   onUploadAnother,
 }: ShareLinkResultProps) {
   const clipboard = useCopyToClipboard();
@@ -19,12 +19,19 @@ export function ShareLinkResult({
       </span>
       <div className="flex items-center gap-2 border border-line bg-paper-2 px-3 py-2">
         <span className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
-          {viewUrl}
+          {shareUrl}
         </span>
-        <Button type="button" size="sm" onClick={() => clipboard.copy(viewUrl)}>
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => clipboard.copy(shareUrl)}
+        >
           {copyLabel(clipboard.state)}
         </Button>
       </div>
+      <p className="text-sm text-muted-foreground">
+        Anyone with this link can comment and mark it up.
+      </p>
       <div>
         <Button type="button" variant="outline" onClick={onUploadAnother}>
           Upload another
