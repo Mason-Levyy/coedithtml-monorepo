@@ -5,10 +5,12 @@ import {
   fitMessage,
   markActivatedMessage,
   orphansMessage,
+  patchMarkMessage,
   placementMessage,
   readyMessage,
   renderMarksMessage,
   selectionMessage,
+  setCapabilitiesMessage,
   setToolMessage,
   type AppToRuntimeMessage,
   type FitMode,
@@ -19,7 +21,8 @@ import {
 import type { OverlayEntry } from "./overlay";
 import { parseAnchor } from "./parse-anchor";
 import { parseOverlayEntry } from "./parse-overlay";
-import { asFiniteNumber, asRecord } from "./parse-values";
+import { parseEntryPatch } from "./parse-room";
+import { asFilledString, asFiniteNumber, asRecord } from "./parse-values";
 
 const FIT_MODES: readonly FitMode[] = ["scrolls-itself", "grows-to-content"];
 
@@ -109,6 +112,14 @@ export function parseRuntimeToAppMessage(
       : null;
   }
 
+  if (candidate.type === "patch-mark") {
+    const markId = asFilledString(candidate.markId);
+    const patch = parseEntryPatch(candidate.patch);
+    return markId === null || patch === null
+      ? null
+      : patchMarkMessage(markId, patch);
+  }
+
   return null;
 }
 
@@ -148,6 +159,11 @@ export function parseAppToRuntimeMessage(
       return setToolMessage(null);
     }
     return isMarkTool(candidate.tool) ? setToolMessage(candidate.tool) : null;
+  }
+  if (candidate.type === "set-capabilities") {
+    return typeof candidate.canWrite === "boolean"
+      ? setCapabilitiesMessage(candidate.canWrite)
+      : null;
   }
   return null;
 }

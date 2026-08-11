@@ -1,5 +1,5 @@
 import type { Anchor, TextAnchor } from "./anchor";
-import type { OverlayEntry } from "./overlay";
+import type { EntryPatch, OverlayEntry } from "./overlay";
 
 export const BRIDGE_VERSION = 1;
 
@@ -46,13 +46,20 @@ export type RuntimeOrphansMessage = Versioned & {
   markIds: string[];
 };
 
+export type RuntimePatchMarkMessage = Versioned & {
+  type: "patch-mark";
+  markId: string;
+  patch: EntryPatch;
+};
+
 export type RuntimeToAppMessage =
   | RuntimeReadyMessage
   | RuntimeFitMessage
   | RuntimeSelectionMessage
   | RuntimeMarkActivatedMessage
   | RuntimePlacementMessage
-  | RuntimeOrphansMessage;
+  | RuntimeOrphansMessage
+  | RuntimePatchMarkMessage;
 
 export type AppRenderMarksMessage = Versioned & {
   type: "render-marks";
@@ -68,7 +75,13 @@ export type AppSetToolMessage = Versioned & {
   tool: MarkTool | null;
 };
 
-export type AppToRuntimeMessage = AppRenderMarksMessage | AppSetToolMessage;
+export type AppSetCapabilitiesMessage = Versioned & {
+  type: "set-capabilities";
+  canWrite: boolean;
+};
+
+export type AppToRuntimeMessage =
+  AppRenderMarksMessage | AppSetToolMessage | AppSetCapabilitiesMessage;
 
 export function readyMessage(title: string): RuntimeReadyMessage {
   return { version: BRIDGE_VERSION, type: "ready", title };
@@ -110,4 +123,17 @@ export function orphansMessage(markIds: string[]): RuntimeOrphansMessage {
 
 export function setToolMessage(tool: MarkTool | null): AppSetToolMessage {
   return { version: BRIDGE_VERSION, type: "set-tool", tool };
+}
+
+export function patchMarkMessage(
+  markId: string,
+  patch: EntryPatch,
+): RuntimePatchMarkMessage {
+  return { version: BRIDGE_VERSION, type: "patch-mark", markId, patch };
+}
+
+export function setCapabilitiesMessage(
+  canWrite: boolean,
+): AppSetCapabilitiesMessage {
+  return { version: BRIDGE_VERSION, type: "set-capabilities", canWrite };
 }

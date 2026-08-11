@@ -1,10 +1,12 @@
-import { parseOptionalAnchor } from "./parse-anchor";
 import type { EntryPatch } from "./overlay";
 import {
   isEntryStatus,
   isMarkColor,
+  parseOptionalFill,
+  parseOptionalSide,
   parseOverlayDocument,
   parseOverlayEntry,
+  parseTailTip,
 } from "./parse-overlay";
 import {
   asFilledString,
@@ -62,7 +64,7 @@ function parseReaderList(value: unknown): ReaderPresence[] | null {
 }
 
 // Absent stays absent: a patch that names no field must not clear the others.
-function parseEntryPatch(value: unknown): EntryPatch | null {
+export function parseEntryPatch(value: unknown): EntryPatch | null {
   const record = asRecord(value);
   if (record === null) {
     return null;
@@ -102,12 +104,32 @@ function parseEntryPatch(value: unknown): EntryPatch | null {
     }
     patch.offsetY = offsetY;
   }
-  if (record.tail !== undefined) {
-    const tail = parseOptionalAnchor(record.tail);
-    if (!tail.ok) {
+  if (record.fill !== undefined) {
+    const fill = parseOptionalFill(record.fill);
+    if (record.fill !== null && fill === null) {
       return null;
     }
-    patch.tail = tail.anchor;
+    patch.fill = fill;
+  }
+  if (record.width !== undefined) {
+    const width = parseOptionalSide(record.width);
+    if (record.width !== null && width === null) {
+      return null;
+    }
+    patch.width = width;
+  }
+  if (record.height !== undefined) {
+    const height = parseOptionalSide(record.height);
+    if (record.height !== null && height === null) {
+      return null;
+    }
+    patch.height = height;
+  }
+  if (record.tail !== undefined) {
+    if (record.tail !== null && parseTailTip(record.tail) === null) {
+      return null;
+    }
+    patch.tail = parseTailTip(record.tail);
   }
   return patch;
 }
@@ -181,8 +203,9 @@ export function parseRoomToClientMessage(
     return readers === null ? null : presenceMessage(readers);
   }
   if (record.type === "rejected") {
+    // Absent stays null: a room too old to name the entry still rejects.
     return isRejectionReason(record.reason)
-      ? rejectedMessage(record.reason)
+      ? rejectedMessage(record.reason, asFilledString(record.id))
       : null;
   }
   return null;

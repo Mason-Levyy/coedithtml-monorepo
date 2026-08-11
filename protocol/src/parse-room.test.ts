@@ -32,6 +32,7 @@ const COMMENT: CommentEntry = {
   body: "Net or gross?",
   author: { id: "reader-1", displayName: "Sam", source: "anonymous" },
   color: "yellow",
+  fill: null,
   status: "open",
   createdAt: "2026-08-04T12:00:00.000Z",
 };
@@ -42,7 +43,9 @@ const STICKY: StickyEntry = {
   id: "s1",
   offsetX: 10,
   offsetY: 20,
-  tail: ANCHOR,
+  width: null,
+  height: null,
+  tail: { x: 40, y: 120 },
 };
 
 function roundTrip<T>(message: T): unknown {
@@ -119,6 +122,48 @@ describe("parseClientToRoomMessage", () => {
       }),
     ).toBeNull();
   });
+
+  // The patch parser is a second colour site; missing it rejects every recolour.
+  it("reads the fields a drag and a colour wheel produce", () => {
+    const parsed = parseClientToRoomMessage(
+      roundTrip(
+        patchEntryMessage("s1", {
+          fill: "#0b1f4d",
+          width: 320,
+          height: 180,
+          offsetX: 40,
+        }),
+      ),
+    );
+
+    expect(parsed).toMatchObject({
+      patch: { fill: "#0b1f4d", width: 320, height: 180, offsetX: 40 },
+    });
+  });
+
+  it("reads a null fill and a null size as instructions to clear them", () => {
+    expect(
+      parseClientToRoomMessage({
+        version: 1,
+        type: "patch-entry",
+        id: "s1",
+        patch: { fill: null, width: null },
+      }),
+    ).toMatchObject({ patch: { fill: null, width: null } });
+  });
+
+  it("rejects a fill no stylesheet could take and a size that is not one", () => {
+    for (const patch of [{ fill: "chartreuse" }, { width: "wide" }]) {
+      expect(
+        parseClientToRoomMessage({
+          version: 1,
+          type: "patch-entry",
+          id: "s1",
+          patch,
+        }),
+      ).toBeNull();
+    }
+  });
 });
 
 describe("parseRoomToClientMessage", () => {
@@ -181,6 +226,6 @@ describe("patchEntry", () => {
   // A comment is placed by its anchor, so an offset on one has nowhere to go.
   it("refuses to move something that does not float", () => {
     expect(patchEntry(COMMENT, { offsetY: 5 })).toBeNull();
-    expect(patchEntry(COMMENT, { tail: ANCHOR })).toBeNull();
+    expect(patchEntry(COMMENT, { tail: { x: 1, y: 2 } })).toBeNull();
   });
 });

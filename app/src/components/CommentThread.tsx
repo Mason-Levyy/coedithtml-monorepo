@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MARK_FILL, type OverlayEntry, type ReplyEntry } from "@/lib/protocol";
+import {
+  effectiveEdge,
+  effectiveFill,
+  type OverlayEntry,
+  type ReplyEntry,
+} from "@/lib/protocol";
 import { cn } from "@/lib/utils";
 
 function displayNameOf(entry: OverlayEntry): string {
@@ -40,6 +45,13 @@ export function CommentThread({
   const resolved = entry.status === "resolved";
   const quote = quoteOf(entry);
 
+  function send(): void {
+    if (reply.trim().length > 0) {
+      onReply(reply.trim());
+      setReply("");
+    }
+  }
+
   return (
     <article
       onClick={onActivate}
@@ -52,8 +64,11 @@ export function CommentThread({
       <header className="flex items-center gap-2">
         <span
           aria-hidden
-          className="size-3 flex-none border border-ink"
-          style={{ background: MARK_FILL[entry.color] }}
+          className="size-3 flex-none border"
+          style={{
+            background: effectiveFill(entry),
+            borderColor: effectiveEdge(entry),
+          }}
         />
         <span className="truncate font-mono text-[10px] tracking-wide uppercase">
           {displayNameOf(entry)}
@@ -104,10 +119,7 @@ export function CommentThread({
             className="flex gap-2"
             onSubmit={(event) => {
               event.preventDefault();
-              if (reply.trim().length > 0) {
-                onReply(reply.trim());
-                setReply("");
-              }
+              send();
             }}
           >
             <input

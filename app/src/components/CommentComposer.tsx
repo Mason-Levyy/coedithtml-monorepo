@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MarkColorPicker } from "@/components/MarkColorPicker";
-import {
-  DEFAULT_MARK_COLOR,
-  type MarkColor,
-  type TextAnchor,
-} from "@/lib/protocol";
+import { MarkColorPicker, type MarkPaint } from "@/components/MarkColorPicker";
+import { DEFAULT_MARK_COLOR, type TextAnchor } from "@/lib/protocol";
 
-export type ComposedMark = { body: string; color: MarkColor };
+export type ComposedMark = MarkPaint & { body: string };
 
 type CommentComposerProps = {
   anchor: TextAnchor;
@@ -20,13 +16,17 @@ export function CommentComposer({
   onSubmit,
   onDismiss,
 }: CommentComposerProps) {
-  const [body, setBody] = useState("");
-  const [color, setColor] = useState<MarkColor>(DEFAULT_MARK_COLOR);
   const field = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     field.current?.focus();
   }, [anchor.quote]);
+
+  const [body, setBody] = useState("");
+  const [paint, setPaint] = useState<MarkPaint>({
+    color: DEFAULT_MARK_COLOR,
+    fill: null,
+  });
 
   const ready = body.trim().length > 0;
 
@@ -36,7 +36,7 @@ export function CommentComposer({
       onSubmit={(event) => {
         event.preventDefault();
         if (ready) {
-          onSubmit({ body: body.trim(), color });
+          onSubmit({ ...paint, body: body.trim() });
           setBody("");
         }
       }}
@@ -59,7 +59,7 @@ export function CommentComposer({
         className="resize-none border-2 border-line bg-paper-2 p-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
       />
       <div className="flex items-center gap-2">
-        <MarkColorPicker value={color} onChange={setColor} />
+        <MarkColorPicker value={paint} onChange={setPaint} />
         <Button type="submit" size="sm" className="ml-auto" disabled={!ready}>
           Comment
         </Button>

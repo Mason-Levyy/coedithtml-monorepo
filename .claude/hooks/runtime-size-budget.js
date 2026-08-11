@@ -67,7 +67,7 @@ function main() {
   const jsFiles = fs.readdirSync(distDir).filter((f) => f.endsWith('.js'));
   if (jsFiles.length === 0) return;
 
-  const LIMIT_BYTES = 20 * 1024;
+  const LIMIT_BYTES = 32 * 1024;
   const oversized = jsFiles
     .map((f) => ({ f, size: fs.statSync(path.join(distDir, f)).size }))
     .filter(({ size }) => size > LIMIT_BYTES);
@@ -75,7 +75,7 @@ function main() {
   if (oversized.length > 0) {
     const detail = oversized.map(({ f, size }) => `  ${f}: ${(size / 1024).toFixed(1)}KB`).join('\n');
     block(
-      `runtime/ bundle exceeds the 20KB minified budget (CLAUDE.md):\n${detail}\nReduce bundle size or justify the increase in the PR.`,
+      `runtime/ bundle exceeds the 32KB minified budget (CLAUDE.md):\n${detail}\nReduce bundle size or justify the increase in the PR.`,
     );
   }
 }

@@ -21,6 +21,7 @@ type Draft = {
   body: string;
   reader: ReaderPresence;
   color: MarkColor;
+  fill?: string | null;
 };
 
 // The room stamps its own createdAt; this one only orders an unsent entry.
@@ -31,6 +32,7 @@ function shared(draft: Draft) {
     body: draft.body,
     author: authorFrom(draft.reader),
     color: draft.color,
+    fill: draft.fill ?? null,
     status: "open" as const,
     createdAt: new Date().toISOString(),
   };
@@ -53,6 +55,8 @@ export function newSticky(
     parentId: null,
     offsetX: draft.offsetX,
     offsetY: draft.offsetY,
+    width: null,
+    height: null,
     tail: null,
   };
 }

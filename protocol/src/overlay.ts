@@ -31,6 +31,8 @@ type EntryBase = {
   body: string;
   author: Author;
   color: MarkColor;
+  // A client too old to know this field still paints the nearest named colour.
+  fill: string | null;
   status: EntryStatus;
   createdAt: string;
 };
@@ -39,14 +41,43 @@ export type CommentEntry = EntryBase & { kind: "comment"; parentId: null };
 
 export type ReplyEntry = EntryBase & { kind: "reply"; parentId: string };
 
+// Measured from the sticky's own top-left, so the tip travels with the shape.
+export type TailTip = { x: number; y: number };
+
 // A callout is a sticky whose tail is set, so there is no third kind.
 export type StickyEntry = EntryBase & {
   kind: "sticky";
   parentId: null;
   offsetX: number;
   offsetY: number;
-  tail: Anchor | null;
+  width: number | null;
+  height: number | null;
+  tail: TailTip | null;
 };
+
+export const MIN_STICKY_WIDTH = 120;
+export const MIN_STICKY_HEIGHT = 40;
+// Capped because a sticky takes pointer events, and a huge one eats the artifact.
+export const MAX_STICKY_WIDTH = 800;
+export const MAX_STICKY_HEIGHT = 2000;
+
+function clampSide(
+  value: number | null,
+  min: number,
+  max: number,
+): number | null {
+  return value === null ? null : Math.min(Math.max(value, min), max);
+}
+
+export function clampStickySize(size: {
+  width: number | null;
+  height: number | null;
+}): { width: number | null; height: number | null } {
+  return {
+    width: clampSide(size.width, MIN_STICKY_WIDTH, MAX_STICKY_WIDTH),
+    height: clampSide(size.height, MIN_STICKY_HEIGHT, MAX_STICKY_HEIGHT),
+  };
+}
 
 export type OverlayEntry = CommentEntry | ReplyEntry | StickyEntry;
 
@@ -85,16 +116,21 @@ export function repliesTo(
 export type EntryPatch = {
   body?: string;
   color?: MarkColor;
+  fill?: string | null;
   status?: EntryStatus;
   offsetX?: number;
   offsetY?: number;
-  tail?: Anchor | null;
+  width?: number | null;
+  height?: number | null;
+  tail?: TailTip | null;
 };
 
 function movesOrPoints(patch: EntryPatch): boolean {
   return (
     patch.offsetX !== undefined ||
     patch.offsetY !== undefined ||
+    patch.width !== undefined ||
+    patch.height !== undefined ||
     patch.tail !== undefined
   );
 }
@@ -104,16 +140,23 @@ export function patchEntry(
   entry: OverlayEntry,
   patch: EntryPatch,
 ): OverlayEntry | null {
-  const body = patch.body ?? entry.body;
-  const color = patch.color ?? entry.color;
-  const status = patch.status ?? entry.status;
+  const shared = {
+    body: patch.body ?? entry.body,
+    color: patch.color ?? entry.color,
+    fill: patch.fill === undefined ? entry.fill : patch.fill,
+    status: patch.status ?? entry.status,
+  };
 
   if (isFloating(entry)) {
+    // Clamped here so the server stores what the dragging client previewed.
+    const size = clampStickySize({
+      width: patch.width === undefined ? entry.width : patch.width,
+      height: patch.height === undefined ? entry.height : patch.height,
+    });
     return {
       ...entry,
-      body,
-      color,
-      status,
+      ...shared,
+      ...size,
       offsetX: patch.offsetX ?? entry.offsetX,
       offsetY: patch.offsetY ?? entry.offsetY,
       tail: patch.tail === undefined ? entry.tail : patch.tail,
@@ -122,5 +165,5 @@ export function patchEntry(
   if (movesOrPoints(patch)) {
     return null;
   }
-  return { ...entry, body, color, status };
+  return { ...entry, ...shared };
 }

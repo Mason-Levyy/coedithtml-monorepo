@@ -9,7 +9,11 @@ import {
   type RoomToClientMessage,
 } from "@coedithtml/protocol";
 import { createEntryStore } from "@/lib/entry-store-sqlite";
-import { applyClientMessage, type EntryStore } from "@/lib/overlay-log";
+import {
+  applyClientMessage,
+  entryIdIn,
+  type EntryStore,
+} from "@/lib/overlay-log";
 import { attachmentOf, readersAmong } from "@/lib/room-presence";
 import { ROOM_REVISION_HEADER, ROOM_WRITE_HEADER } from "@/lib/room-headers";
 
@@ -82,7 +86,7 @@ export class DocRoom extends DurableObject<Env> {
       return;
     }
     if (!attachment.canWrite) {
-      this.sendTo(socket, rejectedMessage("read-only"));
+      this.sendTo(socket, rejectedMessage("read-only", entryIdIn(message)));
       return;
     }
 
@@ -95,7 +99,7 @@ export class DocRoom extends DurableObject<Env> {
       return;
     }
     if (!outcome.ok) {
-      this.sendTo(socket, rejectedMessage(outcome.reason));
+      this.sendTo(socket, rejectedMessage(outcome.reason, outcome.id));
       return;
     }
     this.broadcast(outcome.broadcast);

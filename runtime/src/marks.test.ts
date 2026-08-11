@@ -36,9 +36,11 @@ beforeEach(() => {
     postMessage: (message: RuntimeToAppMessage) => posted.push(message),
   } as unknown as Window);
 
-  vi.spyOn(document, "elementFromPoint").mockImplementation(() =>
-    document.querySelector("p"),
-  );
+  // happy-dom has no elementsFromPoint, so it is assigned rather than spied on.
+  Object.defineProperty(document, "elementsFromPoint", {
+    configurable: true,
+    value: () => [document.querySelector("p")].filter((node) => node !== null),
+  });
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
     left: 0,
     top: 0,
