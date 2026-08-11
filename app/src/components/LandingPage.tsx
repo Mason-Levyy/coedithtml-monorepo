@@ -22,7 +22,7 @@ export function LandingPage() {
 
       {upload.data ? (
         <ShareLinkResult
-          viewUrl={upload.data.viewUrl}
+          shareUrl={upload.data.editUrl}
           onUploadAnother={() => {
             setPassword("");
             upload.reset();

@@ -39,7 +39,7 @@ describe("LandingPage", () => {
   });
 
   it("shows the share link after a successful upload", async () => {
-    const viewUrl = "https://sandbox.test/" + "a".repeat(32);
+    const editUrl = "https://sandbox.test/" + "c".repeat(32);
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -48,8 +48,8 @@ describe("LandingPage", () => {
             artifactId: "a".repeat(32),
             viewToken: "b".repeat(32),
             editToken: "c".repeat(32),
-            viewUrl,
-            editUrl: "https://sandbox.test/" + "c".repeat(32),
+            viewUrl: "https://sandbox.test/" + "a".repeat(32),
+            editUrl,
           },
           201,
         ),
@@ -62,7 +62,7 @@ describe("LandingPage", () => {
     });
 
     await vi.waitFor(() => {
-      expect(() => screen.getByText(viewUrl)).not.toThrow();
+      expect(() => screen.getByText(editUrl)).not.toThrow();
     });
   });
 
@@ -84,7 +84,7 @@ describe("LandingPage", () => {
   });
 
   it("returns to the dropzone after Upload another", async () => {
-    const viewUrl = "https://sandbox.test/" + "a".repeat(32);
+    const editUrl = "https://sandbox.test/" + "c".repeat(32);
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
@@ -93,8 +93,8 @@ describe("LandingPage", () => {
             artifactId: "a".repeat(32),
             viewToken: "b".repeat(32),
             editToken: "c".repeat(32),
-            viewUrl,
-            editUrl: "https://sandbox.test/" + "c".repeat(32),
+            viewUrl: "https://sandbox.test/" + "a".repeat(32),
+            editUrl,
           },
           201,
         ),
@@ -106,7 +106,7 @@ describe("LandingPage", () => {
       target: { files: [htmlFile("deck.html", 100)] },
     });
     await vi.waitFor(() => {
-      expect(() => screen.getByText(viewUrl)).not.toThrow();
+      expect(() => screen.getByText(editUrl)).not.toThrow();
     });
 
     fireEvent.click(screen.getByText("Upload another"));
