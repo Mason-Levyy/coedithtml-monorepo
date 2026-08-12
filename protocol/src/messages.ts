@@ -46,6 +46,11 @@ export type RuntimeOrphansMessage = Versioned & {
   markIds: string[];
 };
 
+// Escape is pressed over the frame, where the app's own listener never hears it.
+export type RuntimeToolCancelledMessage = Versioned & {
+  type: "tool-cancelled";
+};
+
 export type RuntimePatchMarkMessage = Versioned & {
   type: "patch-mark";
   markId: string;
@@ -59,6 +64,7 @@ export type RuntimeToAppMessage =
   | RuntimeMarkActivatedMessage
   | RuntimePlacementMessage
   | RuntimeOrphansMessage
+  | RuntimeToolCancelledMessage
   | RuntimePatchMarkMessage
   | RuntimeRemoveMarkMessage;
 
@@ -141,6 +147,10 @@ export function placementMessage(anchor: Anchor): RuntimePlacementMessage {
 
 export function orphansMessage(markIds: string[]): RuntimeOrphansMessage {
   return { version: BRIDGE_VERSION, type: "orphans", markIds };
+}
+
+export function toolCancelledMessage(): RuntimeToolCancelledMessage {
+  return { version: BRIDGE_VERSION, type: "tool-cancelled" };
 }
 
 export function setToolMessage(tool: MarkTool | null): AppSetToolMessage {

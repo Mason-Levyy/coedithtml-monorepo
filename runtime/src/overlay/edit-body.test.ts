@@ -5,6 +5,7 @@ import { createStickyElement } from "./elements";
 
 const commits = vi.fn();
 const abandons = vi.fn();
+const changes = vi.fn();
 
 let editor: BodyEditor;
 let element: HTMLElement;
@@ -57,6 +58,7 @@ function field(): HTMLElement {
 
 function typeIn(text: string): void {
   field().textContent = text;
+  field().dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function blur(): void {
@@ -73,10 +75,11 @@ beforeEach(() => {
   document.body.innerHTML = "";
   commits.mockReset();
   abandons.mockReset();
+  changes.mockReset();
   editor = createBodyEditor({
     onCommit: commits,
     onAbandon: abandons,
-    onChanged: () => {},
+    onChanged: changes,
   });
 });
 
@@ -152,6 +155,29 @@ describe("editing a sticky in place", () => {
 
     expect(abandons).not.toHaveBeenCalled();
     expect(commits).toHaveBeenCalledWith("s1", "");
+  });
+
+  // The note is drawn from its measured box, so it only grows if typing repaints.
+  it("asks for a repaint on every keystroke", () => {
+    element = stickyWith("");
+    editor.begin(element, "s1", "");
+    changes.mockReset();
+
+    typeIn("Swap");
+    typeIn("Swap this");
+
+    expect(changes).toHaveBeenCalledTimes(2);
+  });
+
+  it("stops asking once the reader has clicked away", () => {
+    element = stickyWith("Swap this chart");
+    editor.begin(element, "s1", "Swap this chart");
+    blur();
+    changes.mockReset();
+
+    typeIn("no longer editing");
+
+    expect(changes).not.toHaveBeenCalled();
   });
 
   // The artifact's own shortcuts must not fire under a reader who is typing.

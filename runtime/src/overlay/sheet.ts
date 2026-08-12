@@ -28,9 +28,11 @@ export const EDITABLE_SHEET =
 .sticky.dragging { cursor: grabbing; }
 ` +
   // Invisible handles would otherwise steal the drag that should move it.
-  `.handle { position: absolute; width: ${HANDLE_SIZE}px; height: ${HANDLE_SIZE}px; box-sizing: border-box; border: 1.5px solid #4b5563; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); opacity: 0; transition: opacity 90ms ease-out; pointer-events: none; touch-action: none; }
-:is(.sticky:hover, .sticky.selected, .sticky.dragging) :is(.handle, .node) { opacity: 1; }
-:is(.sticky:hover, .sticky.selected, .sticky.dragging) .handle { pointer-events: auto; }
+  `:is(.handle, .node) { position: absolute; box-sizing: border-box; background: #fff; border-radius: 50%; opacity: 0; transition: opacity 90ms ease-out; pointer-events: none; }
+.handle { width: ${HANDLE_SIZE}px; height: ${HANDLE_SIZE}px; border: 1.5px solid #4b5563; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); touch-action: none; }
+.node { width: ${NODE_SIZE}px; height: ${NODE_SIZE}px; margin: ${NODE_INSET}px 0 0 ${NODE_INSET}px; border: 1.5px solid #2f6fed; }
+.sticky:is(:hover, .selected, .dragging) :is(.handle, .node) { opacity: 1; }
+.sticky:is(:hover, .selected, .dragging) .handle { pointer-events: auto; }
 .handle:hover { border-color: #17171a; transform: scale(1.15); }
 .handle[data-edge="nw"] { top: ${HANDLE_INSET}px; left: ${HANDLE_INSET}px; cursor: nwse-resize; }
 .handle[data-edge="n"] { top: ${HANDLE_INSET}px; left: 50%; margin-left: ${HANDLE_INSET}px; cursor: ns-resize; }
@@ -41,18 +43,15 @@ export const EDITABLE_SHEET =
 .handle[data-edge="sw"] { bottom: ${HANDLE_INSET}px; left: ${HANDLE_INSET}px; cursor: nesw-resize; }
 .handle[data-edge="w"] { top: 50%; left: ${HANDLE_INSET}px; margin-top: ${HANDLE_INSET}px; cursor: ew-resize; }
 .handle.tip { margin: ${HANDLE_INSET}px 0 0 ${HANDLE_INSET}px; border-color: #2f6fed; background: #2f6fed; box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.9); cursor: crosshair; }
-.node { position: absolute; width: ${NODE_SIZE}px; height: ${NODE_SIZE}px; box-sizing: border-box; margin: ${NODE_INSET}px 0 0 ${NODE_INSET}px; border: 1.5px solid #2f6fed; background: #fff; border-radius: 50%; opacity: 0; transition: opacity 90ms ease-out; pointer-events: none; }
-:is(.sticky.selected, .sticky.editing) .shape path { stroke: #2f6fed; stroke-width: 2; }
+.sticky:is(.selected, .editing) .shape path { stroke: #2f6fed; stroke-width: 2; }
 .sticky.editing { user-select: text; cursor: text; }
 .sticky.editing .content { overflow: auto; }
 .sticky.editing :is(.handle, .node) { opacity: 0; pointer-events: none; }
 ` +
   // Padding, not a gap: a bare 6px would drop :hover and take the tools away mid-reach.
   `.tools { position: absolute; right: 0; bottom: 100%; padding-bottom: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity 90ms ease-out; pointer-events: none; }
-` +
-  // Flipped under the note when it sits too near the top edge to show them above.
-  `.sticky.low-room .tools { top: 100%; bottom: auto; padding: 6px 0 0; }
-:is(.sticky:hover, .sticky.selected, .sticky.editing) .tools { opacity: 1; pointer-events: auto; }
+.sticky.low-room .tools { top: 100%; bottom: auto; padding: 6px 0 0; }
+.sticky:is(:hover, .selected, .editing) .tools { opacity: 1; pointer-events: auto; }
 .sticky.dragging .tools { opacity: 0; pointer-events: none; }
 .tool { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 1px solid #d3d5d8; border-radius: 6px; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); color: #3c4046; font: 12px/1 ${FONT}; cursor: pointer; }
 .tool:hover { border-color: #17171a; color: #17171a; }

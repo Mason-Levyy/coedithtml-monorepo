@@ -15,6 +15,8 @@ type StickyPadProps = {
 // Below this a press is a click, and a click arms the pad instead of dropping.
 const DRAG_THRESHOLD = 5;
 
+const FOLDED_EAR = "polygon(100% 0, 100% 100%, 0 100%)";
+
 function travelled(from: PadPoint, to: PadPoint): number {
   return Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y));
 }
@@ -58,22 +60,26 @@ export function StickyPad({ armed, color, onArm, onDrop }: StickyPadProps) {
         }}
         onPointerCancel={finish}
         className={cn(
-          "flex items-center gap-2 border-2 border-ink px-3 py-2 shadow-md transition-transform",
-          "touch-none select-none hover:-translate-y-0.5",
-          armed ? "bg-ink text-paper" : "bg-paper-2",
+          "relative flex h-8 min-w-28 flex-none items-center justify-center",
+          "border-2 border-ink px-2 touch-none select-none",
+          "font-mono text-xs tracking-wide uppercase",
+          "focus-visible:outline-2 focus-visible:outline-ring",
+          armed && "outline-2 outline-offset-2 outline-ink",
         )}
+        style={{
+          background: effectiveFill(paint),
+          color: textOn(effectiveFill(paint)),
+        }}
       >
+        <span>{armed ? "Click page" : "Sticky"}</span>
         <span
           aria-hidden
-          className="size-4 flex-none rounded-[2px] border"
+          className="absolute right-0 bottom-0 size-3"
           style={{
-            background: effectiveFill(paint),
-            borderColor: effectiveEdge(paint),
+            background: effectiveEdge(paint),
+            clipPath: FOLDED_EAR,
           }}
         />
-        <span className="font-mono text-[10px] tracking-wide uppercase">
-          {armed ? "Click the page" : "Sticky"}
-        </span>
       </button>
 
       {ghost !== null && (

@@ -64,6 +64,7 @@ function applyMessage(
       return { ...previous, orphanedMarkIds: message.markIds };
     case "patch-mark":
     case "remove-mark":
+    case "tool-cancelled":
       return previous;
   }
 }
@@ -77,6 +78,7 @@ export function useArtifactBridge(options: {
   sandboxOrigin: string;
   onPatchMark: PatchMark;
   onRemoveMark: RemoveMark;
+  onToolCancelled: () => void;
 }): ArtifactBridgeState {
   const { sandboxOrigin } = options;
   const [state, setState] = useState<ArtifactBridgeState>(NOTHING_REPORTED);
@@ -101,6 +103,10 @@ export function useArtifactBridge(options: {
       }
       if (message.type === "remove-mark") {
         acted.current.onRemoveMark(message.markId);
+        return;
+      }
+      if (message.type === "tool-cancelled") {
+        acted.current.onToolCancelled();
         return;
       }
       setState((previous) => applyMessage(previous, message));

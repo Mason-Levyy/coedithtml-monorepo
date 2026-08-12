@@ -164,7 +164,7 @@ function pressPad(): void {
 const CHOSEN_COLOUR = "#2456b5";
 
 function pickColour(): void {
-  fireEvent.click(screen.getByRole("button", { name: "Your colour" }));
+  fireEvent.click(screen.getByRole("button", { name: "Your name and colour" }));
   fireEvent.click(screen.getByRole("button", { name: CHOSEN_COLOUR }));
 }
 
@@ -417,6 +417,25 @@ describe("the comment rail", () => {
         expect.objectContaining({ type: "set-tool", tool: "sticky" }),
       );
     });
+
+    // Escape over the frame is heard by the artifact, never by this document.
+    it("stands the pad down when the artifact reports the tool cancelled", () => {
+      renderViewer();
+      openRoomWith([]);
+      pressPad();
+      expect(screen.getByText("Click page")).toBeTruthy();
+
+      act(() => {
+        window.dispatchEvent(
+          new MessageEvent("message", {
+            origin: SANDBOX_ORIGIN,
+            data: { version: 1, type: "tool-cancelled" },
+          }),
+        );
+      });
+
+      expect(screen.queryByText("Click page")).toBeNull();
+    });
   });
 
   it("deletes the sticky the reader threw away from inside the artifact", () => {
@@ -618,7 +637,7 @@ describe("the comment rail", () => {
       fireEvent.click(screen.getByRole("button", { name: "Hide comments" }));
       expect(screen.queryByText("Net or gross?")).toBeNull();
 
-      fireEvent.click(screen.getByRole("button", { name: /1 open/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Show comments" }));
       expect(screen.getByText("Net or gross?")).toBeTruthy();
     });
 
@@ -713,6 +732,23 @@ describe("the comment rail", () => {
         expect.objectContaining({ type: "set-tool", tool: "sticky" }),
       );
     });
+
+    it("reaches the sticky once they have named themselves in the bar", () => {
+      renderViewer({ named: false });
+      const posted = watchRuntimeMessages();
+      openRoomWith([]);
+      pressPad();
+
+      fireEvent.change(screen.getByLabelText("Your name"), {
+        target: { value: "Priya" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      pressPad();
+
+      expect(posted).toContainEqual(
+        expect.objectContaining({ type: "set-tool", tool: "sticky" }),
+      );
+    });
   });
 
   // A view link cannot write at any name, so asking would be a dead end.
@@ -731,7 +767,8 @@ describe("the comment rail", () => {
     selectText();
     writeComment("Tighten this.");
 
-    expect(screen.queryByLabelText("Your name")).toBeTruthy();
+    expect(screen.queryByLabelText("Your name")).toBeNull();
+    expect(screen.getByText("Mason")).toBeTruthy();
     expect(lastSentOfType("add-entry")?.entry).toMatchObject({
       author: { displayName: "Mason", source: "anonymous" },
     });

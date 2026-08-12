@@ -1,14 +1,11 @@
 import { CommentComposer } from "@/components/CommentComposer";
 import { CommentThread } from "@/components/CommentThread";
-import { NamePrompt } from "@/components/NamePrompt";
-import { ReaderNameField } from "@/components/ReaderNameField";
 import { Button } from "@/components/ui/button";
 import type { DocRoom } from "@/hooks/useDocRoom";
 import type { ReaderIdentity } from "@/hooks/useReaderIdentity";
 import {
   repliesTo,
   threadsIn,
-  unresolvedCount,
   type RejectionReason,
   type TextAnchor,
 } from "@/lib/protocol";
@@ -32,7 +29,6 @@ type CommentRailProps = {
   room: DocRoom;
   identity: ReaderIdentity;
   composing: TextAnchor | null;
-  promptForName: boolean;
   activeMarkId: string | null;
   orphanedMarkIds: string[];
   onActivate: (markId: string) => void;
@@ -46,7 +42,6 @@ export function CommentRail({
   room,
   identity,
   composing,
-  promptForName,
   activeMarkId,
   orphanedMarkIds,
   onActivate,
@@ -56,7 +51,6 @@ export function CommentRail({
   onClose,
 }: CommentRailProps) {
   const threads = threadsIn(room.entries);
-  const unresolved = unresolvedCount(room.entries);
   const others = room.readers.filter(
     (reader) => reader.id !== identity.reader.id,
   );
@@ -64,34 +58,31 @@ export function CommentRail({
   const needsName = room.canWrite && !identity.named;
 
   return (
-    <aside className="flex h-full w-[min(20rem,100vw)] flex-none flex-col border-l-2 border-ink bg-paper">
-      <header className="flex flex-col gap-2 border-b-2 border-ink px-3 py-2">
-        <div className="flex items-center gap-2">
-          <h2 className="font-mono text-xs tracking-wide uppercase">
-            {unresolved} open
-          </h2>
-          <span className="ml-auto font-mono text-[10px] text-muted-foreground uppercase">
-            {STATUS_LABEL[room.status]}
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            aria-label="Hide comments"
-            title="Hide comments"
-            className="-mr-1 px-2"
-            onClick={onClose}
-          >
-            ✕
-          </Button>
-        </div>
+    <aside
+      aria-label="Comments"
+      className="flex h-full w-[min(20rem,100vw)] flex-none flex-col border-l-2 border-ink bg-paper"
+    >
+      <header className="flex items-center gap-2 border-b-2 border-ink px-3 py-2">
+        <span className="font-mono text-[10px] text-muted-foreground uppercase">
+          {STATUS_LABEL[room.status]}
+        </span>
         {others.length > 0 && (
-          <p className="truncate font-mono text-[10px] text-muted-foreground uppercase">
-            {others.length} other {others.length === 1 ? "reader" : "readers"}{" "}
+          <span className="truncate font-mono text-[10px] text-muted-foreground uppercase">
+            · {others.length} other {others.length === 1 ? "reader" : "readers"}{" "}
             here
-          </p>
+          </span>
         )}
-        {identity.named && <ReaderNameField identity={identity} />}
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          aria-label="Close comments"
+          title="Close comments"
+          className="-mr-1 ml-auto px-2"
+          onClick={onClose}
+        >
+          ✕
+        </Button>
       </header>
 
       {room.rejection !== null && (
@@ -101,11 +92,6 @@ export function CommentRail({
       )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-        {/* The composer carries its own name field, and two at once reads as two questions. */}
-        {promptForName && needsName && composing === null && (
-          <NamePrompt identity={identity} />
-        )}
-
         {composing !== null && canMarkUp && (
           <CommentComposer
             anchor={composing}
