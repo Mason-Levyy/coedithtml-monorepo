@@ -16,6 +16,7 @@ export type FramePoint = { x: number; y: number };
 export type StickyPlacement = {
   armed: boolean;
   toggleArmed: () => void;
+  disarm: () => void;
   dropAt: (point: FramePoint) => void;
 };
 
@@ -47,7 +48,7 @@ export function useStickyPlacement(options: {
     }
   }, [canMarkUp]);
 
-  // A keystroke inside the cross-origin frame never reaches this document.
+  // Covers focus in the app; the frame reports its own Escape over the bridge.
   useEffect(() => {
     if (!armed) {
       return;
@@ -93,6 +94,7 @@ export function useStickyPlacement(options: {
   return {
     armed,
     toggleArmed: useCallback(() => setArmed((on) => !on), []),
+    disarm: useCallback(() => setArmed(false), []),
     dropAt,
   };
 }

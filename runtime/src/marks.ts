@@ -5,6 +5,7 @@ import {
   placementMessage,
   removeMarkMessage,
   selectionMessage,
+  toolCancelledMessage,
   type OverlayEntry,
   type StickyEntry,
 } from "@coedithtml/protocol";
@@ -96,6 +97,7 @@ export function startMarks(): () => void {
   const placing = startPlaceTool({
     revision,
     onPlace: (anchor) => sendToApp(placementMessage(anchor)),
+    onCancel: () => sendToApp(toolCancelledMessage()),
   });
 
   const gestures = startStickyGestures({
@@ -198,6 +200,7 @@ export function startMarks(): () => void {
     stopReceiving();
     placing.stop();
     document.removeEventListener("selectionchange", scheduleSelection);
+    window.removeEventListener("scroll", onScroll, true);
     window.cancelAnimationFrame(selectionFrame);
     view.clear();
     layer.destroy();

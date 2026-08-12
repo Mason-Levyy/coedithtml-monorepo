@@ -10,6 +10,7 @@ export type PlaceTool = {
 export function startPlaceTool(options: {
   revision: string;
   onPlace(anchor: Anchor): void;
+  onCancel(): void;
 }): PlaceTool {
   let armed: MarkTool | null = null;
   let borrowedCursor: string | null = null;
@@ -31,6 +32,11 @@ export function startPlaceTool(options: {
     return regionAnchorAtPoint(x, y, options.revision);
   }
 
+  function disarm(): void {
+    armed = null;
+    showCursor(false);
+  }
+
   // Swallowed so the artifact's own handlers do not fire under the pointer.
   function onClick(event: MouseEvent): void {
     if (armed === null) {
@@ -42,12 +48,23 @@ export function startPlaceTool(options: {
     if (anchor === null) {
       return;
     }
-    armed = null;
-    showCursor(false);
+    disarm();
     options.onPlace(anchor);
   }
 
+  // Swallowed so the artifact does not also act on the key that left our mode.
+  function onKeyDown(event: KeyboardEvent): void {
+    if (armed === null || event.key !== "Escape") {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    disarm();
+    options.onCancel();
+  }
+
   document.addEventListener("click", onClick, true);
+  document.addEventListener("keydown", onKeyDown, true);
 
   return {
     arm: (tool) => {
@@ -57,6 +74,7 @@ export function startPlaceTool(options: {
     resolve,
     stop: () => {
       document.removeEventListener("click", onClick, true);
+      document.removeEventListener("keydown", onKeyDown, true);
       showCursor(false);
     },
   };

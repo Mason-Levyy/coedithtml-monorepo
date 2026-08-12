@@ -42,6 +42,7 @@ export function createBodyEditor(options: {
 
     field.removeAttribute("contenteditable");
     field.removeEventListener("keydown", onKeyDown);
+    field.removeEventListener("input", options.onChanged);
     field.removeEventListener("blur", onBlur);
     sticky.classList.remove("editing");
     document.getSelection()?.removeAllRanges();
@@ -92,6 +93,8 @@ export function createBodyEditor(options: {
       // plaintext-only keeps pasted markup out of a body we render as text.
       field.setAttribute("contenteditable", "plaintext-only");
       field.addEventListener("keydown", onKeyDown);
+      // The shape is drawn from the measured box, which every keystroke changes.
+      field.addEventListener("input", options.onChanged);
       field.addEventListener("blur", onBlur);
       field.focus();
       caretToEnd(field);

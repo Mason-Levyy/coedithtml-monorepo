@@ -110,7 +110,7 @@ describe("ArtifactViewer", () => {
         .map(
           (button) => button.getAttribute("aria-label") ?? button.textContent,
         ),
-    ).toEqual(["Copy link", "Hide comments"]);
+    ).toEqual(["Copy link", "Hide comments", "Close comments"]);
   });
 
   it("fills the frame until the artifact says how it wants to be sized", () => {

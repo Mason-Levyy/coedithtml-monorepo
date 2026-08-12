@@ -15,6 +15,7 @@ import {
   selectionMessage,
   setCapabilitiesMessage,
   setToolMessage,
+  toolCancelledMessage,
   type AppToRuntimeMessage,
   type FitMode,
   type MarkTool,
@@ -113,6 +114,10 @@ export function parseRuntimeToAppMessage(
     return candidate.markIds.every((id) => typeof id === "string")
       ? orphansMessage(candidate.markIds)
       : null;
+  }
+
+  if (candidate.type === "tool-cancelled") {
+    return toolCancelledMessage();
   }
 
   if (candidate.type === "patch-mark") {

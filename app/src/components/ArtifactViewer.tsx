@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactFrame } from "@/components/ArtifactFrame";
 import { CommentRail } from "@/components/CommentRail";
-import { RailToggle } from "@/components/RailToggle";
-import { ShareBar } from "@/components/ShareBar";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { RailButton } from "@/components/RailButton";
+import { ReaderChip } from "@/components/ReaderChip";
 import { SelectionAction } from "@/components/SelectionAction";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
+import { ViewerBar } from "@/components/ViewerBar";
 import { useArtifactBridge } from "@/hooks/useArtifactBridge";
 import { useDocRoom } from "@/hooks/useDocRoom";
 import { useReaderIdentity } from "@/hooks/useReaderIdentity";
@@ -44,11 +46,13 @@ export function ArtifactViewer({
       void patch;
     },
     remove: (markId: string) => void markId,
+    cancelTool: () => {},
   });
   const bridge = useArtifactBridge({
     sandboxOrigin,
     onPatchMark: (markId, patch) => acted.current.patch(markId, patch),
     onRemoveMark: (markId) => acted.current.remove(markId),
+    onToolCancelled: () => acted.current.cancelTool(),
   });
   const sendToRuntime = useRuntimeChannel(frame, sandboxOrigin);
   const identity = useReaderIdentity();
@@ -62,23 +66,10 @@ export function ArtifactViewer({
   const [activeMarkId, setActiveMarkId] = useState<string | null>(null);
   const [dismissedQuote, setDismissedQuote] = useState<string | null>(null);
   const [railOpen, setRailOpen] = useState(() => window.innerWidth >= 1024);
-  const [stickyNeedsName, setStickyNeedsName] = useState(false);
+  const [identityOpen, setIdentityOpen] = useState(false);
   const [composing, setComposing] = useState<TextAnchor | null>(null);
 
   const canMarkUp = room.canWrite;
-
-  acted.current = {
-    patch: (markId, patch) => {
-      if (canMarkUp) {
-        room.patchEntry(markId, patch);
-      }
-    },
-    remove: (markId) => {
-      if (canMarkUp) {
-        room.removeEntry(markId);
-      }
-    },
-  };
 
   useEffect(() => {
     if (bridge.ready) {
@@ -115,6 +106,20 @@ export function ArtifactViewer({
     send: sendToRuntime,
   });
 
+  acted.current = {
+    patch: (markId, patch) => {
+      if (canMarkUp) {
+        room.patchEntry(markId, patch);
+      }
+    },
+    remove: (markId) => {
+      if (canMarkUp) {
+        room.removeEntry(markId);
+      }
+    },
+    cancelTool: sticky.disarm,
+  };
+
   const fit = bridge.fit;
   const frameHeight =
     fit && fit.mode === "grows-to-content"
@@ -139,12 +144,6 @@ export function ArtifactViewer({
       setRailOpen(true);
     }
   }, [selection]);
-
-  useEffect(() => {
-    if (identity.named) {
-      setStickyNeedsName(false);
-    }
-  }, [identity.named]);
 
   function authorOf(displayName: string | null): ReaderPresence {
     return displayName === null
@@ -179,8 +178,7 @@ export function ArtifactViewer({
 
   // A sticky carries a name the moment it lands, so one is asked for before it does.
   function askForName(): void {
-    setStickyNeedsName(true);
-    setRailOpen(true);
+    setIdentityOpen(true);
   }
 
   function armSticky(): void {
@@ -205,8 +203,31 @@ export function ArtifactViewer({
   return (
     <div className={`flex ${columnHeight} bg-card`}>
       <div className="relative flex min-w-0 flex-1 flex-col">
-        <div className="sticky top-0 z-10">
-          <ShareBar title={bridge.title ?? fileName} fileName={fileName} />
+        {/* z-20: the pad's drag ghost renders in this subtree and must clear the frame. */}
+        <div className="sticky top-0 z-20">
+          <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
+            <CopyLinkButton />
+            {canMarkUp && (
+              <ReaderChip
+                identity={identity}
+                open={identityOpen}
+                onOpenChange={setIdentityOpen}
+              />
+            )}
+            <RailButton
+              open={railOpen}
+              unresolved={unresolvedCount(room.entries)}
+              onToggle={() => setRailOpen((shown) => !shown)}
+            />
+            {canMarkUp && (
+              <StickyPad
+                armed={sticky.armed}
+                color={identity.color}
+                onArm={armSticky}
+                onDrop={dropSticky}
+              />
+            )}
+          </ViewerBar>
         </div>
         <div className={frameHeight ? undefined : "min-h-0 flex-1"}>
           <ArtifactFrame
@@ -216,16 +237,6 @@ export function ArtifactViewer({
             height={frameHeight}
           />
         </div>
-        {canMarkUp && (
-          <div className="fixed bottom-4 left-4 z-20">
-            <StickyPad
-              armed={sticky.armed}
-              color={identity.color}
-              onArm={armSticky}
-              onDrop={dropSticky}
-            />
-          </div>
-        )}
         {selection !== null &&
           canMarkUp &&
           selectionAt !== null &&
@@ -235,12 +246,6 @@ export function ArtifactViewer({
               onComment={() => openComposer(selection.anchor)}
             />
           )}
-        {!railOpen && (
-          <RailToggle
-            unresolved={unresolvedCount(room.entries)}
-            onOpen={() => setRailOpen(true)}
-          />
-        )}
       </div>
 
       {railOpen && (
@@ -249,7 +254,6 @@ export function ArtifactViewer({
             room={room}
             identity={identity}
             composing={composing}
-            promptForName={stickyNeedsName}
             activeMarkId={activeMarkId}
             orphanedMarkIds={bridge.orphanedMarkIds}
             onActivate={setActiveMarkId}
