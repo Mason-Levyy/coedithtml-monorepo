@@ -1,11 +1,7 @@
-import {
-  CommentComposer,
-  type ComposedMark,
-} from "@/components/CommentComposer";
+import { CommentComposer } from "@/components/CommentComposer";
 import { CommentThread } from "@/components/CommentThread";
 import { NamePrompt } from "@/components/NamePrompt";
 import { ReaderNameField } from "@/components/ReaderNameField";
-import { StickyProperties } from "@/components/StickyProperties";
 import { Button } from "@/components/ui/button";
 import type { ArtifactSelection } from "@/hooks/useArtifactBridge";
 import type { DocRoom } from "@/hooks/useDocRoom";
@@ -15,7 +11,6 @@ import {
   threadsIn,
   unresolvedCount,
   type RejectionReason,
-  type StickyEntry,
 } from "@/lib/protocol";
 import type { RoomStatus } from "@/lib/room-socket";
 
@@ -37,51 +32,58 @@ type CommentRailProps = {
   room: DocRoom;
   identity: ReaderIdentity;
   selection: ArtifactSelection | null;
+  promptForName: boolean;
   activeMarkId: string | null;
   orphanedMarkIds: string[];
-  placingSticky: boolean;
-  onPlaceSticky: () => void;
   onActivate: (markId: string) => void;
-  onComment: (mark: ComposedMark) => void;
-  onReply: (parentId: string, body: string) => void;
+  onComment: (body: string, displayName: string | null) => void;
+  onReply: (parentId: string, body: string, displayName: string | null) => void;
   onDismissSelection: () => void;
+  onClose: () => void;
 };
 
 export function CommentRail({
   room,
   identity,
   selection,
+  promptForName,
   activeMarkId,
   orphanedMarkIds,
-  placingSticky,
-  onPlaceSticky,
   onActivate,
   onComment,
   onReply,
   onDismissSelection,
+  onClose,
 }: CommentRailProps) {
   const threads = threadsIn(room.entries);
   const unresolved = unresolvedCount(room.entries);
   const others = room.readers.filter(
     (reader) => reader.id !== identity.reader.id,
   );
-  const canMarkUp = room.canWrite && identity.named;
+  const canMarkUp = room.canWrite;
   const needsName = room.canWrite && !identity.named;
-  const activeSticky = room.entries.find(
-    (entry): entry is StickyEntry =>
-      entry.id === activeMarkId && entry.kind === "sticky",
-  );
 
   return (
-    <aside className="flex h-full w-80 flex-none flex-col border-l-2 border-ink bg-paper">
+    <aside className="flex h-full w-[min(20rem,100vw)] flex-none flex-col border-l-2 border-ink bg-paper">
       <header className="flex flex-col gap-2 border-b-2 border-ink px-3 py-2">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-center gap-2">
           <h2 className="font-mono text-xs tracking-wide uppercase">
             {unresolved} open
           </h2>
           <span className="ml-auto font-mono text-[10px] text-muted-foreground uppercase">
             {STATUS_LABEL[room.status]}
           </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            aria-label="Hide comments"
+            title="Hide comments"
+            className="-mr-1 px-2"
+            onClick={onClose}
+          >
+            ✕
+          </Button>
         </div>
         {others.length > 0 && (
           <p className="truncate font-mono text-[10px] text-muted-foreground uppercase">
@@ -89,22 +91,7 @@ export function CommentRail({
             here
           </p>
         )}
-        {!needsName && (
-          <ReaderNameField
-            displayName={identity.reader.displayName}
-            onRename={identity.rename}
-          />
-        )}
-        {canMarkUp && (
-          <Button
-            type="button"
-            size="sm"
-            variant={placingSticky ? "default" : "outline"}
-            onClick={onPlaceSticky}
-          >
-            {placingSticky ? "Click the artifact" : "Add a sticky"}
-          </Button>
-        )}
+        {identity.named && <ReaderNameField identity={identity} />}
       </header>
 
       {room.rejection !== null && (
@@ -114,24 +101,15 @@ export function CommentRail({
       )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-        {needsName && (
-          <NamePrompt
-            displayName={identity.reader.displayName}
-            onRename={identity.rename}
-          />
-        )}
-
-        {activeSticky !== undefined && canMarkUp && (
-          <StickyProperties
-            entry={activeSticky}
-            onPatch={(patch) => room.patchEntry(activeSticky.id, patch)}
-            onRemove={() => room.removeEntry(activeSticky.id)}
-          />
+        {/* The composer carries its own name field, and two at once reads as two questions. */}
+        {promptForName && needsName && selection === null && (
+          <NamePrompt identity={identity} />
         )}
 
         {selection !== null && canMarkUp && (
           <CommentComposer
             anchor={selection.anchor}
+            needsName={needsName}
             onSubmit={onComment}
             onDismiss={onDismissSelection}
           />
@@ -140,7 +118,7 @@ export function CommentRail({
         {threads.length === 0 && selection === null && (
           <p className="text-sm text-muted-foreground">
             {canMarkUp
-              ? "Select text in the artifact to comment on it, or drop a sticky anywhere."
+              ? "Select text in the artifact to comment on it, or drag a sticky onto the page."
               : "No comments yet."}
           </p>
         )}
@@ -151,10 +129,13 @@ export function CommentRail({
             entry={entry}
             replies={repliesTo(room.entries, entry.id)}
             canWrite={canMarkUp}
+            needsName={needsName}
             active={entry.id === activeMarkId}
             orphaned={orphanedMarkIds.includes(entry.id)}
             onActivate={() => onActivate(entry.id)}
-            onReply={(body) => onReply(entry.id, body)}
+            onReply={(body, displayName) =>
+              onReply(entry.id, body, displayName)
+            }
             onResolve={(resolved) =>
               room.patchEntry(entry.id, {
                 status: resolved ? "resolved" : "open",

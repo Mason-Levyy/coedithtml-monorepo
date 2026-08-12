@@ -98,16 +98,19 @@ describe("ArtifactViewer", () => {
     expect(screen.queryByText("Injected")).toBeNull();
   });
 
-  it("adds no navigation of its own, only the share and naming controls", () => {
+  it("adds no navigation of its own, only the share and rail controls", () => {
     renderViewer();
 
     expect(screen.queryByRole("tablist")).toBeNull();
     expect(screen.queryByRole("navigation")).toBeNull();
     expect(screen.queryByRole("menubar")).toBeNull();
-    expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual([
-      "Copy link",
-      "Save",
-    ]);
+    expect(
+      screen
+        .getAllByRole("button")
+        .map(
+          (button) => button.getAttribute("aria-label") ?? button.textContent,
+        ),
+    ).toEqual(["Copy link", "Hide comments"]);
   });
 
   it("fills the frame until the artifact says how it wants to be sized", () => {

@@ -59,7 +59,8 @@ export type RuntimeToAppMessage =
   | RuntimeMarkActivatedMessage
   | RuntimePlacementMessage
   | RuntimeOrphansMessage
-  | RuntimePatchMarkMessage;
+  | RuntimePatchMarkMessage
+  | RuntimeRemoveMarkMessage;
 
 export type AppRenderMarksMessage = Versioned & {
   type: "render-marks";
@@ -80,8 +81,29 @@ export type AppSetCapabilitiesMessage = Versioned & {
   canWrite: boolean;
 };
 
+// Viewport coordinates inside the frame: where a drag off the pad was released.
+export type AppPlaceAtMessage = Versioned & {
+  type: "place-at";
+  x: number;
+  y: number;
+};
+
+export type AppEditMarkMessage = Versioned & {
+  type: "edit-mark";
+  markId: string;
+};
+
+export type RuntimeRemoveMarkMessage = Versioned & {
+  type: "remove-mark";
+  markId: string;
+};
+
 export type AppToRuntimeMessage =
-  AppRenderMarksMessage | AppSetToolMessage | AppSetCapabilitiesMessage;
+  | AppRenderMarksMessage
+  | AppSetToolMessage
+  | AppSetCapabilitiesMessage
+  | AppPlaceAtMessage
+  | AppEditMarkMessage;
 
 export function readyMessage(title: string): RuntimeReadyMessage {
   return { version: BRIDGE_VERSION, type: "ready", title };
@@ -136,4 +158,16 @@ export function setCapabilitiesMessage(
   canWrite: boolean,
 ): AppSetCapabilitiesMessage {
   return { version: BRIDGE_VERSION, type: "set-capabilities", canWrite };
+}
+
+export function placeAtMessage(x: number, y: number): AppPlaceAtMessage {
+  return { version: BRIDGE_VERSION, type: "place-at", x, y };
+}
+
+export function editMarkMessage(markId: string): AppEditMarkMessage {
+  return { version: BRIDGE_VERSION, type: "edit-mark", markId };
+}
+
+export function removeMarkMessage(markId: string): RuntimeRemoveMarkMessage {
+  return { version: BRIDGE_VERSION, type: "remove-mark", markId };
 }

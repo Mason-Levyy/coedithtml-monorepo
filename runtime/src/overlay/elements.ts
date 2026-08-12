@@ -6,6 +6,7 @@ import {
   type StickyEntry,
 } from "@coedithtml/protocol";
 import type { Point, Rect } from "./geometry";
+import { stickyToolbar } from "./sticky-tools";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
@@ -94,6 +95,8 @@ export function createStickyElement(mark: StickyEntry): HTMLElement {
   author.className = "author";
   content.appendChild(author);
 
+  element.appendChild(stickyToolbar());
+
   for (const edge of RESIZE_EDGES) {
     element.appendChild(handleElement(edge));
   }
@@ -107,19 +110,27 @@ function childBy(element: HTMLElement, className: string): HTMLElement | null {
   return element.querySelector<HTMLElement>(`.${className}`);
 }
 
+const TOOLS_HEADROOM = 34;
+
 // Written rather than rebuilt: a gesture holds the element it is dragging.
 export function updateStickyElement(
   element: HTMLElement,
   mark: StickyEntry,
   geometry: StickyGeometry,
 ): void {
+  const top = geometry.at.y + geometry.offsetY;
   element.style.left = `${geometry.at.x + geometry.offsetX}px`;
-  element.style.top = `${geometry.at.y + geometry.offsetY}px`;
+  element.style.top = `${top}px`;
+  element.classList.toggle("low-room", top < TOOLS_HEADROOM);
   element.style.width =
     geometry.width === null ? "" : `${Math.round(geometry.width)}px`;
   element.style.height =
     geometry.height === null ? "" : `${Math.round(geometry.height)}px`;
   element.style.color = textOn(effectiveFill(mark));
+  element.classList.toggle(
+    "sized",
+    mark.width !== null || mark.height !== null,
+  );
 
   const body = childBy(element, "body");
   // Left alone mid-edit, or a repaint would overwrite what is being typed.

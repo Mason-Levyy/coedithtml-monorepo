@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AuthorNameField } from "@/components/AuthorNameField";
 import { Button } from "@/components/ui/button";
 import {
   effectiveEdge,
@@ -22,10 +23,11 @@ type CommentThreadProps = {
   entry: OverlayEntry;
   replies: ReplyEntry[];
   canWrite: boolean;
+  needsName: boolean;
   active: boolean;
   orphaned: boolean;
   onActivate: () => void;
-  onReply: (body: string) => void;
+  onReply: (body: string, displayName: string | null) => void;
   onResolve: (resolved: boolean) => void;
   onRemove: () => void;
 };
@@ -34,6 +36,7 @@ export function CommentThread({
   entry,
   replies,
   canWrite,
+  needsName,
   active,
   orphaned,
   onActivate,
@@ -42,12 +45,15 @@ export function CommentThread({
   onRemove,
 }: CommentThreadProps) {
   const [reply, setReply] = useState("");
+  const [name, setName] = useState("");
   const resolved = entry.status === "resolved";
   const quote = quoteOf(entry);
+  const ready =
+    reply.trim().length > 0 && (!needsName || name.trim().length > 0);
 
   function send(): void {
-    if (reply.trim().length > 0) {
-      onReply(reply.trim());
+    if (ready) {
+      onReply(reply.trim(), needsName ? name.trim() : null);
       setReply("");
     }
   }
@@ -116,27 +122,33 @@ export function CommentThread({
       {canWrite && (
         <div className="mt-3 flex flex-col gap-2">
           <form
-            className="flex gap-2"
+            className="flex flex-col gap-2"
             onSubmit={(event) => {
               event.preventDefault();
               send();
             }}
           >
-            <input
-              value={reply}
-              onChange={(event) => setReply(event.target.value)}
-              placeholder="Reply"
-              aria-label={`Reply to ${displayNameOf(entry)}`}
-              className="min-w-0 flex-1 border-2 border-line bg-paper-2 px-2 py-1 text-sm focus-visible:outline-2 focus-visible:outline-ring"
-            />
-            <Button
-              type="submit"
-              size="sm"
-              variant="outline"
-              disabled={reply.trim().length === 0}
-            >
-              Send
-            </Button>
+            <div className="flex gap-2">
+              <input
+                value={reply}
+                onChange={(event) => setReply(event.target.value)}
+                placeholder="Reply"
+                aria-label={`Reply to ${displayNameOf(entry)}`}
+                className="min-w-0 flex-1 border-2 border-line bg-paper-2 px-2 py-1 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                variant="outline"
+                disabled={!ready}
+              >
+                Send
+              </Button>
+            </div>
+            {/* Held back until there is a reply to sign, or every thread asks at once. */}
+            {needsName && reply.length > 0 && (
+              <AuthorNameField value={name} onChange={setName} />
+            )}
           </form>
           <div className="flex gap-2">
             <Button

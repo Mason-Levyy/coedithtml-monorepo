@@ -3,19 +3,21 @@ import {
   orphansMessage,
   patchMarkMessage,
   placementMessage,
+  removeMarkMessage,
   selectionMessage,
-  type MarkTool,
   type OverlayEntry,
   type StickyEntry,
 } from "@coedithtml/protocol";
 import { resolveRevision } from "./config";
-import { anchorFromRange, regionAnchorAtPoint } from "./dom/anchor-dom";
+import { anchorFromRange } from "./dom/anchor-dom";
 import { buildTextIndex, type TextIndex } from "./dom/text-index";
 import { createBodyEditor } from "./overlay/edit-body";
 import { createOverlayLayer, type OverlayLayer } from "./overlay/layer";
+import { startPlaceTool } from "./overlay/place-tool";
 import { onMarkActivated, paintMarks } from "./overlay/paint";
 import { createRepaintScheduler } from "./overlay/scheduler";
 import { startStickyGestures } from "./overlay/sticky-gestures";
+import { startStickyTools } from "./overlay/sticky-tools";
 import { createStickyView, type StickyOverride } from "./overlay/sticky-view";
 import { receiveFromApp, sendToApp } from "./transport/bridge";
 
@@ -34,6 +36,20 @@ export function startMarks(): () => void {
   let selectionFrame = 0;
   let reportedOrphans = "";
 
+  // A sticky the app just created is asked for before the next paint builds it.
+  let awaitingEdit: string | null = null;
+
+  function openAwaitedEdit(): void {
+    const markId = awaitingEdit;
+    const element = markId === null ? null : view.elementFor(markId);
+    const mark = markId === null ? null : stickyById(markId);
+    if (markId === null || element === null || mark === null) {
+      return;
+    }
+    awaitingEdit = null;
+    editor.begin(element, markId, mark.body);
+  }
+
   function paint(): void {
     try {
       const result = paintMarks(layer, view, index, marks, override);
@@ -42,6 +58,7 @@ export function startMarks(): () => void {
         reportedOrphans = orphans;
         sendToApp(orphansMessage(result.orphaned));
       }
+      openAwaitedEdit();
     } catch (error) {
       console.error("[coedit] failed to paint marks", error);
     }
@@ -63,7 +80,22 @@ export function startMarks(): () => void {
 
   const editor = createBodyEditor({
     onCommit: (markId, body) => sendToApp(patchMarkMessage(markId, { body })),
+    onAbandon: (markId) => sendToApp(removeMarkMessage(markId)),
     onChanged: scheduler.repaint,
+  });
+
+  const tools = startStickyTools({
+    layer,
+    view,
+    canWrite: () => canWrite,
+    onRemove: (markId) => sendToApp(removeMarkMessage(markId)),
+    onFit: (markId) =>
+      sendToApp(patchMarkMessage(markId, { width: null, height: null })),
+  });
+
+  const placing = startPlaceTool({
+    revision,
+    onPlace: (anchor) => sendToApp(placementMessage(anchor)),
   });
 
   const gestures = startStickyGestures({
@@ -114,45 +146,12 @@ export function startMarks(): () => void {
     selectionFrame = window.requestAnimationFrame(reportSelection);
   }
 
-  let armedTool: MarkTool | null = null;
-  let borrowedCursor: string | null = null;
-
-  // Restored to its old value, not cleared: the cursor is the artifact's to set.
-  function armCursor(armed: boolean): void {
-    if (armed) {
-      borrowedCursor ??= document.body.style.cursor;
-      document.body.style.cursor = "crosshair";
-      return;
-    }
-    if (borrowedCursor !== null) {
-      document.body.style.cursor = borrowedCursor;
-      borrowedCursor = null;
-    }
-  }
-
-  // Swallowed so the artifact's own handlers do not fire under the pointer.
-  function placeOnClick(event: MouseEvent): void {
-    if (armedTool === null) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    const anchor = regionAnchorAtPoint(event.clientX, event.clientY, revision);
-    if (anchor === null) {
-      return;
-    }
-    armedTool = null;
-    armCursor(false);
-    sendToApp(placementMessage(anchor));
-  }
-
   const stopActivation = onMarkActivated(layer, (markId) =>
     sendToApp(markActivatedMessage(markId)),
   );
   const stopReceiving = receiveFromApp((message) => {
     if (message.type === "set-tool") {
-      armedTool = message.tool;
-      armCursor(armedTool !== null);
+      placing.arm(message.tool);
       return;
     }
     if (message.type === "set-capabilities") {
@@ -163,22 +162,33 @@ export function startMarks(): () => void {
       }
       return;
     }
+    if (message.type === "place-at") {
+      const anchor = placing.resolve(message.x, message.y);
+      if (anchor !== null) {
+        sendToApp(placementMessage(anchor));
+      }
+      return;
+    }
+    if (message.type === "edit-mark") {
+      awaitingEdit = message.markId;
+      scheduler.repaint();
+      return;
+    }
     marks = message.marks;
     scheduler.repaint();
   });
 
   document.addEventListener("selectionchange", scheduleSelection);
-  document.addEventListener("click", placeOnClick, true);
 
   return () => {
     gestures.stop();
+    tools.stop();
     editor.stop();
     scheduler.stop();
     stopActivation();
     stopReceiving();
+    placing.stop();
     document.removeEventListener("selectionchange", scheduleSelection);
-    document.removeEventListener("click", placeOnClick, true);
-    armCursor(false);
     window.cancelAnimationFrame(selectionFrame);
     view.clear();
     layer.destroy();

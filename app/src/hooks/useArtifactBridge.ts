@@ -63,20 +63,25 @@ function applyMessage(
     case "orphans":
       return { ...previous, orphanedMarkIds: message.markIds };
     case "patch-mark":
+    case "remove-mark":
       return previous;
   }
 }
 
 export type PatchMark = (markId: string, patch: EntryPatch) => void;
 
-// Callback, not state: a second drag of one sticky would look like a re-render.
-export function useArtifactBridge(
-  sandboxOrigin: string,
-  onPatchMark?: PatchMark,
-): ArtifactBridgeState {
+export type RemoveMark = (markId: string) => void;
+
+// Callbacks, not state: a second drag of one sticky would look like a re-render.
+export function useArtifactBridge(options: {
+  sandboxOrigin: string;
+  onPatchMark: PatchMark;
+  onRemoveMark: RemoveMark;
+}): ArtifactBridgeState {
+  const { sandboxOrigin } = options;
   const [state, setState] = useState<ArtifactBridgeState>(NOTHING_REPORTED);
-  const patch = useRef<PatchMark | undefined>(onPatchMark);
-  patch.current = onPatchMark;
+  const acted = useRef(options);
+  acted.current = options;
 
   // Layout effect: a cached frame can post before a deferred effect attaches.
   useLayoutEffect(() => {
@@ -91,7 +96,11 @@ export function useArtifactBridge(
         return;
       }
       if (message.type === "patch-mark") {
-        patch.current?.(message.markId, message.patch);
+        acted.current.onPatchMark(message.markId, message.patch);
+        return;
+      }
+      if (message.type === "remove-mark") {
+        acted.current.onRemoveMark(message.markId);
         return;
       }
       setState((previous) => applyMessage(previous, message));
