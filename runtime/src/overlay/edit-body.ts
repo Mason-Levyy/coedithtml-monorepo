@@ -12,16 +12,23 @@ type Editing = {
   original: string;
 };
 
-function selectAll(field: HTMLElement): void {
+// Not select-all: a click opens the note, and typing must not wipe what is there.
+function caretToEnd(field: HTMLElement): void {
   const range = document.createRange();
   range.selectNodeContents(field);
+  range.collapse(false);
   const selection = document.getSelection();
   selection?.removeAllRanges();
   selection?.addRange(range);
 }
 
+function isUnwritten(original: string, body: string): boolean {
+  return original === "" && body.trim() === "";
+}
+
 export function createBodyEditor(options: {
   onCommit(markId: string, body: string): void;
+  onAbandon(markId: string): void;
   onChanged(): void;
 }): BodyEditor {
   let editing: Editing | null = null;
@@ -40,7 +47,9 @@ export function createBodyEditor(options: {
     document.getSelection()?.removeAllRanges();
 
     const body = field.textContent ?? "";
-    if (!commit || body === original) {
+    if (isUnwritten(original, body)) {
+      options.onAbandon(markId);
+    } else if (!commit || body === original) {
       field.textContent = original;
     } else {
       options.onCommit(markId, body);
@@ -74,7 +83,7 @@ export function createBodyEditor(options: {
   return {
     begin(sticky, markId, body) {
       close(true);
-      const field = sticky.querySelector<HTMLElement>(":scope > .body");
+      const field = sticky.querySelector<HTMLElement>(".body");
       if (field === null) {
         return;
       }
@@ -85,7 +94,7 @@ export function createBodyEditor(options: {
       field.addEventListener("keydown", onKeyDown);
       field.addEventListener("blur", onBlur);
       field.focus();
-      selectAll(field);
+      caretToEnd(field);
       options.onChanged();
     },
     isEditing: () => editing !== null,

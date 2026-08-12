@@ -2,12 +2,15 @@ import type { TextAnchor } from "./anchor";
 import {
   BRIDGE_VERSION,
   MARK_TOOLS,
+  editMarkMessage,
   fitMessage,
   markActivatedMessage,
   orphansMessage,
   patchMarkMessage,
+  placeAtMessage,
   placementMessage,
   readyMessage,
+  removeMarkMessage,
   renderMarksMessage,
   selectionMessage,
   setCapabilitiesMessage,
@@ -120,6 +123,11 @@ export function parseRuntimeToAppMessage(
       : patchMarkMessage(markId, patch);
   }
 
+  if (candidate.type === "remove-mark") {
+    const markId = asFilledString(candidate.markId);
+    return markId === null ? null : removeMarkMessage(markId);
+  }
+
   return null;
 }
 
@@ -164,6 +172,15 @@ export function parseAppToRuntimeMessage(
     return typeof candidate.canWrite === "boolean"
       ? setCapabilitiesMessage(candidate.canWrite)
       : null;
+  }
+  if (candidate.type === "place-at") {
+    const x = asFiniteNumber(candidate.x);
+    const y = asFiniteNumber(candidate.y);
+    return x === null || y === null ? null : placeAtMessage(x, y);
+  }
+  if (candidate.type === "edit-mark") {
+    const markId = asFilledString(candidate.markId);
+    return markId === null ? null : editMarkMessage(markId);
   }
   return null;
 }

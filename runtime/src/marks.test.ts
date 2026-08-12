@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setToolMessage, type RuntimeToAppMessage } from "@coedithtml/protocol";
+import {
+  placeAtMessage,
+  setToolMessage,
+  type RuntimeToAppMessage,
+} from "@coedithtml/protocol";
 import { startMarks } from "./marks";
 
 const APP_ORIGIN = "https://app.test";
@@ -106,6 +110,27 @@ describe("the sticky tool", () => {
 
     postFromApp(setToolMessage(null));
     expect(document.body.style.cursor).toBe("grab");
+  });
+
+  // A drag off the pad ends outside the frame's own event stream, so the app aims it.
+  it("resolves a point the app hands it without any arming", () => {
+    postFromApp(placeAtMessage(50, 25));
+
+    expect(posted.at(-1)).toMatchObject({
+      type: "placement",
+      anchor: { kind: "region", fractionX: 0.25, fractionY: 0.25 },
+    });
+  });
+
+  it("says nothing when the drop lands on no element at all", () => {
+    Object.defineProperty(document, "elementsFromPoint", {
+      configurable: true,
+      value: () => [],
+    });
+
+    postFromApp(placeAtMessage(5000, 5000));
+
+    expect(posted.some((message) => message.type === "placement")).toBe(false);
   });
 
   it("ignores a tool armed by anyone but the app", () => {

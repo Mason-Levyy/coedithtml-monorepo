@@ -5,6 +5,7 @@ import { beginGesture, type Gesture, type GestureUpdate } from "./gesture";
 import type { Rect } from "./geometry";
 import type { OverlayLayer } from "./layer";
 import { isInside, resizeRect } from "./resize-math";
+import { toolOf } from "./sticky-tools";
 import type { StickyOverride, StickyView } from "./sticky-view";
 
 export type StickyGestures = {
@@ -150,6 +151,10 @@ export function startStickyGestures(options: {
     if (element.classList.contains("editing")) {
       return;
     }
+    if (toolOf(target) !== null) {
+      event.stopPropagation();
+      return;
+    }
     const mark = options.markById(markId);
     const painted = options.view.rectOf(markId);
     const intent = intentOf(target);
@@ -171,13 +176,15 @@ export function startStickyGestures(options: {
       onUpdate: (update) => options.setOverride(previewOf(update)),
       onCommit: (update) => {
         const patch = committed(update);
-        const held = live?.markId ?? null;
         release();
         swallowClick = true;
-        if (patch !== null && held !== null) {
-          options.onPatch(held, patch);
-        } else if (held !== null && !update.moved) {
-          options.onSelect(held);
+        if (patch !== null) {
+          options.onPatch(markId, patch);
+          return;
+        }
+        if (!update.moved) {
+          options.onSelect(markId);
+          options.onEdit(element, markId, options.markById(markId)?.body ?? "");
         }
       },
       onCancel: () => {
@@ -206,25 +213,8 @@ export function startStickyGestures(options: {
     }
   }
 
-  function onDoubleClick(event: Event): void {
-    const target = event.target;
-    if (!(target instanceof HTMLElement) || !options.canWrite()) {
-      return;
-    }
-    const markId = options.view.markIdOf(target);
-    const element = markId === null ? null : options.view.elementFor(markId);
-    const mark = markId === null ? null : options.markById(markId);
-    if (markId === null || element === null || mark === null) {
-      return;
-    }
-    event.stopPropagation();
-    event.preventDefault();
-    options.onEdit(element, markId, mark.body);
-  }
-
   surface.addEventListener("pointerdown", onPointerDown);
   surface.addEventListener("click", onClick, true);
-  surface.addEventListener("dblclick", onDoubleClick);
 
   return {
     isDragging: () => live !== null,
@@ -233,7 +223,6 @@ export function startStickyGestures(options: {
       release();
       surface.removeEventListener("pointerdown", onPointerDown);
       surface.removeEventListener("click", onClick, true);
-      surface.removeEventListener("dblclick", onDoubleClick);
     },
   };
 }

@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from "react";
+import { AuthorNameField } from "@/components/AuthorNameField";
 import { Button } from "@/components/ui/button";
-import { MarkColorPicker, type MarkPaint } from "@/components/MarkColorPicker";
-import { DEFAULT_MARK_COLOR, type TextAnchor } from "@/lib/protocol";
-
-export type ComposedMark = MarkPaint & { body: string };
+import type { TextAnchor } from "@/lib/protocol";
 
 type CommentComposerProps = {
   anchor: TextAnchor;
-  onSubmit: (mark: ComposedMark) => void;
+  needsName: boolean;
+  onSubmit: (body: string, displayName: string | null) => void;
   onDismiss: () => void;
 };
 
 export function CommentComposer({
   anchor,
+  needsName,
   onSubmit,
   onDismiss,
 }: CommentComposerProps) {
@@ -23,22 +23,23 @@ export function CommentComposer({
   }, [anchor.quote]);
 
   const [body, setBody] = useState("");
-  const [paint, setPaint] = useState<MarkPaint>({
-    color: DEFAULT_MARK_COLOR,
-    fill: null,
-  });
+  const [name, setName] = useState("");
+  const ready =
+    body.trim().length > 0 && (!needsName || name.trim().length > 0);
 
-  const ready = body.trim().length > 0;
+  function send(): void {
+    if (ready) {
+      onSubmit(body.trim(), needsName ? name.trim() : null);
+      setBody("");
+    }
+  }
 
   return (
     <form
       className="flex flex-col gap-2 border-2 border-ink bg-card p-3"
       onSubmit={(event) => {
         event.preventDefault();
-        if (ready) {
-          onSubmit({ ...paint, body: body.trim() });
-          setBody("");
-        }
+        send();
       }}
     >
       <blockquote className="border-l-2 border-ink-soft pl-2 text-xs text-muted-foreground italic">
@@ -52,15 +53,19 @@ export function CommentComposer({
           if (event.key === "Escape") {
             onDismiss();
           }
+          if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+            event.preventDefault();
+            send();
+          }
         }}
         rows={3}
         placeholder="What should change here?"
         aria-label="Comment"
         className="resize-none border-2 border-line bg-paper-2 p-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
       />
+      {needsName && <AuthorNameField value={name} onChange={setName} />}
       <div className="flex items-center gap-2">
-        <MarkColorPicker value={paint} onChange={setPaint} />
-        <Button type="submit" size="sm" className="ml-auto" disabled={!ready}>
+        <Button type="submit" size="sm" disabled={!ready}>
           Comment
         </Button>
         <Button type="button" size="sm" variant="ghost" onClick={onDismiss}>
