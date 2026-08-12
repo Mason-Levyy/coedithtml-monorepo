@@ -3,12 +3,14 @@ import { ArtifactFrame } from "@/components/ArtifactFrame";
 import { CommentRail } from "@/components/CommentRail";
 import { RailToggle } from "@/components/RailToggle";
 import { ShareBar } from "@/components/ShareBar";
+import { SelectionAction } from "@/components/SelectionAction";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
 import { useArtifactBridge } from "@/hooks/useArtifactBridge";
 import { useDocRoom } from "@/hooks/useDocRoom";
 import { useReaderIdentity } from "@/hooks/useReaderIdentity";
 import { useRuntimeChannel } from "@/hooks/useRuntimeChannel";
 import { useMarkAuthoring } from "@/hooks/useMarkAuthoring";
+import { useSelectionAnchor } from "@/hooks/useSelectionAnchor";
 import { useStickyPlacement } from "@/hooks/useStickyPlacement";
 import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
 import {
@@ -17,6 +19,7 @@ import {
   unresolvedCount,
   type EntryPatch,
   type ReaderPresence,
+  type TextAnchor,
 } from "@/lib/protocol";
 import { roomUrl } from "@/lib/room-url";
 
@@ -60,6 +63,7 @@ export function ArtifactViewer({
   const [dismissedQuote, setDismissedQuote] = useState<string | null>(null);
   const [railOpen, setRailOpen] = useState(() => window.innerWidth >= 1024);
   const [stickyNeedsName, setStickyNeedsName] = useState(false);
+  const [composing, setComposing] = useState<TextAnchor | null>(null);
 
   const canMarkUp = room.canWrite;
 
@@ -126,8 +130,12 @@ export function ArtifactViewer({
       ? bridge.selection
       : null;
 
+  const selectionAt = useSelectionAnchor(frame, selection?.rect ?? null);
+
+  // Nowhere to put the button means the rail is the only answer a selection can get.
   useEffect(() => {
-    if (selection !== null) {
+    if (selection !== null && selection.rect === null) {
+      setComposing(selection.anchor);
       setRailOpen(true);
     }
   }, [selection]);
@@ -144,10 +152,20 @@ export function ArtifactViewer({
       : identity.rename(displayName);
   }
 
+  function openComposer(anchor: TextAnchor): void {
+    setComposing(anchor);
+    setRailOpen(true);
+  }
+
+  function closeComposer(): void {
+    setDismissedQuote(composing?.quote ?? null);
+    setComposing(null);
+  }
+
   function writeComment(body: string, displayName: string | null): void {
-    if (selection !== null) {
-      authoring.comment(selection.anchor, body, authorOf(displayName));
-      setDismissedQuote(selection.anchor.quote);
+    if (composing !== null) {
+      authoring.comment(composing, body, authorOf(displayName));
+      closeComposer();
     }
   }
 
@@ -208,6 +226,15 @@ export function ArtifactViewer({
             />
           </div>
         )}
+        {selection !== null &&
+          canMarkUp &&
+          selectionAt !== null &&
+          composing === null && (
+            <SelectionAction
+              at={selectionAt}
+              onComment={() => openComposer(selection.anchor)}
+            />
+          )}
         {!railOpen && (
           <RailToggle
             unresolved={unresolvedCount(room.entries)}
@@ -221,7 +248,7 @@ export function ArtifactViewer({
           <CommentRail
             room={room}
             identity={identity}
-            selection={selection}
+            composing={composing}
             promptForName={stickyNeedsName}
             activeMarkId={activeMarkId}
             orphanedMarkIds={bridge.orphanedMarkIds}
@@ -229,9 +256,7 @@ export function ArtifactViewer({
             onComment={writeComment}
             onReply={writeReply}
             onClose={() => setRailOpen(false)}
-            onDismissSelection={() =>
-              setDismissedQuote(bridge.selection?.anchor.quote ?? null)
-            }
+            onDismissSelection={closeComposer}
           />
         </div>
       )}

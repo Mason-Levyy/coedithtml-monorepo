@@ -3,7 +3,6 @@ import { CommentThread } from "@/components/CommentThread";
 import { NamePrompt } from "@/components/NamePrompt";
 import { ReaderNameField } from "@/components/ReaderNameField";
 import { Button } from "@/components/ui/button";
-import type { ArtifactSelection } from "@/hooks/useArtifactBridge";
 import type { DocRoom } from "@/hooks/useDocRoom";
 import type { ReaderIdentity } from "@/hooks/useReaderIdentity";
 import {
@@ -11,6 +10,7 @@ import {
   threadsIn,
   unresolvedCount,
   type RejectionReason,
+  type TextAnchor,
 } from "@/lib/protocol";
 import type { RoomStatus } from "@/lib/room-socket";
 
@@ -31,7 +31,7 @@ const REJECTION_LABEL: Record<RejectionReason, string> = {
 type CommentRailProps = {
   room: DocRoom;
   identity: ReaderIdentity;
-  selection: ArtifactSelection | null;
+  composing: TextAnchor | null;
   promptForName: boolean;
   activeMarkId: string | null;
   orphanedMarkIds: string[];
@@ -45,7 +45,7 @@ type CommentRailProps = {
 export function CommentRail({
   room,
   identity,
-  selection,
+  composing,
   promptForName,
   activeMarkId,
   orphanedMarkIds,
@@ -102,20 +102,20 @@ export function CommentRail({
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
         {/* The composer carries its own name field, and two at once reads as two questions. */}
-        {promptForName && needsName && selection === null && (
+        {promptForName && needsName && composing === null && (
           <NamePrompt identity={identity} />
         )}
 
-        {selection !== null && canMarkUp && (
+        {composing !== null && canMarkUp && (
           <CommentComposer
-            anchor={selection.anchor}
+            anchor={composing}
             needsName={needsName}
             onSubmit={onComment}
             onDismiss={onDismissSelection}
           />
         )}
 
-        {threads.length === 0 && selection === null && (
+        {threads.length === 0 && composing === null && (
           <p className="text-sm text-muted-foreground">
             {canMarkUp
               ? "Select text in the artifact to comment on it, or drag a sticky onto the page."
