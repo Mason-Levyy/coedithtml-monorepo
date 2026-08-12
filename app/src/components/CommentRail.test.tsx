@@ -2,7 +2,12 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ArtifactViewer } from "@/components/ArtifactViewer";
 import { FakeWebSocket } from "@/lib/fakes";
-import type { CommentEntry, OverlayEntry, StickyEntry } from "@/lib/protocol";
+import type {
+  CommentEntry,
+  OverlayEntry,
+  StickyEntry,
+  ViewportRect,
+} from "@/lib/protocol";
 
 const SANDBOX_ORIGIN = "https://sandbox.example.com";
 const TOKEN = "a".repeat(32);
@@ -193,6 +198,21 @@ function selectText(): void {
       }),
     );
   });
+}
+
+function selectTextAt(rect: ViewportRect): void {
+  act(() => {
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        origin: SANDBOX_ORIGIN,
+        data: { version: 1, type: "selection", anchor: ANCHOR, rect },
+      }),
+    );
+  });
+}
+
+function selectionAction(): HTMLElement {
+  return screen.getByRole("button", { name: "Comment on the selected text" });
 }
 
 function sentTypes(): unknown[] {
@@ -510,6 +530,83 @@ describe("the comment rail", () => {
       expect(window.localStorage.getItem("coedit:reader")).toContain(
         CHOSEN_COLOUR,
       );
+    });
+  });
+
+  // Answering a selection where the reader is looking, not 320px away at the edge.
+  describe("commenting from the selection", () => {
+    const RECT = { x: 10, y: 20, width: 100, height: 16 };
+    const FRAME = { left: 40, top: 100, right: 840, bottom: 700 };
+
+    it("offers the action without disturbing the rail", () => {
+      renderViewer();
+      openRoomWith([]);
+      fireEvent.click(screen.getByRole("button", { name: "Hide comments" }));
+      frameAt(FRAME);
+
+      selectTextAt(RECT);
+
+      expect(selectionAction()).toBeTruthy();
+      expect(screen.queryByLabelText("Comment")).toBeNull();
+    });
+
+    it("places the action against the text it belongs to", () => {
+      renderViewer();
+      openRoomWith([]);
+      frameAt(FRAME);
+
+      selectTextAt(RECT);
+
+      expect(selectionAction().style.left).toBe("50px");
+      expect(selectionAction().style.top).toBe("136px");
+    });
+
+    it("opens the composer only once the reader asks", () => {
+      renderViewer();
+      openRoomWith([]);
+      frameAt(FRAME);
+      selectTextAt(RECT);
+
+      fireEvent.click(selectionAction());
+
+      expect(screen.getByLabelText("Comment")).toBeTruthy();
+      expect(screen.getByText("Revenue grew 18%")).toBeTruthy();
+    });
+
+    it("stands down once the composer has the selection", () => {
+      renderViewer();
+      openRoomWith([]);
+      frameAt(FRAME);
+      selectTextAt(RECT);
+
+      fireEvent.click(selectionAction());
+
+      expect(
+        screen.queryByRole("button", { name: "Comment on the selected text" }),
+      ).toBeNull();
+    });
+
+    it("offers nothing to a reader who cannot write", () => {
+      renderViewer();
+      openRoomWith([], false);
+      frameAt(FRAME);
+
+      selectTextAt(RECT);
+
+      expect(
+        screen.queryByRole("button", { name: "Comment on the selected text" }),
+      ).toBeNull();
+    });
+
+    // With no rect there is nowhere to stand the action, so the rail must still answer.
+    it("falls back to the rail when the artifact reports no rect", () => {
+      renderViewer();
+      openRoomWith([]);
+      fireEvent.click(screen.getByRole("button", { name: "Hide comments" }));
+
+      selectText();
+
+      expect(screen.getByLabelText("Comment")).toBeTruthy();
     });
   });
 

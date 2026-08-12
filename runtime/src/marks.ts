@@ -178,7 +178,16 @@ export function startMarks(): () => void {
     scheduler.repaint();
   });
 
+  // The app pins a control to the reported rect, which a scroll moves out from under it.
+  function onScroll(): void {
+    const selection = document.getSelection();
+    if (selection !== null && !selection.isCollapsed) {
+      scheduleSelection();
+    }
+  }
+
   document.addEventListener("selectionchange", scheduleSelection);
+  window.addEventListener("scroll", onScroll, true);
 
   return () => {
     gestures.stop();

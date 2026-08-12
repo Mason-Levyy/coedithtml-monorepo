@@ -13,6 +13,17 @@ export function framePixelHeight(contentHeight: number): string {
   return `${clamped}px`;
 }
 
+export function pointOnPage(
+  frame: HTMLIFrameElement | null,
+  point: ViewportPoint,
+): ViewportPoint | null {
+  if (frame === null) {
+    return null;
+  }
+  const box = frame.getBoundingClientRect();
+  return { x: point.x + box.left, y: point.y + box.top };
+}
+
 // The frame's own viewport is never scrolled, so its box is the whole offset.
 export function pointInFrame(
   frame: HTMLIFrameElement | null,
