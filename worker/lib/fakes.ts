@@ -18,11 +18,11 @@ export function fakeArtifactStore(): Record<string, unknown> {
 }
 
 export function stubArtifactStore(
-  stored: { artifactId: string; bytes: ArrayBuffer }[],
+  stored: { artifactId: string; revision: string; bytes: ArrayBuffer }[],
 ): R2Bucket {
   const entries = new Map(
-    stored.map(({ artifactId, bytes }) => [
-      artifactObjectKey(artifactId),
+    stored.map(({ artifactId, revision, bytes }) => [
+      artifactObjectKey(artifactId, revision),
       bytes,
     ]),
   );
@@ -147,7 +147,6 @@ export function liveKv(
   } as unknown as KVNamespace;
 }
 
-// Pass a liveKv() last to get a seeded store that is still writable.
 export function mergeKv(...stores: KVNamespace[]): KVNamespace {
   const writable = stores.at(-1);
   return {
@@ -172,7 +171,6 @@ export function mergeKv(...stores: KVNamespace[]): KVNamespace {
   } as unknown as KVNamespace;
 }
 
-// Shaped like the real binding so it passes env validation, but every read throws.
 export function failingKv(message: string): KVNamespace {
   const boom = () => {
     throw new Error(message);
@@ -212,7 +210,6 @@ export function memoryEntryStore(seed: OverlayEntry[] = []): EntryStore {
   };
 }
 
-// Node's Response rejects 101, so the accepted upgrade is marked in a header.
 export const FAKE_ROOM_HEADER = "x-fake-room";
 
 function fakeRoomResponse(): Response {
@@ -300,7 +297,6 @@ export function fakeWorkerEnvWithout(key: string): Record<string, unknown> {
   );
 }
 
-// Parses rather than casts so a drifted fake fails here, not in a handler.
 export function testWorkerEnv(
   overrides: Record<string, unknown> = {},
 ): WorkerEnv {

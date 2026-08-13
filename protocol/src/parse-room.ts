@@ -1,4 +1,5 @@
 import type { EntryPatch } from "./overlay";
+import { parseAnchor } from "./parse-anchor";
 import {
   isEntryStatus,
   isMarkColor,
@@ -70,6 +71,13 @@ export function parseEntryPatch(value: unknown): EntryPatch | null {
   }
   const patch: EntryPatch = {};
 
+  if (record.anchor !== undefined) {
+    const anchor = parseAnchor(record.anchor);
+    if (anchor === null) {
+      return null;
+    }
+    patch.anchor = anchor;
+  }
   if (record.body !== undefined) {
     const body = asString(record.body);
     if (body === null) {

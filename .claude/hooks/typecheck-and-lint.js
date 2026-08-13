@@ -42,17 +42,10 @@ function hasEslintConfig(root) {
   return candidates.some((c) => isFile(path.join(root, c)));
 }
 
-// pnpm resolves to a .CMD shim on Windows, which Node can only launch via a
-// shell — so args are quoted here rather than relying on execFileSync's
-// array+shell:true (which concatenates unescaped and is unsafe/deprecated).
 function shQuote(arg) {
   return '"' + String(arg).replace(/"/g, '""') + '"';
 }
 
-// The command name must stay unquoted: cmd.exe sets %0 to the literal token it
-// was given, so `"pnpm"` leaves %~dp0 with no directory part and the shim
-// expands it against the cwd, resolving pnpm.mjs under the project instead of
-// its install dir. Only the arguments get quoted.
 function run(args, cwd) {
   const command = ['pnpm', ...args.map(shQuote)].join(' ');
   try {
@@ -73,7 +66,7 @@ function main() {
   if (!isInsideRepo(root, file)) return;
 
   const pkgPath = path.join(root, 'package.json');
-  if (!isFile(pkgPath)) return; // workspace not scaffolded yet
+  if (!isFile(pkgPath)) return;
 
   let pkg;
   try {

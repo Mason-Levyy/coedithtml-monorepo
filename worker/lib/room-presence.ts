@@ -23,7 +23,6 @@ export function attachmentOf(socket: WebSocket): RoomAttachment {
   };
 }
 
-// Two tabs are one person, so presence is keyed by reader rather than socket.
 export function readersAmong(
   sockets: readonly WebSocket[],
   leaving?: WebSocket,

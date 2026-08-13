@@ -1,7 +1,7 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { ArtifactViewer } from "@/components/ArtifactViewer";
-import { FakeWebSocket } from "@/lib/fakes";
+import { FakeWebSocket, renderWithQueryClient } from "@/lib/fakes";
 import type {
   CommentEntry,
   OverlayEntry,
@@ -48,12 +48,13 @@ function renderViewer({ named = true }: { named?: boolean } = {}) {
       }),
     );
   }
-  render(
+  renderWithQueryClient(
     <ArtifactViewer
       token={TOKEN}
       src={`${SANDBOX_ORIGIN}/${TOKEN}`}
       sandboxOrigin={SANDBOX_ORIGIN}
       fileName="q3-review.html"
+      revision="9f2c1a04b7e35d68"
     />,
   );
 }
@@ -402,6 +403,59 @@ describe("the comment rail", () => {
 
     expect(screen.queryByRole("button", { name: "Show me" })).toBeNull();
     expect(screen.queryByText("The text this points at is gone")).toBeNull();
+  });
+
+  describe("copying feedback for an AI tool", () => {
+    function copyFeedback(): string[] {
+      const written: string[] = [];
+      vi.stubGlobal("navigator", {
+        clipboard: {
+          writeText: (text: string) => {
+            written.push(text);
+            return Promise.resolve();
+          },
+        },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Share" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Copy feedback for AI tool" }),
+      );
+      return written;
+    }
+
+    it("renders what the room is actually holding", async () => {
+      renderViewer();
+      openRoomWith([comment()]);
+
+      const written = copyFeedback();
+
+      await waitFor(() => expect(written).toHaveLength(1));
+      expect(written[0]).toContain("# Feedback on q3-review.html");
+      expect(written[0]).toContain('## On "Revenue grew 18%"');
+      expect(written[0]).toContain("**Priya:** Net or gross?");
+    });
+
+    it("separates threads the runtime reported as orphaned", async () => {
+      renderViewer();
+      openRoomWith([comment()]);
+      reportPlaced({ orphaned: ["c1"] });
+
+      const written = copyFeedback();
+
+      await waitFor(() => expect(written).toHaveLength(1));
+      expect(written[0]).toContain("## Unplaced");
+    });
+
+    it("cannot be copied when the room is empty", () => {
+      renderViewer();
+      openRoomWith([]);
+
+      fireEvent.click(screen.getByRole("button", { name: "Share" }));
+
+      expect(
+        screen.getByRole("button", { name: "Copy feedback for AI tool" }),
+      ).toHaveProperty("disabled", true);
+    });
   });
 
   describe("dropping a sticky", () => {

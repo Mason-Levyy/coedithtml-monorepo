@@ -6,8 +6,6 @@ export const VIEWER_PATH_PREFIX = "/a/";
 
 export { UNLOCK_QUERY_PARAM };
 
-// Points at the app origin, never the sandbox: opening untrusted markup
-// top-level gives up the iframe's sandbox attributes.
 export function viewerUrl(
   request: Request,
   env: WorkerEnv,

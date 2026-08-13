@@ -1,5 +1,6 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { renderWithQueryClient } from "@/lib/fakes";
 import { ArtifactViewer } from "./ArtifactViewer";
 
 const SANDBOX_ORIGIN = "https://sandbox.example.com";
@@ -7,12 +8,13 @@ const TOKEN = "a".repeat(32);
 const SRC = `${SANDBOX_ORIGIN}/${TOKEN}`;
 
 function renderViewer() {
-  return render(
+  return renderWithQueryClient(
     <ArtifactViewer
       token={TOKEN}
       src={SRC}
       sandboxOrigin={SANDBOX_ORIGIN}
       fileName="q3-review.html"
+      revision="9f2c1a04b7e35d68"
     />,
   );
 }
@@ -109,7 +111,7 @@ describe("ArtifactViewer", () => {
         .map(
           (button) => button.getAttribute("aria-label") ?? button.textContent,
         ),
-    ).toEqual(["Copy link", "Hide comments", "Close comments"]);
+    ).toEqual(["Hide comments", "Share", "Close comments"]);
   });
 
   it("fills the frame until the artifact says how it wants to be sized", () => {

@@ -13,6 +13,7 @@ import { accessTokenKey, artifactMetadataKey } from "@/lib/storage-keys";
 import { handleRoomConnect } from "./room";
 
 const ARTIFACT_ID = "a".repeat(32);
+const REVISION = "9f2c1a04b7e35d68";
 const VIEW_TOKEN = "c".repeat(32);
 const EDIT_TOKEN = "d".repeat(32);
 const APP_ORIGIN = `https://${FAKE_APP_HOST}`;
@@ -35,6 +36,7 @@ async function seededKv(password?: string): Promise<KVNamespace> {
         fileName: "deck.html",
         size: 42,
         uploadedAt: "2026-08-01T00:00:00.000Z",
+        revision: REVISION,
         ...(passwordHash === undefined ? {} : { passwordHash }),
       },
     },
@@ -106,11 +108,11 @@ describe("handleRoomConnect", () => {
     expect(room.connects[0]?.request.headers.get(ROOM_WRITE_HEADER)).toBe("no");
   });
 
-  it("tells the room which artifact it is holding marks for", async () => {
+  it("stamps the overlay with the revision on show, not the artifact id", async () => {
     const { room } = await connect(EDIT_TOKEN);
 
     expect(room.connects[0]?.request.headers.get(ROOM_REVISION_HEADER)).toBe(
-      ARTIFACT_ID,
+      REVISION,
     );
   });
 

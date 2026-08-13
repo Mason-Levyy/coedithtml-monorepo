@@ -162,6 +162,47 @@ describe("sticky sizing", () => {
   });
 });
 
+describe("re-placing a mark", () => {
+  it("moves a sticky onto the anchor the patch carries", () => {
+    const moved = regionAnchor({
+      path: "body/figure[2]",
+      fractionX: 0.1,
+      fractionY: 0.9,
+      revision: "rev-2",
+    });
+
+    expect(
+      patchEntry(sticky({ anchor: chartAnchor() }), {
+        anchor: moved ?? undefined,
+      })?.anchor,
+    ).toEqual(moved);
+  });
+
+  it("leaves the rest of the sticky alone", () => {
+    const patched = patchEntry(
+      sticky({ anchor: chartAnchor(), offsetX: 24, body: "Swap it" }),
+      { anchor: chartAnchor() },
+    );
+
+    expect(patched).toMatchObject({ offsetX: 24, body: "Swap it" });
+  });
+
+  it("refuses an anchor of a different kind than the mark it points with", () => {
+    expect(patchEntry(comment(), { anchor: chartAnchor() })).toBeNull();
+    expect(
+      patchEntry(sticky({ anchor: chartAnchor() }), {
+        anchor: textAnchor(),
+      }),
+    ).toBeNull();
+  });
+
+  it("keeps the original anchor when the patch carries none", () => {
+    expect(patchEntry(comment(), { body: "Reworded" })?.anchor).toEqual(
+      textAnchor(),
+    );
+  });
+});
+
 describe("fill", () => {
   it("recolours a mark without disturbing its named colour", () => {
     expect(patchEntry(comment(), { fill: "#0b1f4d" })).toMatchObject({

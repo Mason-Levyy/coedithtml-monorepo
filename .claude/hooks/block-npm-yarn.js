@@ -11,9 +11,6 @@ function readStdin() {
   }
 }
 
-// Matches npm/yarn as a command word at the start of the string or right
-// after a shell separator (;, &&, ||, |, or an opening paren/backtick) —
-// not just anywhere "npm"/"yarn" happens to appear as a substring.
 const NPM_YARN_AT_COMMAND_POSITION = /(^|[;&|(`]\s*)(npm|yarn)(\.cmd|\.exe)?(\s|$)/i;
 
 function main() {

@@ -30,6 +30,7 @@ export type ArtifactBridgeState = {
   activatedMarkId: string | null;
   placement: Anchor | null;
   marks: MarkPlacement;
+  marksReported: boolean;
 };
 
 const NOTHING_REPORTED: ArtifactBridgeState = {
@@ -40,6 +41,7 @@ const NOTHING_REPORTED: ArtifactBridgeState = {
   activatedMarkId: null,
   placement: null,
   marks: { offscreen: [], hidden: [], orphaned: [] },
+  marksReported: false,
 };
 
 function applyMessage(
@@ -69,6 +71,7 @@ function applyMessage(
     case "placed":
       return {
         ...previous,
+        marksReported: true,
         marks: {
           offscreen: message.offscreen,
           hidden: message.hidden,
@@ -88,11 +91,12 @@ export type RemoveMark = (markId: string) => void;
 
 export function useArtifactBridge(options: {
   sandboxOrigin: string;
+  src: string;
   onPatchMark: PatchMark;
   onRemoveMark: RemoveMark;
   onToolCancelled: () => void;
 }): ArtifactBridgeState {
-  const { sandboxOrigin } = options;
+  const { sandboxOrigin, src } = options;
   const [state, setState] = useState<ArtifactBridgeState>(NOTHING_REPORTED);
   const acted = useRef(options);
   acted.current = options;
@@ -125,7 +129,7 @@ export function useArtifactBridge(options: {
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [sandboxOrigin]);
+  }, [sandboxOrigin, src]);
 
   return state;
 }

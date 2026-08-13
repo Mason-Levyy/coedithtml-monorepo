@@ -3,10 +3,16 @@ import type { ReactNode } from "react";
 type ViewerBarProps = {
   title: string;
   fileName: string;
+  trailing: ReactNode;
   children: ReactNode;
 };
 
-export function ViewerBar({ title, fileName, children }: ViewerBarProps) {
+export function ViewerBar({
+  title,
+  fileName,
+  trailing,
+  children,
+}: ViewerBarProps) {
   return (
     <div className="flex items-center gap-3 border-b-2 border-ink bg-card px-3 py-1.5">
       <div className="flex flex-none items-center gap-2">{children}</div>
@@ -18,6 +24,9 @@ export function ViewerBar({ title, fileName, children }: ViewerBarProps) {
           {fileName}
         </span>
       )}
+      <div className="ml-auto flex flex-none items-center gap-2">
+        {trailing}
+      </div>
     </div>
   );
 }

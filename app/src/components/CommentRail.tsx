@@ -33,8 +33,10 @@ type CommentRailProps = {
   composing: TextAnchor | null;
   activeMarkId: string | null;
   marks: MarkPlacement;
+  replacingMarkId: string | null;
   onActivate: (markId: string) => void;
   onReveal: (markId: string) => void;
+  onReplace: (markId: string) => void;
   onComment: (body: string, displayName: string | null) => void;
   onReply: (parentId: string, body: string, displayName: string | null) => void;
   onDismissSelection: () => void;
@@ -47,8 +49,10 @@ export function CommentRail({
   composing,
   activeMarkId,
   marks,
+  replacingMarkId,
   onActivate,
   onReveal,
+  onReplace,
   onComment,
   onReply,
   onDismissSelection,
@@ -122,8 +126,10 @@ export function CommentRail({
             needsName={needsName}
             active={entry.id === activeMarkId}
             placement={placementOf(marks, entry.id)}
+            replacing={entry.id === replacingMarkId}
             onActivate={() => onActivate(entry.id)}
             onReveal={() => onReveal(entry.id)}
+            onReplace={() => onReplace(entry.id)}
             onReply={(body, displayName) =>
               onReply(entry.id, body, displayName)
             }

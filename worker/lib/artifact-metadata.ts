@@ -5,10 +5,24 @@ export const artifactMetadataSchema = z.object({
   fileName: z.string().min(1),
   size: z.number().int().positive(),
   uploadedAt: z.string().datetime(),
+  revision: z.string().min(1),
+  previousRevisions: z.array(z.string().min(1)).default([]),
   passwordHash: z.string().optional(),
 });
 
 export type ArtifactMetadata = z.infer<typeof artifactMetadataSchema>;
+
+export function withNewRevision(
+  metadata: ArtifactMetadata,
+  uploaded: { fileName: string; size: number; revision: string },
+): ArtifactMetadata {
+  return {
+    ...metadata,
+    ...uploaded,
+    uploadedAt: new Date().toISOString(),
+    previousRevisions: [...metadata.previousRevisions, metadata.revision],
+  };
+}
 
 export type PutMetadataResult = { ok: true } | { ok: false; cause: unknown };
 
