@@ -120,7 +120,7 @@ export function startMarks(): () => void {
 
   const placing = startPlaceTool({
     revision,
-    onPlace: (anchor) => sendToApp(placementMessage(anchor)),
+    onPlace: (anchor, size) => sendToApp(placementMessage(anchor, size)),
     onCancel: () => sendToApp(toolCancelledMessage()),
   });
 
@@ -137,6 +137,7 @@ export function startMarks(): () => void {
     onPatch: (markId, patch) => sendToApp(patchMarkMessage(markId, patch)),
     onSelect: (markId) => sendToApp(markActivatedMessage(markId)),
     onEdit: (element, markId, body) => editor.begin(element, markId, body),
+    onRemove: (markId) => sendToApp(removeMarkMessage(markId)),
   });
 
   function reportSelection(): void {
@@ -175,7 +176,7 @@ export function startMarks(): () => void {
   );
   const stopReceiving = receiveFromApp((message) => {
     if (message.type === "set-tool") {
-      placing.arm(message.tool);
+      placing.arm(message.tool, message.color);
       return;
     }
     if (message.type === "set-capabilities") {

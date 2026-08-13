@@ -46,7 +46,12 @@ export function newReply(draft: Draft & { parentId: string }): ReplyEntry {
 }
 
 export function newSticky(
-  draft: Draft & { offsetX: number; offsetY: number },
+  draft: Draft & {
+    offsetX: number;
+    offsetY: number;
+    width?: number | null;
+    height?: number | null;
+  },
 ): StickyEntry {
   return {
     ...shared(draft),
@@ -54,8 +59,8 @@ export function newSticky(
     parentId: null,
     offsetX: draft.offsetX,
     offsetY: draft.offsetY,
-    width: null,
-    height: null,
+    width: draft.width !== undefined ? draft.width : 180,
+    height: draft.height !== undefined ? draft.height : 140,
     tail: null,
   };
 }

@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { copyLabel, useCopyToClipboard } from "@/hooks/useCopyToClipboard";
-
-type LinkPermission = "view" | "suggest" | "edit";
+import type { LinkPermission } from "@/lib/link-permission";
 
 type ShareLinkResultProps = {
   shareUrl: string;
@@ -23,7 +22,7 @@ export function ShareLinkResult({
   const clipboard = useCopyToClipboard();
 
   function handleOpenLink() {
-    window.open(shareUrl, "_blank");
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
   }
 
   return (

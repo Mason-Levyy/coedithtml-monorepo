@@ -27,6 +27,7 @@ export type StickyPlacement = {
 
 export function useStickyPlacement(options: {
   placement: Anchor | null;
+  placementSize?: { width: number; height: number } | null;
   ready: boolean;
   canMarkUp: boolean;
   reader: ReaderPresence;
@@ -35,7 +36,7 @@ export function useStickyPlacement(options: {
   patchEntry: (markId: string, patch: EntryPatch) => void;
   send: (message: AppToRuntimeMessage) => void;
 }): StickyPlacement {
-  const { placement, ready, canMarkUp, send } = options;
+  const { placement, ready, canMarkUp, color, send } = options;
   const [intent, setIntent] = useState<Intent | null>(null);
 
   const latest = useRef(options);
@@ -45,9 +46,14 @@ export function useStickyPlacement(options: {
 
   useEffect(() => {
     if (ready) {
-      send(setToolMessage(intent === null ? null : "sticky"));
+      send(
+        setToolMessage(
+          intent === null ? null : "sticky",
+          intent === null ? null : color,
+        ),
+      );
     }
-  }, [intent, ready, send]);
+  }, [intent, ready, color, send]);
 
   useEffect(() => {
     if (!canMarkUp) {
@@ -76,7 +82,13 @@ export function useStickyPlacement(options: {
     const reason = droppedIntentRef.current ?? { kind: "new" };
     droppedIntentRef.current = null;
 
-    const { canMarkUp: allowed, reader, color, addEntry } = latest.current;
+    const {
+      canMarkUp: allowed,
+      reader,
+      color,
+      addEntry,
+      placementSize,
+    } = latest.current;
     if (!allowed) {
       return;
     }
@@ -91,6 +103,8 @@ export function useStickyPlacement(options: {
       ...paintFor(color),
       offsetX: 0,
       offsetY: 0,
+      width: placementSize?.width ?? 180,
+      height: placementSize?.height ?? 140,
     });
     addEntry(sticky);
     latest.current.send(editMarkMessage(sticky.id));
