@@ -8,9 +8,6 @@ async function readCount(kv: KVNamespace, key: string): Promise<number> {
   return raw === null ? 0 : Number(raw);
 }
 
-// Checking and recording are separate so a caller can decide what counts as an
-// attempt: every upload consumes the ceiling, but only a *failed* password
-// consumes one, or reading a shared link a few times would lock the reader out.
 export async function isWithinRateLimit(
   kv: KVNamespace,
   key: string,
@@ -23,10 +20,6 @@ export async function isWithinRateLimit(
   }
 }
 
-// A read-then-write counter, not an atomic increment: KV has no atomic
-// increment, so concurrent requests can race and let slightly more than
-// `limit` through in the same window. Acceptable for an abuse ceiling, not
-// for anything that needs a hard guarantee.
 export async function recordRateLimitedAttempt(
   kv: KVNamespace,
   key: string,

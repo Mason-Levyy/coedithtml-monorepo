@@ -109,6 +109,7 @@ export function repliesTo(
 }
 
 export type EntryPatch = {
+  anchor?: Anchor;
   body?: string;
   color?: MarkColor;
   fill?: string | null;
@@ -134,7 +135,12 @@ export function patchEntry(
   entry: OverlayEntry,
   patch: EntryPatch,
 ): OverlayEntry | null {
+  if (patch.anchor !== undefined && patch.anchor.kind !== entry.anchor.kind) {
+    return null;
+  }
+
   const shared = {
+    anchor: patch.anchor ?? entry.anchor,
     body: patch.body ?? entry.body,
     color: patch.color ?? entry.color,
     fill: patch.fill === undefined ? entry.fill : patch.fill,

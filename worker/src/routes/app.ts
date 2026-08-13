@@ -2,6 +2,7 @@ import { serveAppAsset } from "@/lib/app-assets";
 import type { WorkerEnv } from "@/lib/env";
 import { jsonError } from "@/lib/responses";
 import { handleGetArtifact } from "./artifact";
+import { handleReplaceArtifact } from "./revisions";
 import { handleRevokeToken } from "./revoke";
 import { handleRoomConnect } from "./room";
 import { handleUnlockArtifact } from "./unlock";
@@ -10,6 +11,7 @@ import { handleUpload } from "./upload";
 const ARTIFACT_TOKEN_PATH = /^\/api\/artifacts\/([^/]+)$/;
 const ARTIFACT_UNLOCK_PATH = /^\/api\/artifacts\/([^/]+)\/unlock$/;
 const ARTIFACT_ROOM_PATH = /^\/api\/artifacts\/([^/]+)\/room$/;
+const ARTIFACT_REVISIONS_PATH = /^\/api\/artifacts\/([^/]+)\/revisions$/;
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
 export function handleAppRequest(
@@ -31,6 +33,14 @@ export function handleAppRequest(
       return jsonError("Method not allowed.", 405);
     }
     return handleUnlockArtifact(unlockMatch[1] ?? "", request, env);
+  }
+
+  const revisionsMatch = ARTIFACT_REVISIONS_PATH.exec(pathname);
+  if (revisionsMatch) {
+    if (request.method !== "POST") {
+      return jsonError("Method not allowed.", 405);
+    }
+    return handleReplaceArtifact(revisionsMatch[1] ?? "", request, env);
   }
 
   const roomMatch = ARTIFACT_ROOM_PATH.exec(pathname);

@@ -42,7 +42,6 @@ describe("checkPasswordGate", () => {
     expect(result.ok).toBe(true);
   });
 
-  // Grants are scoped, so unlocking one artifact must not unlock another.
   it("refuses a grant minted for a different artifact", async () => {
     const kv = liveKv();
     const minted = await mintUnlockGrant(kv, OTHER_ARTIFACT_ID);

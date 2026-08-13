@@ -35,7 +35,6 @@ function addEntry(
   now: string,
 ): LogOutcome {
   const existing = store.get(entry.id);
-  // A reconnecting client resends what it never saw acknowledged.
   if (existing !== null) {
     return { ok: true, broadcast: entryAddedMessage(existing) };
   }

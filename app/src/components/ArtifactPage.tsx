@@ -1,6 +1,7 @@
 import { useArtifact, useUnlockArtifact } from "@/hooks/useArtifact";
 import { ArtifactViewer } from "@/components/ArtifactViewer";
 import { PasswordPrompt } from "@/components/PasswordPrompt";
+import { artifactSrcFor } from "@/lib/artifact-src";
 
 type ArtifactPageProps = {
   token: string;
@@ -37,9 +38,10 @@ export function ArtifactPage({ token }: ArtifactPageProps) {
   return (
     <ArtifactViewer
       token={token}
-      src={artifact.data.artifactUrl}
+      src={artifactSrcFor(artifact.data)}
       sandboxOrigin={artifact.data.sandboxOrigin}
       fileName={artifact.data.fileName}
+      revision={artifact.data.revision}
     />
   );
 }

@@ -2,8 +2,6 @@ import { z } from "zod";
 
 export const MAX_ARTIFACT_BYTES = 5 * 1024 * 1024;
 
-// The multipart envelope costs boundaries and part headers on top of the file
-// itself, so the body a request may send is capped a little higher.
 export const MAX_UPLOAD_BODY_BYTES = MAX_ARTIFACT_BYTES + 64 * 1024;
 
 export const uploadFieldName = "file";

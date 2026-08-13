@@ -24,6 +24,7 @@ function seededKv(): KVNamespace {
         fileName: "deck.html",
         size: 42,
         uploadedAt: "2026-08-01T00:00:00.000Z",
+        revision: "9f2c1a04b7e35d68",
       },
     },
   ]);

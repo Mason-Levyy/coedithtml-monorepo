@@ -18,7 +18,6 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Node's DNS doesn't special-case *.localhost like browsers do; connect by IP and set Host manually for the origin classifier (changeOrigin would overwrite it with the IP target instead).
       "/api": {
         target: "http://127.0.0.1:8787",
         headers: { host: "app.localhost:8787" },
@@ -28,7 +27,6 @@ export default defineConfig({
   test: {
     environment: "happy-dom",
     setupFiles: ["./src/test-setup.ts"],
-    // Otherwise happy-dom actually fetches every rendered <iframe src>.
     environmentOptions: {
       happyDOM: { settings: { disableIframePageLoading: true } },
     },

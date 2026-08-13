@@ -28,8 +28,10 @@ type CommentThreadProps = {
   needsName: boolean;
   active: boolean;
   placement: MarkPlacementState;
+  replacing: boolean;
   onActivate: () => void;
   onReveal: () => void;
+  onReplace: () => void;
   onReply: (body: string, displayName: string | null) => void;
   onResolve: (resolved: boolean) => void;
   onRemove: () => void;
@@ -42,8 +44,10 @@ export function CommentThread({
   needsName,
   active,
   placement,
+  replacing,
   onActivate,
   onReveal,
+  onReplace,
   onReply,
   onResolve,
   onRemove,
@@ -101,7 +105,13 @@ export function CommentThread({
         </blockquote>
       )}
 
-      <ThreadPlacement state={placement} onReveal={onReveal} />
+      <ThreadPlacement
+        state={placement}
+        canReplace={canWrite && entry.kind === "sticky"}
+        replacing={replacing}
+        onReveal={onReveal}
+        onReplace={onReplace}
+      />
 
       <p className="mt-2 whitespace-pre-wrap">{entry.body}</p>
 

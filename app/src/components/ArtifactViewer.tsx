@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactFrame } from "@/components/ArtifactFrame";
 import { CommentRail } from "@/components/CommentRail";
-import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { RailButton } from "@/components/RailButton";
 import { ReaderChip } from "@/components/ReaderChip";
+import { ReanchorBanner } from "@/components/ReanchorBanner";
+import { ReplaceFileButton } from "@/components/ReplaceFileButton";
 import { SelectionAction } from "@/components/SelectionAction";
+import { ShareMenu } from "@/components/ShareMenu";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
 import { ViewerBar } from "@/components/ViewerBar";
 import { useArtifactBridge } from "@/hooks/useArtifactBridge";
+import { useReplaceArtifact } from "@/hooks/useArtifact";
 import { useDocRoom } from "@/hooks/useDocRoom";
 import { useReaderIdentity } from "@/hooks/useReaderIdentity";
 import { useRuntimeChannel } from "@/hooks/useRuntimeChannel";
@@ -15,7 +18,9 @@ import { useMarkAuthoring } from "@/hooks/useMarkAuthoring";
 import { useSelectionAnchor } from "@/hooks/useSelectionAnchor";
 import { useStickyPlacement } from "@/hooks/useStickyPlacement";
 import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
+import { describeReanchoring, reanchorCounts } from "@/lib/reanchor-report";
 import {
+  overlayToMarkdown,
   renderMarksMessage,
   revealMarkMessage,
   setCapabilitiesMessage,
@@ -26,11 +31,14 @@ import {
 } from "@/lib/protocol";
 import { roomUrl } from "@/lib/room-url";
 
+type Notice = { tone: "report" | "error"; message: string };
+
 type ArtifactViewerProps = {
   token: string;
   src: string;
   sandboxOrigin: string;
   fileName: string;
+  revision: string;
 };
 
 export function ArtifactViewer({
@@ -38,6 +46,7 @@ export function ArtifactViewer({
   src,
   sandboxOrigin,
   fileName,
+  revision,
 }: ArtifactViewerProps) {
   const frame = useRef<HTMLIFrameElement>(null);
   const acted = useRef({
@@ -50,6 +59,7 @@ export function ArtifactViewer({
   });
   const bridge = useArtifactBridge({
     sandboxOrigin,
+    src,
     onPatchMark: (markId, patch) => acted.current.patch(markId, patch),
     onRemoveMark: (markId) => acted.current.remove(markId),
     onToolCancelled: () => acted.current.cancelTool(),
@@ -68,8 +78,32 @@ export function ArtifactViewer({
   const [railOpen, setRailOpen] = useState(() => window.innerWidth >= 1024);
   const [identityOpen, setIdentityOpen] = useState(false);
   const [composing, setComposing] = useState<TextAnchor | null>(null);
+  const [awaitedRevision, setAwaitedRevision] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
 
   const canMarkUp = room.canWrite;
+  const replace = useReplaceArtifact(token);
+
+  const feedback = useMemo(
+    () =>
+      overlayToMarkdown({
+        fileName,
+        entries: room.entries,
+        orphaned: bridge.marks.orphaned,
+      }),
+    [fileName, room.entries, bridge.marks.orphaned],
+  );
+
+  const reporting =
+    awaitedRevision === revision && bridge.ready && bridge.marksReported;
+  const banner: Notice | null = reporting
+    ? {
+        tone: "report",
+        message: describeReanchoring(
+          reanchorCounts(room.entries, bridge.marks),
+        ),
+      }
+    : notice;
 
   useEffect(() => {
     if (bridge.ready) {
@@ -103,6 +137,7 @@ export function ArtifactViewer({
     reader: identity.reader,
     color: identity.color,
     addEntry: room.addEntry,
+    patchEntry: room.patchEntry,
     send: sendToRuntime,
   });
 
@@ -186,6 +221,29 @@ export function ArtifactViewer({
     askForName();
   }
 
+  function replaceFile(file: File): void {
+    setNotice(null);
+    setAwaitedRevision(null);
+    replace.mutate(file, {
+      onSuccess: (result) => {
+        if (result.replaced) {
+          setAwaitedRevision(result.revision);
+        } else {
+          setNotice({
+            tone: "report",
+            message: "That file is identical to the one already here.",
+          });
+        }
+      },
+      onError: (error) => setNotice({ tone: "error", message: error.message }),
+    });
+  }
+
+  function dismissBanner(): void {
+    setNotice(null);
+    setAwaitedRevision(null);
+  }
+
   function dropSticky(point: PadPoint): void {
     if (!identity.named) {
       askForName();
@@ -201,8 +259,11 @@ export function ArtifactViewer({
     <div className={`flex ${columnHeight} bg-card`}>
       <div className="relative flex min-w-0 flex-1 flex-col">
         <div className="sticky top-0 z-20">
-          <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
-            <CopyLinkButton />
+          <ViewerBar
+            title={bridge.title ?? fileName}
+            fileName={fileName}
+            trailing={<ShareMenu feedback={feedback} />}
+          >
             {canMarkUp && (
               <ReaderChip
                 identity={identity}
@@ -223,7 +284,21 @@ export function ArtifactViewer({
                 onDrop={dropSticky}
               />
             )}
+            {canMarkUp && (
+              <ReplaceFileButton
+                pending={replace.isPending}
+                onReplace={replaceFile}
+                onReject={(message) => setNotice({ tone: "error", message })}
+              />
+            )}
           </ViewerBar>
+          {banner !== null && (
+            <ReanchorBanner
+              message={banner.message}
+              tone={banner.tone}
+              onDismiss={dismissBanner}
+            />
+          )}
         </div>
         <div className={frameHeight ? undefined : "min-h-0 flex-1"}>
           <ArtifactFrame
@@ -252,8 +327,10 @@ export function ArtifactViewer({
             composing={composing}
             activeMarkId={activeMarkId}
             marks={bridge.marks}
+            replacingMarkId={sticky.replacingMarkId}
             onActivate={setActiveMarkId}
             onReveal={(markId) => sendToRuntime(revealMarkMessage(markId))}
+            onReplace={sticky.armForMark}
             onComment={writeComment}
             onReply={writeReply}
             onClose={() => setRailOpen(false)}

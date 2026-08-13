@@ -1,10 +1,6 @@
 import { z } from "zod";
 import { newUnlockGrant, unlockGrantKey } from "./storage-keys";
 
-// Short-lived on purpose. The grant travels in the iframe URL, where the
-// artifact's own scripts can read it — harmless, since it only unlocks the
-// artifact already being displayed, which is exactly what a password entered
-// into the URL was not.
 const GRANT_TTL_SECONDS = 3600;
 
 const grantRecordSchema = z.object({ artifactId: z.string() });

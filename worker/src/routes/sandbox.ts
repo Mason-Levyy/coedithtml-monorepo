@@ -1,7 +1,7 @@
 import {
   appendRuntimeScript,
+  revisionInRuntimePath,
   RUNTIME_ASSET_PATH,
-  RUNTIME_SCRIPT_PATH,
 } from "@/lib/artifact-render";
 import { getArtifact } from "@/lib/artifact-store";
 import type { WorkerEnv } from "@/lib/env";
@@ -30,6 +30,7 @@ async function serveRuntimeScript(
   request: Request,
   env: WorkerEnv,
   headers: Headers,
+  revision: string,
 ): Promise<Response> {
   const assetResponse = await env.ASSETS.fetch(
     new Request(new URL(RUNTIME_ASSET_PATH, request.url)),
@@ -40,7 +41,7 @@ async function serveRuntimeScript(
 
   const appOrigin = originFor(request, env.APP_HOST);
   const body = await assetResponse.text();
-  const configured = `"use strict";\nwindow.__coedit__=${JSON.stringify({ config: { appOrigin } })};\n${body}`;
+  const configured = `"use strict";\nwindow.__coedit__=${JSON.stringify({ config: { appOrigin, revision } })};\n${body}`;
 
   const merged = new Headers(assetResponse.headers);
   for (const [name, value] of headers) {
@@ -63,8 +64,9 @@ export async function handleSandboxRequest(
   }
 
   const url = new URL(request.url);
-  if (url.pathname === RUNTIME_SCRIPT_PATH) {
-    return serveRuntimeScript(request, env, headers);
+  const runtimeRevision = revisionInRuntimePath(url.pathname);
+  if (runtimeRevision !== null) {
+    return serveRuntimeScript(request, env, headers, runtimeRevision);
   }
 
   const resolved = await resolveArtifactByToken(
@@ -93,7 +95,11 @@ export async function handleSandboxRequest(
     return sandboxResponse("This link needs a password.", 401, headers);
   }
 
-  const result = await getArtifact(env.ARTIFACT_STORE, artifactId);
+  const result = await getArtifact(
+    env.ARTIFACT_STORE,
+    artifactId,
+    metadata.revision,
+  );
   if (!result.ok) {
     console.error("Failed to read artifact", result.cause);
     return sandboxResponse(UNAVAILABLE, 500, headers);
@@ -103,7 +109,7 @@ export async function handleSandboxRequest(
   }
 
   return sandboxResponse(
-    appendRuntimeScript(result.bytes),
+    appendRuntimeScript(result.bytes, metadata.revision),
     200,
     headers,
     "text/html; charset=utf-8",
