@@ -53,8 +53,10 @@ describe("uploadArtifact", () => {
     const result = {
       artifactId: "a".repeat(32),
       viewToken: "b".repeat(32),
+      suggestToken: "d".repeat(32),
       editToken: "c".repeat(32),
       viewUrl: "https://sandbox.test/" + "b".repeat(32),
+      suggestUrl: "https://sandbox.test/" + "d".repeat(32),
       editUrl: "https://sandbox.test/" + "c".repeat(32),
     };
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(result, 201));

@@ -5,6 +5,7 @@ import {
   removeEntryMessage,
   type Anchor,
   type CommentEntry,
+  type EditEntry,
   type OverlayEntry,
   type ReplyEntry,
   type StickyEntry,
@@ -55,6 +56,17 @@ function reply(overrides: Partial<ReplyEntry> = {}): ReplyEntry {
   };
 }
 
+function edit(overrides: Partial<EditEntry> = {}): EditEntry {
+  return {
+    ...comment(),
+    kind: "edit",
+    id: "e1",
+    body: "Revenue fell",
+    rev: 0,
+    ...overrides,
+  };
+}
+
 function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
   return {
     ...comment(),
@@ -72,8 +84,9 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
 function apply(
   store: EntryStore,
   message: Parameters<typeof applyClientMessage>[1],
+  canEdit = true,
 ) {
-  return applyClientMessage(store, message, NOW);
+  return applyClientMessage(store, message, { now: NOW, canEdit });
 }
 
 describe("applyClientMessage", () => {
@@ -210,12 +223,70 @@ describe("applyClientMessage", () => {
     expect(outcome).toMatchObject({ ok: false, reason: "unknown-entry" });
   });
 
+  it("refuses an edit from a link that may only suggest", () => {
+    const store = memoryEntryStore();
+    const outcome = apply(store, addEntryMessage(edit()), false);
+
+    expect(outcome).toMatchObject({ ok: false, reason: "not-editable" });
+    expect(store.list()).toHaveLength(0);
+  });
+
+  it("still lets a suggest link write a comment", () => {
+    const store = memoryEntryStore();
+    const outcome = apply(store, addEntryMessage(comment()), false);
+
+    expect(outcome).toMatchObject({ ok: true });
+  });
+
+  it("refuses to let a suggest link change an edit already stored", () => {
+    const store = memoryEntryStore();
+    apply(store, addEntryMessage(edit()));
+
+    const outcome = apply(
+      store,
+      patchEntryMessage("e1", { body: "Revenue held" }),
+      false,
+    );
+
+    expect(outcome).toMatchObject({ ok: false, reason: "not-editable" });
+  });
+
+  it("counts up an edit's revision so a racing writer can be caught", () => {
+    const store = memoryEntryStore();
+    apply(store, addEntryMessage(edit()));
+
+    apply(store, patchEntryMessage("e1", { ifRev: 0, body: "Revenue held" }));
+
+    expect(store.get("e1")).toMatchObject({ rev: 1, body: "Revenue held" });
+  });
+
+  it("refuses a patch built on a revision the room has moved past", () => {
+    const store = memoryEntryStore();
+    apply(store, addEntryMessage(edit()));
+    apply(store, patchEntryMessage("e1", { ifRev: 0, body: "Ann's wording" }));
+
+    const outcome = apply(
+      store,
+      patchEntryMessage("e1", { ifRev: 0, body: "Bob's wording" }),
+    );
+
+    expect(outcome).toMatchObject({ ok: false, reason: "stale" });
+    expect(store.get("e1")).toMatchObject({ body: "Ann's wording" });
+  });
+
+  it("refuses an edit that arrives claiming to have been revised already", () => {
+    const store = memoryEntryStore();
+    const outcome = apply(store, addEntryMessage(edit({ rev: 4 })));
+
+    expect(outcome).toMatchObject({ ok: false, reason: "malformed" });
+  });
+
   it("has nothing to broadcast for a hello", () => {
     const store = memoryEntryStore();
     const outcome = applyClientMessage(
       store,
       { version: 1, type: "hello", reader: { id: "r", displayName: "Sam" } },
-      NOW,
+      { now: NOW, canEdit: true },
     );
 
     expect(outcome).toBeNull();

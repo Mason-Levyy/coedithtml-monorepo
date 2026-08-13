@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WorkerEnv } from "@/lib/env";
 import {
+  FAKE_APP_HOST,
   liveKv,
   mergeKv,
   stubAccessTokens,
@@ -57,6 +58,53 @@ describe("handleGetArtifact", () => {
       artifactId: ARTIFACT_ID,
       fileName: "deck.html",
       size: 42,
+    });
+  });
+
+  it("falls back to just its own link when the token predates sibling tokens", async () => {
+    const response = await handleGetArtifact(
+      VIEW_TOKEN,
+      request(),
+      envFor(METADATA),
+    );
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(body.shareLinks).toEqual({
+      view: `https://${FAKE_APP_HOST}/a/${VIEW_TOKEN}`,
+    });
+  });
+
+  it("offers only links at or below an edit token's own permission", async () => {
+    const suggestToken = "d".repeat(32);
+    const editToken = "e".repeat(32);
+    const siblingTokens = {
+      view: VIEW_TOKEN,
+      suggest: suggestToken,
+      edit: editToken,
+    };
+    const env = envWith(
+      mergeKv(
+        stubAccessTokens([
+          {
+            token: editToken,
+            record: { artifactId: ARTIFACT_ID, kind: "edit", siblingTokens },
+          },
+        ]),
+        stubArtifactMetadata([{ artifactId: ARTIFACT_ID, metadata: METADATA }]),
+      ),
+    );
+
+    const response = await handleGetArtifact(
+      editToken,
+      new Request(`https://app.test/api/artifacts/${editToken}`),
+      env,
+    );
+    const body = (await response.json()) as Record<string, unknown>;
+
+    expect(body.shareLinks).toEqual({
+      view: `https://${FAKE_APP_HOST}/a/${VIEW_TOKEN}`,
+      suggest: `https://${FAKE_APP_HOST}/a/${suggestToken}`,
+      edit: `https://${FAKE_APP_HOST}/a/${editToken}`,
     });
   });
 

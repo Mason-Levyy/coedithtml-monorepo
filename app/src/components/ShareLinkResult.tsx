@@ -1,16 +1,29 @@
 import { Button } from "@/components/ui/button";
 import { copyLabel, useCopyToClipboard } from "@/hooks/useCopyToClipboard";
+import type { LinkPermission } from "@/lib/link-permission";
 
 type ShareLinkResultProps = {
   shareUrl: string;
+  permission: LinkPermission;
   onUploadAnother: () => void;
+};
+
+const PERMISSION_DESCRIPTION: Record<LinkPermission, string> = {
+  view: "Anyone with this link can read the file, but not comment or edit it.",
+  suggest: "Anyone with this link can comment and mark it up.",
+  edit: "Anyone with this link can comment and mark it up.",
 };
 
 export function ShareLinkResult({
   shareUrl,
+  permission,
   onUploadAnother,
 }: ShareLinkResultProps) {
   const clipboard = useCopyToClipboard();
+
+  function handleOpenLink() {
+    window.open(shareUrl, "_blank", "noopener,noreferrer");
+  }
 
   return (
     <div className="flex flex-col gap-3 border-2 border-ink bg-card p-6">
@@ -30,11 +43,19 @@ export function ShareLinkResult({
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">
-        Anyone with this link can comment and mark it up.
+        {PERMISSION_DESCRIPTION[permission]}
       </p>
-      <div>
+      <div className="flex w-full items-center justify-between gap-2">
         <Button type="button" variant="outline" onClick={onUploadAnother}>
           Upload another
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleOpenLink}
+          className="ml-auto"
+        >
+          Open file
         </Button>
       </div>
     </div>

@@ -173,3 +173,13 @@ export function placeTailNode(
     node.style.top = `${at.y}px`;
   }
 }
+
+export function paintTailTip(element: HTMLElement, mark: StickyEntry): void {
+  const tip = element.querySelector<HTMLElement>('[data-node="tip"]');
+  if (tip === null) {
+    return;
+  }
+  const edge = effectiveEdge(mark);
+  tip.style.borderColor = edge;
+  tip.style.background = edge;
+}

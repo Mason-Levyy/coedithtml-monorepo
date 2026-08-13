@@ -48,13 +48,14 @@ function reply(overrides: Partial<ReplyEntry> = {}): ReplyEntry {
   };
 }
 
-function snapshot(entries: OverlayEntry[], canWrite = true) {
+function snapshot(entries: OverlayEntry[], canWrite = true, canEdit = false) {
   return {
     version: 1 as const,
     type: "snapshot" as const,
     overlay: { version: 1 as const, artifactRevision: "r1", entries },
     readers: [],
     canWrite,
+    canEdit,
   };
 }
 
@@ -172,6 +173,14 @@ describe("applyRoomMessage", () => {
     const state = applyRoomMessage(EMPTY_ROOM, snapshot([], false));
 
     expect(state).toMatchObject({ canWrite: false, loaded: true });
+  });
+
+  it("separates writing from editing, so a suggest link gets no caret", () => {
+    const suggesting = applyRoomMessage(EMPTY_ROOM, snapshot([], true, false));
+    const editing = applyRoomMessage(EMPTY_ROOM, snapshot([], true, true));
+
+    expect(suggesting).toMatchObject({ canWrite: true, canEdit: false });
+    expect(editing).toMatchObject({ canWrite: true, canEdit: true });
   });
 
   it("keeps the room in order as entries arrive", () => {

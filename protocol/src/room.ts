@@ -40,6 +40,7 @@ export type RoomSnapshotMessage = Versioned & {
   overlay: OverlayDocument;
   readers: ReaderPresence[];
   canWrite: boolean;
+  canEdit: boolean;
 };
 
 export type RoomEntryAddedMessage = Versioned & {
@@ -68,6 +69,8 @@ export const REJECTION_REASONS = [
   "unknown-entry",
   "limit-reached",
   "too-long",
+  "not-editable",
+  "stale",
 ] as const;
 
 export type RejectionReason = (typeof REJECTION_REASONS)[number];
@@ -109,6 +112,7 @@ export function snapshotMessage(options: {
   overlay: OverlayDocument;
   readers: ReaderPresence[];
   canWrite: boolean;
+  canEdit: boolean;
 }): RoomSnapshotMessage {
   return { version: ROOM_VERSION, type: "snapshot", ...options };
 }
