@@ -11,6 +11,7 @@ export type RoomContents = {
   entries: OverlayEntry[];
   readers: ReaderPresence[];
   canWrite: boolean;
+  canEdit: boolean;
   rejection: RejectionReason | null;
   loaded: boolean;
   undo: Record<string, OverlayEntry[]>;
@@ -20,6 +21,7 @@ export const EMPTY_ROOM: RoomContents = {
   entries: [],
   readers: [],
   canWrite: false,
+  canEdit: false,
   rejection: null,
   loaded: false,
   undo: {},
@@ -114,6 +116,7 @@ export function applyRoomMessage(
         entries: [...message.overlay.entries].sort(byCreatedAt),
         readers: message.readers,
         canWrite: message.canWrite,
+        canEdit: message.canEdit,
         rejection: null,
         loaded: true,
         undo: {},

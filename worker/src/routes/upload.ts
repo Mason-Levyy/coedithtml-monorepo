@@ -57,21 +57,41 @@ async function storeUpload(
   return null;
 }
 
-type ShareTokens = { viewToken: string; editToken: string };
+type ShareTokens = {
+  viewToken: string;
+  suggestToken: string;
+  editToken: string;
+};
 
 async function mintShareTokens(
   env: WorkerEnv,
   artifactId: string,
 ): Promise<{ ok: true; tokens: ShareTokens } | Rejected> {
-  const tokens: ShareTokens = { viewToken: newToken(), editToken: newToken() };
+  const tokens: ShareTokens = {
+    viewToken: newToken(),
+    suggestToken: newToken(),
+    editToken: newToken(),
+  };
+  const siblingTokens = {
+    view: tokens.viewToken,
+    suggest: tokens.suggestToken,
+    edit: tokens.editToken,
+  };
   const results = await Promise.all([
     putAccessToken(env.ARTIFACT_METADATA, tokens.viewToken, {
       artifactId,
       kind: "view",
+      siblingTokens,
+    }),
+    putAccessToken(env.ARTIFACT_METADATA, tokens.suggestToken, {
+      artifactId,
+      kind: "suggest",
+      siblingTokens,
     }),
     putAccessToken(env.ARTIFACT_METADATA, tokens.editToken, {
       artifactId,
       kind: "edit",
+      siblingTokens,
     }),
   ]);
 
@@ -112,13 +132,15 @@ export async function handleUpload(
     return minted.response;
   }
 
-  const { viewToken, editToken } = minted.tokens;
+  const { viewToken, suggestToken, editToken } = minted.tokens;
   return jsonResponse(
     {
       artifactId,
       viewToken,
+      suggestToken,
       editToken,
       viewUrl: viewerUrl(request, env, viewToken),
+      suggestUrl: viewerUrl(request, env, suggestToken),
       editUrl: viewerUrl(request, env, editToken),
     },
     201,

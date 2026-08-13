@@ -33,28 +33,37 @@ function jsonResponse(body: unknown, status: number): Response {
   });
 }
 
+function stubUploadResponse() {
+  const viewUrl = "https://sandbox.test/" + "a".repeat(32);
+  const suggestUrl = "https://sandbox.test/" + "b".repeat(32);
+  const editUrl = "https://sandbox.test/" + "c".repeat(32);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      jsonResponse(
+        {
+          artifactId: "a".repeat(32),
+          viewToken: "a".repeat(32),
+          suggestToken: "b".repeat(32),
+          editToken: "c".repeat(32),
+          viewUrl,
+          suggestUrl,
+          editUrl,
+        },
+        201,
+      ),
+    ),
+  );
+  return { viewUrl, suggestUrl, editUrl };
+}
+
 describe("LandingPage", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("shows the share link after a successful upload", async () => {
-    const editUrl = "https://sandbox.test/" + "c".repeat(32);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        jsonResponse(
-          {
-            artifactId: "a".repeat(32),
-            viewToken: "b".repeat(32),
-            editToken: "c".repeat(32),
-            viewUrl: "https://sandbox.test/" + "a".repeat(32),
-            editUrl,
-          },
-          201,
-        ),
-      ),
-    );
+  it("defaults to the view-only link", async () => {
+    const { viewUrl, suggestUrl, editUrl } = stubUploadResponse();
 
     renderLandingPage();
     fireEvent.change(getInput(), {
@@ -62,8 +71,45 @@ describe("LandingPage", () => {
     });
 
     await vi.waitFor(() => {
-      expect(() => screen.getByText(editUrl)).not.toThrow();
+      expect(() => screen.getByText(viewUrl)).not.toThrow();
     });
+    expect(screen.queryByText(suggestUrl)).toBeNull();
+    expect(screen.queryByText(editUrl)).toBeNull();
+  });
+
+  it("uses the suggest link when the permission is set to suggest", async () => {
+    const { viewUrl, suggestUrl } = stubUploadResponse();
+
+    renderLandingPage();
+    fireEvent.change(screen.getByLabelText("Permissions"), {
+      target: { value: "suggest" },
+    });
+    fireEvent.change(getInput(), {
+      target: { files: [htmlFile("deck.html", 100)] },
+    });
+
+    await vi.waitFor(() => {
+      expect(() => screen.getByText(suggestUrl)).not.toThrow();
+    });
+    expect(screen.queryByText(viewUrl)).toBeNull();
+  });
+
+  it("falls back to the suggest link when the permission is set to edit, since direct editing isn't built yet", async () => {
+    const { viewUrl, suggestUrl, editUrl } = stubUploadResponse();
+
+    renderLandingPage();
+    fireEvent.change(screen.getByLabelText("Permissions"), {
+      target: { value: "edit" },
+    });
+    fireEvent.change(getInput(), {
+      target: { files: [htmlFile("deck.html", 100)] },
+    });
+
+    await vi.waitFor(() => {
+      expect(() => screen.getByText(suggestUrl)).not.toThrow();
+    });
+    expect(screen.queryByText(viewUrl)).toBeNull();
+    expect(screen.queryByText(editUrl)).toBeNull();
   });
 
   it("shows the server's error message and lets the reader try again", async () => {
@@ -84,29 +130,14 @@ describe("LandingPage", () => {
   });
 
   it("returns to the dropzone after Upload another", async () => {
-    const editUrl = "https://sandbox.test/" + "c".repeat(32);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        jsonResponse(
-          {
-            artifactId: "a".repeat(32),
-            viewToken: "b".repeat(32),
-            editToken: "c".repeat(32),
-            viewUrl: "https://sandbox.test/" + "a".repeat(32),
-            editUrl,
-          },
-          201,
-        ),
-      ),
-    );
+    const { viewUrl } = stubUploadResponse();
 
     renderLandingPage();
     fireEvent.change(getInput(), {
       target: { files: [htmlFile("deck.html", 100)] },
     });
     await vi.waitFor(() => {
-      expect(() => screen.getByText(editUrl)).not.toThrow();
+      expect(() => screen.getByText(viewUrl)).not.toThrow();
     });
 
     fireEvent.click(screen.getByText("Upload another"));

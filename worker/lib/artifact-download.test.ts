@@ -1,0 +1,135 @@
+import { describe, expect, it } from "vitest";
+import type { CommentEntry, EditEntry } from "@coedithtml/protocol";
+import {
+  appendToArtifact,
+  downloadChoiceIn,
+  downloadFileName,
+  editScript,
+  feedbackSection,
+} from "./artifact-download";
+
+const ARTIFACT = "<html><body><P CLASS=lead>Revenue grew 18%</P></body></html>";
+
+const ANCHOR = {
+  kind: "text" as const,
+  quote: "Revenue grew 18%",
+  prefix: "",
+  suffix: "",
+  path: "p[1]",
+  revision: "r1",
+};
+
+function comment(overrides: Partial<CommentEntry> = {}): CommentEntry {
+  return {
+    kind: "comment",
+    id: "c1",
+    parentId: null,
+    anchor: ANCHOR,
+    body: "Net or gross?",
+    author: { id: "reader-1", displayName: "Priya", source: "anonymous" },
+    color: "yellow",
+    fill: null,
+    status: "open",
+    createdAt: "2026-08-13T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function textEdit(overrides: Partial<EditEntry> = {}): EditEntry {
+  return {
+    ...comment(),
+    kind: "edit",
+    id: "e1",
+    body: "Revenue fell 4%",
+    rev: 0,
+    ...overrides,
+  };
+}
+
+function decode(bytes: ArrayBuffer): string {
+  return new TextDecoder().decode(bytes);
+}
+
+function artifactBytes(): ArrayBuffer {
+  return new TextEncoder().encode(ARTIFACT).buffer as ArrayBuffer;
+}
+
+describe("appendToArtifact", () => {
+  it("leaves the uploaded bytes exactly as they were", () => {
+    const out = decode(appendToArtifact(artifactBytes(), "<!-- after -->"));
+
+    expect(out.startsWith(ARTIFACT)).toBe(true);
+    expect(out).toContain("<P CLASS=lead>");
+  });
+
+  it("adds nothing at all when there is nothing to add", () => {
+    expect(decode(appendToArtifact(artifactBytes(), "", ""))).toBe(ARTIFACT);
+  });
+});
+
+describe("editScript", () => {
+  it("carries the edits and the bundle that applies them", () => {
+    const script = editScript([textEdit()], "APPLY();");
+
+    expect(script).toContain("window.__coeditDownload__=");
+    expect(script).toContain("Revenue fell 4%");
+    expect(script).toContain("APPLY();");
+  });
+
+  it("writes nothing when the file was never edited", () => {
+    expect(editScript([comment()], "APPLY();")).toBe("");
+  });
+
+  it("cannot be broken out of by an edit that contains a closing tag", () => {
+    const script = editScript(
+      [textEdit({ body: "</script><script>alert(1)</script>" })],
+      "APPLY();",
+    );
+    const opened = script.match(/<script/g) ?? [];
+
+    expect(opened).toHaveLength(1);
+    expect(script).toContain("\\u003c/script");
+  });
+});
+
+describe("feedbackSection", () => {
+  it("lists comments and the changes that were made", () => {
+    const section = feedbackSection([comment(), textEdit()]);
+
+    expect(section).toContain("Net or gross?");
+    expect(section).toContain("Priya");
+    expect(section).toContain("Revenue fell 4%");
+  });
+
+  it("escapes a comment that contains markup", () => {
+    const section = feedbackSection([
+      comment({ body: "<img src=x onerror=alert(1)>" }),
+    ]);
+
+    expect(section).not.toContain("<img");
+    expect(section).toContain("&lt;img");
+  });
+
+  it("writes nothing for an overlay nobody has touched", () => {
+    expect(feedbackSection([])).toBe("");
+  });
+});
+
+describe("downloadFileName", () => {
+  it("names each download for what is in it", () => {
+    expect(downloadFileName("deck.html", "edits")).toBe("deck-edited.html");
+    expect(downloadFileName("deck.html", "everything")).toBe(
+      "deck-with-feedback.html",
+    );
+    expect(downloadFileName("deck.html", "feedback")).toBe("deck-feedback.md");
+  });
+});
+
+describe("downloadChoiceIn", () => {
+  it("reads the choices it offers and refuses anything else", () => {
+    expect(downloadChoiceIn("edits")).toBe("edits");
+    expect(downloadChoiceIn("everything")).toBe("everything");
+    expect(downloadChoiceIn(null)).toBeNull();
+    expect(downloadChoiceIn("../../etc/passwd")).toBeNull();
+  });
+});

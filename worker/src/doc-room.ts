@@ -14,8 +14,13 @@ import {
   entryIdIn,
   type EntryStore,
 } from "@/lib/overlay-log";
+import { capabilitiesInHeader } from "@/lib/room-capabilities";
 import { attachmentOf, readersAmong } from "@/lib/room-presence";
-import { ROOM_REVISION_HEADER, ROOM_WRITE_HEADER } from "@/lib/room-headers";
+import {
+  ROOM_KIND_HEADER,
+  ROOM_OVERLAY_PATH,
+  ROOM_REVISION_HEADER,
+} from "@/lib/room-headers";
 
 const MAX_CONNECTIONS = 64;
 
@@ -38,6 +43,10 @@ export class DocRoom extends DurableObject<Env> {
   }
 
   override fetch(request: Request): Response {
+    if (new URL(request.url).pathname === ROOM_OVERLAY_PATH) {
+      const revision = request.headers.get(ROOM_REVISION_HEADER) ?? "unknown";
+      return Response.json(this.overlay(revision));
+    }
     if (request.headers.get("upgrade") !== "websocket") {
       return new Response("Expected a websocket upgrade.", { status: 426 });
     }
@@ -45,7 +54,9 @@ export class DocRoom extends DurableObject<Env> {
       return new Response("Too many readers in this room.", { status: 503 });
     }
 
-    const canWrite = request.headers.get(ROOM_WRITE_HEADER) === "yes";
+    const capabilities = capabilitiesInHeader(
+      request.headers.get(ROOM_KIND_HEADER),
+    );
     const revision = request.headers.get(ROOM_REVISION_HEADER) ?? "unknown";
     const pair = new WebSocketPair();
     const client = pair[0];
@@ -55,13 +66,13 @@ export class DocRoom extends DurableObject<Env> {
     }
 
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ reader: null, canWrite });
+    server.serializeAttachment({ reader: null, ...capabilities });
     this.sendTo(
       server,
       snapshotMessage({
         overlay: this.overlay(revision),
         readers: readersAmong(this.ctx.getWebSockets()),
-        canWrite,
+        ...capabilities,
       }),
     );
     return new Response(null, { status: 101, webSocket: client });
@@ -89,11 +100,10 @@ export class DocRoom extends DurableObject<Env> {
       return;
     }
 
-    const outcome = applyClientMessage(
-      this.entries,
-      message,
-      new Date().toISOString(),
-    );
+    const outcome = applyClientMessage(this.entries, message, {
+      now: new Date().toISOString(),
+      canEdit: attachment.canEdit,
+    });
     if (outcome === null) {
       return;
     }

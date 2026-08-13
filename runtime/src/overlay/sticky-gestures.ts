@@ -47,11 +47,25 @@ export function startStickyGestures(options: {
   onPatch(markId: string, patch: EntryPatch): void;
   onSelect(markId: string): void;
   onEdit(sticky: HTMLElement, markId: string, body: string): void;
+  onRemove?: (markId: string) => void;
   canWrite(): boolean;
 }): StickyGestures {
   const surface = options.layer.stickies;
+  const root = surface.getRootNode();
+  const shadowRoot = root instanceof ShadowRoot ? root : null;
   let live: Live | null = null;
   let swallowClick = false;
+  const selectedMarkIds = new Set<string>();
+
+  function updateSelectionVisuals(): void {
+    const elements = surface.querySelectorAll<HTMLElement>(".sticky");
+    elements.forEach((el) => {
+      const id = options.view.markIdOf(el);
+      if (id !== null) {
+        el.classList.toggle("selected", selectedMarkIds.has(id));
+      }
+    });
+  }
 
   function draggedTip(update: GestureUpdate, from: TailTip): TailTip {
     return { x: from.x + update.dx, y: from.y + update.dy };
@@ -144,9 +158,14 @@ export function startStickyGestures(options: {
     const markId = options.view.markIdOf(target);
     const element = markId === null ? null : options.view.elementFor(markId);
     if (markId === null || element === null) {
+      if (selectedMarkIds.size > 0) {
+        selectedMarkIds.clear();
+        updateSelectionVisuals();
+      }
       return;
     }
-    if (element.classList.contains("editing")) {
+    const intent = intentOf(target);
+    if (element.classList.contains("editing") && intent?.kind === "move") {
       return;
     }
     if (toolOf(target) !== null) {
@@ -155,7 +174,6 @@ export function startStickyGestures(options: {
     }
     const mark = options.markById(markId);
     const painted = options.view.rectOf(markId);
-    const intent = intentOf(target);
     if (mark === null || painted === null || intent === null) {
       return;
     }
@@ -163,12 +181,37 @@ export function startStickyGestures(options: {
     event.stopPropagation();
     event.preventDefault();
 
+    if (event.ctrlKey || event.metaKey) {
+      if (selectedMarkIds.has(markId)) {
+        selectedMarkIds.delete(markId);
+      } else {
+        selectedMarkIds.add(markId);
+      }
+    } else {
+      if (!selectedMarkIds.has(markId)) {
+        selectedMarkIds.clear();
+        selectedMarkIds.add(markId);
+      }
+    }
+    updateSelectionVisuals();
+
     const startBox: Rect = {
       x: mark.offsetX,
       y: mark.offsetY,
       width: mark.width ?? painted.width,
       height: mark.height ?? painted.height,
     };
+
+    const multiStart = new Map<string, { startX: number; startY: number }>();
+    if (intent.kind === "move" && selectedMarkIds.has(markId)) {
+      for (const id of selectedMarkIds) {
+        const m = options.markById(id);
+        if (m !== null) {
+          multiStart.set(id, { startX: m.offsetX, startY: m.offsetY });
+        }
+      }
+    }
+
     const gesture = beginGesture(event, element, {
       onUpdate: (update) => options.setOverride(previewOf(update)),
       onCommit: (update) => {
@@ -176,7 +219,16 @@ export function startStickyGestures(options: {
         release();
         swallowClick = true;
         if (patch !== null) {
-          options.onPatch(markId, patch);
+          if (intent.kind === "move" && multiStart.size > 1) {
+            for (const [id, start] of multiStart) {
+              options.onPatch(id, {
+                offsetX: start.startX + update.dx,
+                offsetY: start.startY + update.dy,
+              });
+            }
+          } else {
+            options.onPatch(markId, patch);
+          }
           return;
         }
         if (!update.moved) {
@@ -209,8 +261,56 @@ export function startStickyGestures(options: {
     }
   }
 
+  function onKeyDown(event: KeyboardEvent): void {
+    if (event.key !== "Delete" && event.key !== "Backspace") {
+      return;
+    }
+    if (selectedMarkIds.size === 0) {
+      return;
+    }
+    const hostFocus = document.activeElement;
+    const hostHasItsOwnFocus =
+      hostFocus !== null &&
+      hostFocus !== document.body &&
+      hostFocus !== shadowRoot?.host;
+    if (hostHasItsOwnFocus) {
+      return;
+    }
+    const active = shadowRoot?.activeElement ?? null;
+    if (
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      (active instanceof HTMLElement && active.isContentEditable)
+    ) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    for (const id of [...selectedMarkIds]) {
+      options.onRemove?.(id);
+    }
+    selectedMarkIds.clear();
+    updateSelectionVisuals();
+  }
+
+  function onWindowPointerDown(event: Event): void {
+    if (!(event instanceof PointerEvent)) {
+      return;
+    }
+    const origin = event.composedPath()[0];
+    if (origin instanceof HTMLElement && surface.contains(origin)) {
+      return;
+    }
+    if (selectedMarkIds.size > 0) {
+      selectedMarkIds.clear();
+      updateSelectionVisuals();
+    }
+  }
+
   surface.addEventListener("pointerdown", onPointerDown);
   surface.addEventListener("click", onClick, true);
+  window.addEventListener("keydown", onKeyDown, true);
+  window.addEventListener("pointerdown", onWindowPointerDown, true);
 
   return {
     isDragging: () => live !== null,
@@ -219,6 +319,8 @@ export function startStickyGestures(options: {
       release();
       surface.removeEventListener("pointerdown", onPointerDown);
       surface.removeEventListener("click", onClick, true);
+      window.removeEventListener("keydown", onKeyDown, true);
+      window.removeEventListener("pointerdown", onWindowPointerDown, true);
     },
   };
 }

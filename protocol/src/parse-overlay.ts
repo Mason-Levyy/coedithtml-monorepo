@@ -6,6 +6,7 @@ import {
   OVERLAY_VERSION,
   type Author,
   type CommentEntry,
+  type EditEntry,
   type EntryStatus,
   type MarkColor,
   type OverlayDocument,
@@ -140,6 +141,23 @@ function parseSticky(
   };
 }
 
+function parseEdit(
+  record: Record<string, unknown>,
+  shared: SharedFields,
+): EditEntry | null {
+  const rev = asFiniteNumber(record.rev);
+  if (
+    rev === null ||
+    !Number.isInteger(rev) ||
+    rev < 0 ||
+    !isUnparented(record.parentId) ||
+    shared.anchor.kind !== "text"
+  ) {
+    return null;
+  }
+  return { ...shared, kind: "edit", parentId: null, rev };
+}
+
 export function parseOverlayEntry(value: unknown): OverlayEntry | null {
   const record = asRecord(value);
   if (record === null) {
@@ -155,6 +173,9 @@ export function parseOverlayEntry(value: unknown): OverlayEntry | null {
   }
   if (record.kind === "sticky") {
     return parseSticky(record, shared);
+  }
+  if (record.kind === "edit") {
+    return parseEdit(record, shared);
   }
   if (record.kind === "comment" && isUnparented(record.parentId)) {
     return { ...shared, kind: "comment", parentId: null };

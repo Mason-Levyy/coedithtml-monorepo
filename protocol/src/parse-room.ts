@@ -71,6 +71,13 @@ export function parseEntryPatch(value: unknown): EntryPatch | null {
   }
   const patch: EntryPatch = {};
 
+  if (record.ifRev !== undefined) {
+    const ifRev = asFiniteNumber(record.ifRev);
+    if (ifRev === null || !Number.isInteger(ifRev) || ifRev < 0) {
+      return null;
+    }
+    patch.ifRev = ifRev;
+  }
   if (record.anchor !== undefined) {
     const anchor = parseAnchor(record.anchor);
     if (anchor === null) {
@@ -190,7 +197,12 @@ export function parseRoomToClientMessage(
     if (typeof record.canWrite !== "boolean") {
       return null;
     }
-    return snapshotMessage({ overlay, readers, canWrite: record.canWrite });
+    return snapshotMessage({
+      overlay,
+      readers,
+      canWrite: record.canWrite,
+      canEdit: record.canEdit === true,
+    });
   }
   if (record.type === "entry-added" || record.type === "entry-patched") {
     const entry = parseOverlayEntry(record.entry);

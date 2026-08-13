@@ -15,6 +15,7 @@ function renderViewer() {
       sandboxOrigin={SANDBOX_ORIGIN}
       fileName="q3-review.html"
       revision="9f2c1a04b7e35d68"
+      shareLinks={{ view: `https://app.example.com/a/${TOKEN}` }}
     />,
   );
 }
@@ -68,20 +69,6 @@ describe("ArtifactViewer", () => {
     expect(screen.getByTitle("q3-review.html")).toHaveProperty("src", SRC);
   });
 
-  it("shows the file name until the artifact reports its own title", () => {
-    renderViewer();
-
-    expect(screen.getByText("q3-review.html")).toBeTruthy();
-  });
-
-  it("prefers the title the artifact reports", () => {
-    renderViewer();
-
-    announceReady("Make artifacts work like documents");
-
-    expect(screen.getByText("Make artifacts work like documents")).toBeTruthy();
-  });
-
   it("waits for the frame before telling it what the reader may do", () => {
     renderViewer();
     const posted = watchRuntimeMessages();
@@ -99,6 +86,20 @@ describe("ArtifactViewer", () => {
     expect(screen.queryByText("Injected")).toBeNull();
   });
 
+  it("shows the file name until the artifact reports its own title", () => {
+    renderViewer();
+
+    expect(screen.getByText("q3-review.html")).toBeTruthy();
+  });
+
+  it("prefers the title the artifact reports", () => {
+    renderViewer();
+
+    announceReady("Make artifacts work like documents");
+
+    expect(screen.getByText("Make artifacts work like documents")).toBeTruthy();
+  });
+
   it("adds no navigation of its own, only the share and rail controls", () => {
     renderViewer();
 
@@ -111,7 +112,7 @@ describe("ArtifactViewer", () => {
         .map(
           (button) => button.getAttribute("aria-label") ?? button.textContent,
         ),
-    ).toEqual(["Hide comments", "Share", "Close comments"]);
+    ).toEqual(["Share", "Hide comments", "Close comments"]);
   });
 
   it("fills the frame until the artifact says how it wants to be sized", () => {

@@ -56,8 +56,10 @@ async function upload(
   const body = (await response.json()) as {
     artifactId?: string;
     viewToken?: string;
+    suggestToken?: string;
     editToken?: string;
     viewUrl?: string;
+    suggestUrl?: string;
     editUrl?: string;
     error?: string;
   };
@@ -105,26 +107,32 @@ describe("handleUpload", () => {
     });
   });
 
-  it("mints distinct view and edit tokens", async () => {
+  it("mints distinct view, suggest, and edit tokens", async () => {
     const { response, body } = await upload([
       { name: "deck.html", body: VALID_HTML },
     ]);
 
     expect(response.status).toBe(201);
     expect(body.viewToken).toMatch(/^[0-9a-f]{32}$/);
+    expect(body.suggestToken).toMatch(/^[0-9a-f]{32}$/);
     expect(body.editToken).toMatch(/^[0-9a-f]{32}$/);
-    expect(body.viewToken).not.toBe(body.editToken);
+    expect(
+      new Set([body.viewToken, body.suggestToken, body.editToken]).size,
+    ).toBe(3);
   });
 
-  it("reports distinct view and edit URLs on the app origin", async () => {
+  it("reports distinct view, suggest, and edit URLs on the app origin", async () => {
     const { body } = await upload([{ name: "deck.html", body: VALID_HTML }]);
 
     expect(body.viewUrl).toBe(`https://${FAKE_APP_HOST}/a/${body.viewToken}`);
+    expect(body.suggestUrl).toBe(
+      `https://${FAKE_APP_HOST}/a/${body.suggestToken}`,
+    );
     expect(body.editUrl).toBe(`https://${FAKE_APP_HOST}/a/${body.editToken}`);
-    expect(body.viewUrl).not.toBe(body.editUrl);
+    expect(new Set([body.viewUrl, body.suggestUrl, body.editUrl]).size).toBe(3);
   });
 
-  it("stores both tokens in KV, each scoped to the artifact", async () => {
+  it("stores all three tokens in KV, each scoped to the artifact", async () => {
     const store = recordingArtifactStore();
     const metadata = recordingArtifactMetadata();
     const response = await handleUpload(
@@ -134,27 +142,43 @@ describe("handleUpload", () => {
     const body = (await response.json()) as {
       artifactId: string;
       viewToken: string;
+      suggestToken: string;
       editToken: string;
     };
 
     const tokenPuts = metadata.puts.filter((put) =>
       put.key.startsWith("tokens/"),
     );
-    expect(tokenPuts).toHaveLength(2);
+    expect(tokenPuts).toHaveLength(3);
 
     const viewPut = tokenPuts.find(
       (put) => put.key === `tokens/${body.viewToken}`,
     );
+    const suggestPut = tokenPuts.find(
+      (put) => put.key === `tokens/${body.suggestToken}`,
+    );
     const editPut = tokenPuts.find(
       (put) => put.key === `tokens/${body.editToken}`,
     );
+    const siblingTokens = {
+      view: body.viewToken,
+      suggest: body.suggestToken,
+      edit: body.editToken,
+    };
     expect(viewPut && JSON.parse(viewPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "view",
+      siblingTokens,
+    });
+    expect(suggestPut && JSON.parse(suggestPut.value)).toEqual({
+      artifactId: body.artifactId,
+      kind: "suggest",
+      siblingTokens,
     });
     expect(editPut && JSON.parse(editPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "edit",
+      siblingTokens,
     });
   });
 

@@ -46,6 +46,7 @@ describe("ArtifactPage", () => {
       profile: null,
       sandboxOrigin: "https://sandbox.example.com",
       artifactUrl: `https://sandbox.example.com/${TOKEN}`,
+      shareLinks: { view: `https://app.example.com/a/${TOKEN}` },
     });
 
     renderPage();
@@ -106,6 +107,9 @@ describe("ArtifactPage", () => {
                       profile: null,
                       sandboxOrigin: "https://sandbox.example.com",
                       artifactUrl: `https://sandbox.example.com/${TOKEN}?u=${"9".repeat(32)}`,
+                      shareLinks: {
+                        view: `https://app.example.com/a/${TOKEN}`,
+                      },
                     },
               ),
           });

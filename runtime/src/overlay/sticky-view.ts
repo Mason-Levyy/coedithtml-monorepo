@@ -1,10 +1,11 @@
 import type { StickyEntry, TailTip } from "@coedithtml/protocol";
 import type { TextIndex } from "../dom/text-index";
-import { bubblePath, centreOf, tailNodes } from "./bubble-path";
+import { bubblePath, tailNodes, type Size } from "./bubble-path";
 import {
   boxOf,
   createStickyElement,
   paintStickyPath,
+  paintTailTip,
   placeTailNode,
   updateStickyElement,
   type StickyGeometry,
@@ -67,6 +68,15 @@ function tipFor(
   return mark.tail;
 }
 
+const UNSET_TIP_NUDGE = 16;
+
+function defaultTip(size: Size): TailTip {
+  return {
+    x: size.width + UNSET_TIP_NUDGE,
+    y: size.height + UNSET_TIP_NUDGE,
+  };
+}
+
 export function createStickyView(layer: OverlayLayer): StickyView {
   const held = new Map<string, HTMLElement>();
 
@@ -82,9 +92,10 @@ export function createStickyView(layer: OverlayLayer): StickyView {
   ): void {
     const size = boxOf(element);
     paintStickyPath(element, mark, bubblePath(size, tip));
+    paintTailTip(element, mark);
 
     const nodes = tailNodes(size, tip);
-    placeTailNode(element, "tip", tip ?? centreOf(size));
+    placeTailNode(element, "tip", tip ?? defaultTip(size));
     placeTailNode(element, "first", nodes?.first ?? null);
     placeTailNode(element, "second", nodes?.second ?? null);
   }
