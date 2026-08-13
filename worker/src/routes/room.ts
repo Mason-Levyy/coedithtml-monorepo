@@ -57,7 +57,7 @@ export async function handleRoomConnect(
       headers: {
         upgrade: "websocket",
         [ROOM_WRITE_HEADER]: record.kind === "edit" ? "yes" : "no",
-        [ROOM_REVISION_HEADER]: artifactId,
+        [ROOM_REVISION_HEADER]: metadata.revision,
       },
     }),
   );

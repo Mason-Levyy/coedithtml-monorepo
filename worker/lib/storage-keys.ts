@@ -10,8 +10,11 @@ export function newToken(): string {
   return randomId();
 }
 
-export function artifactObjectKey(artifactId: string): string {
-  return `artifacts/${artifactId}.html`;
+export function artifactObjectKey(
+  artifactId: string,
+  revision: string,
+): string {
+  return `artifacts/${artifactId}/${revision}.html`;
 }
 
 export function artifactMetadataKey(artifactId: string): string {

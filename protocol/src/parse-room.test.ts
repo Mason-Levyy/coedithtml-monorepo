@@ -100,6 +100,25 @@ describe("parseClientToRoomMessage", () => {
     expect(parsed && "tail" in (parsed as { patch: object }).patch).toBe(false);
   });
 
+  it("carries an anchor so an orphan can be put back", () => {
+    const parsed = parseClientToRoomMessage(
+      roundTrip(patchEntryMessage("s1", { anchor: ANCHOR })),
+    );
+
+    expect(parsed).toMatchObject({ patch: { anchor: ANCHOR } });
+  });
+
+  it("rejects a patch whose anchor is not a whole anchor", () => {
+    expect(
+      parseClientToRoomMessage({
+        version: 1,
+        type: "patch-entry",
+        id: "s1",
+        patch: { anchor: { kind: "text", quote: "Revenue grew" } },
+      }),
+    ).toBeNull();
+  });
+
   it("reads a null tail as the instruction to retract it", () => {
     const parsed = parseClientToRoomMessage({
       version: 1,

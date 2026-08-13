@@ -23,14 +23,13 @@ function main() {
   if (!file) return;
 
   const root = process.cwd();
-  // Relative, so a scratch file under some other .../runtime/ cannot start a build here.
   const rel = path.relative(root, file);
   if (rel === '' || path.isAbsolute(rel) || rel.startsWith('..' + path.sep)) return;
   if (!rel.replace(/\\/g, '/').startsWith('runtime/')) return;
 
   const runtimeDir = path.join(root, 'runtime');
   const runtimePkgPath = path.join(runtimeDir, 'package.json');
-  if (!fs.existsSync(runtimePkgPath)) return; // runtime/ not scaffolded yet
+  if (!fs.existsSync(runtimePkgPath)) return;
 
   let runtimePkg;
   try {
@@ -40,7 +39,6 @@ function main() {
   }
   if (!runtimePkg.scripts || !runtimePkg.scripts.build) return;
 
-  // Unquoted `pnpm`: quoting leaves the Windows shim's %~dp0 empty and it resolves against cwd.
   try {
     execSync('pnpm --filter runtime build', {
       cwd: root,

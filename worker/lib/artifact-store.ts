@@ -8,9 +8,10 @@ export type GetArtifactResult =
 export async function getArtifact(
   store: R2Bucket,
   artifactId: string,
+  revision: string,
 ): Promise<GetArtifactResult> {
   try {
-    const object = await store.get(artifactObjectKey(artifactId));
+    const object = await store.get(artifactObjectKey(artifactId, revision));
     if (object === null) {
       return { ok: true, bytes: null };
     }
@@ -23,10 +24,11 @@ export async function getArtifact(
 export async function putArtifact(
   store: R2Bucket,
   artifactId: string,
+  revision: string,
   bytes: ArrayBuffer,
 ): Promise<StoreResult> {
   try {
-    await store.put(artifactObjectKey(artifactId), bytes, {
+    await store.put(artifactObjectKey(artifactId, revision), bytes, {
       httpMetadata: { contentType: "text/html; charset=utf-8" },
     });
     return { ok: true };

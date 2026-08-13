@@ -19,6 +19,7 @@ export {
   patchEntryMessage,
   removeEntryMessage,
   renderMarksMessage,
+  overlayToMarkdown,
   repliesTo,
   revealMarkMessage,
   setCapabilitiesMessage,

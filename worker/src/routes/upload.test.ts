@@ -82,7 +82,9 @@ describe("handleUpload", () => {
     expect(store.puts).toHaveLength(1);
     const [put] = store.puts;
     expect(put && new TextDecoder().decode(put.bytes)).toBe(VALID_HTML);
-    expect(put?.key).toBe(`artifacts/${body.artifactId}.html`);
+    expect(put?.key).toMatch(
+      new RegExp(`^artifacts/${body.artifactId}/[0-9a-f]{16}\\.html$`),
+    );
   });
 
   it("stores metadata in KV alongside the R2 object", async () => {

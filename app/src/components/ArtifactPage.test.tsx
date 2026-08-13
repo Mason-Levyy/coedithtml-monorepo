@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ArtifactPage } from "./ArtifactPage";
 
 const TOKEN = "b".repeat(32);
+const REVISION = "9f2c1a04b7e35d68";
 
 function renderPage() {
   const client = new QueryClient({
@@ -41,6 +42,7 @@ describe("ArtifactPage", () => {
       fileName: "deck.html",
       size: 42,
       uploadedAt: "2026-08-01T00:00:00.000Z",
+      revision: REVISION,
       profile: null,
       sandboxOrigin: "https://sandbox.example.com",
       artifactUrl: `https://sandbox.example.com/${TOKEN}`,
@@ -49,7 +51,10 @@ describe("ArtifactPage", () => {
     renderPage();
 
     const frame = await screen.findByTitle("deck.html");
-    expect(frame).toHaveProperty("src", `https://sandbox.example.com/${TOKEN}`);
+    expect(frame).toHaveProperty(
+      "src",
+      `https://sandbox.example.com/${TOKEN}?r=${REVISION}`,
+    );
   });
 
   it("requests the artifact by token", async () => {
@@ -97,6 +102,7 @@ describe("ArtifactPage", () => {
                       fileName: "deck.html",
                       size: 42,
                       uploadedAt: "2026-08-01T00:00:00.000Z",
+                      revision: REVISION,
                       profile: null,
                       sandboxOrigin: "https://sandbox.example.com",
                       artifactUrl: `https://sandbox.example.com/${TOKEN}?u=${"9".repeat(32)}`,

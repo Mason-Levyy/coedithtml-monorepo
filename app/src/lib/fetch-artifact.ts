@@ -11,6 +11,7 @@ const unlockedSchema = z.object({
   fileName: z.string(),
   size: z.number(),
   uploadedAt: z.string(),
+  revision: z.string(),
   sandboxOrigin: z.string(),
   artifactUrl: z.string(),
 });
