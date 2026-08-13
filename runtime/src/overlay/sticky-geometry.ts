@@ -1,6 +1,22 @@
-import type { Point } from "./geometry";
+import { clampStickySize } from "@coedithtml/protocol";
+import type { Point, Rect } from "./geometry";
 
 export type Size = { width: number; height: number };
+
+export const RESIZE_EDGES = [
+  "nw",
+  "n",
+  "ne",
+  "e",
+  "se",
+  "s",
+  "sw",
+  "w",
+] as const;
+
+export type ResizeEdge = (typeof RESIZE_EDGES)[number];
+
+export type Edge = "top" | "right" | "bottom" | "left";
 
 export type TailNodes = {
   edge: Edge;
@@ -13,6 +29,7 @@ const CORNER = 8;
 const TAIL_HALF_BASE = 11;
 const TAPER = 0.28;
 const MIN_REACH = 8;
+const UNSET_TIP_NUDGE = 16;
 
 function round(value: number): number {
   return Math.round(value * 100) / 100;
@@ -22,15 +39,16 @@ function clamp(value: number, low: number, high: number): number {
   return Math.min(Math.max(value, low), high);
 }
 
-function cornerOf(size: Size): number {
+export function cornerOf(size: Size): number {
   return Math.min(CORNER, size.width / 2, size.height / 2);
 }
 
-export function centreOf(size: Size): Point {
-  return { x: size.width / 2, y: size.height / 2 };
+export function defaultTip(size: Size): Point {
+  return {
+    x: size.width + UNSET_TIP_NUDGE,
+    y: size.height + UNSET_TIP_NUDGE,
+  };
 }
-
-type Edge = "top" | "right" | "bottom" | "left";
 
 type Exit = { edge: Edge; along: number; reach: number };
 
@@ -158,4 +176,82 @@ export function bubblePath(size: Size, tip: Point | null): string {
     arc(r, 0),
     "Z",
   ].join("");
+}
+
+type Side = -1 | 0 | 1;
+
+const HORIZONTAL: Record<ResizeEdge, Side> = {
+  nw: -1,
+  n: 0,
+  ne: 1,
+  e: 1,
+  se: 1,
+  s: 0,
+  sw: -1,
+  w: -1,
+};
+
+const VERTICAL: Record<ResizeEdge, Side> = {
+  nw: -1,
+  n: -1,
+  ne: -1,
+  e: 0,
+  se: 1,
+  s: 1,
+  sw: 1,
+  w: 0,
+};
+
+function lockedToAspect(
+  start: Rect,
+  width: number,
+  height: number,
+): { width: number; height: number } {
+  if (start.width <= 0 || start.height <= 0) {
+    return { width, height };
+  }
+  const ratio = start.height / start.width;
+  const widerThanTaller =
+    Math.abs(width - start.width) >= Math.abs(height - start.height);
+  return widerThanTaller
+    ? { width, height: width * ratio }
+    : { width: height / ratio, height };
+}
+
+export function resizeRect(
+  start: Rect,
+  edge: ResizeEdge,
+  delta: Point,
+  lockAspect: boolean,
+): Rect {
+  const horizontal = HORIZONTAL[edge];
+  const vertical = VERTICAL[edge];
+  const pulled = {
+    width: start.width + delta.x * horizontal,
+    height: start.height + delta.y * vertical,
+  };
+  const shaped =
+    lockAspect && horizontal !== 0 && vertical !== 0
+      ? lockedToAspect(start, pulled.width, pulled.height)
+      : pulled;
+
+  const clamped = clampStickySize(shaped);
+  const width = clamped.width ?? shaped.width;
+  const height = clamped.height ?? shaped.height;
+
+  return {
+    x: horizontal === -1 ? start.x + start.width - width : start.x,
+    y: vertical === -1 ? start.y + start.height - height : start.y,
+    width,
+    height,
+  };
+}
+
+export function isInside(box: Rect, point: Point): boolean {
+  return (
+    point.x >= box.x &&
+    point.x <= box.x + box.width &&
+    point.y >= box.y &&
+    point.y <= box.y + box.height
+  );
 }

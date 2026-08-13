@@ -20,9 +20,11 @@ import { startPlaceTool } from "./overlay/place-tool";
 import { onMarkActivated, paintMarks } from "./overlay/paint";
 import { revealAnchor } from "./overlay/reveal";
 import { createRepaintScheduler } from "./overlay/scheduler";
-import { startStickyGestures } from "./overlay/sticky-gestures";
-import { startStickyTools } from "./overlay/sticky-tools";
-import { createStickyView, type StickyOverride } from "./overlay/sticky-view";
+import {
+  createStickyView,
+  startStickyGestures,
+  type StickyOverride,
+} from "./overlay/sticky-controller";
 import { receiveFromApp, sendToApp } from "./transport/bridge";
 
 export function startMarks(): () => void {
@@ -91,8 +93,6 @@ export function startMarks(): () => void {
     for (const id of outcome.applied) {
       replayed.add(id);
     }
-    // An edit moves the text every comment anchor is measured against, so
-    // the index is rebuilt before anything is resolved against it.
     index = buildTextIndex(document.body);
   }
 
@@ -107,15 +107,6 @@ export function startMarks(): () => void {
     onCommit: (markId, body) => sendToApp(patchMarkMessage(markId, { body })),
     onAbandon: (markId) => sendToApp(removeMarkMessage(markId)),
     onChanged: scheduler.repaint,
-  });
-
-  const tools = startStickyTools({
-    layer,
-    view,
-    canWrite: () => canWrite,
-    onRemove: (markId) => sendToApp(removeMarkMessage(markId)),
-    onFit: (markId) =>
-      sendToApp(patchMarkMessage(markId, { width: null, height: null })),
   });
 
   const placing = startPlaceTool({
@@ -220,7 +211,6 @@ export function startMarks(): () => void {
 
   return () => {
     gestures.stop();
-    tools.stop();
     editor.stop();
     scheduler.stop();
     stopActivation();

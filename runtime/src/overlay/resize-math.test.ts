@@ -4,7 +4,7 @@ import {
   MIN_STICKY_HEIGHT,
   MIN_STICKY_WIDTH,
 } from "@coedithtml/protocol";
-import { isInside, resizeRect } from "./resize-math";
+import { isInside, resizeRect } from "./sticky-geometry";
 
 const START = { x: 100, y: 50, width: 200, height: 100 };
 
