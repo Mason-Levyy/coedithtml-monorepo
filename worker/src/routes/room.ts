@@ -56,7 +56,8 @@ export async function handleRoomConnect(
     new Request(request.url, {
       headers: {
         upgrade: "websocket",
-        [ROOM_WRITE_HEADER]: record.kind === "edit" ? "yes" : "no",
+        [ROOM_WRITE_HEADER]:
+          record.kind === "edit" || record.kind === "suggest" ? "yes" : "no",
         [ROOM_REVISION_HEADER]: metadata.revision,
       },
     }),
