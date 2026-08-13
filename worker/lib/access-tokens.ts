@@ -2,9 +2,16 @@ import { z } from "zod";
 import { TOKEN_KINDS } from "./room-capabilities";
 import { accessTokenKey } from "./storage-keys";
 
+const siblingTokensSchema = z.object({
+  view: z.string(),
+  suggest: z.string(),
+  edit: z.string(),
+});
+
 export const tokenRecordSchema = z.object({
   artifactId: z.string(),
   kind: z.enum(TOKEN_KINDS),
+  siblingTokens: siblingTokensSchema.optional(),
 });
 
 export type TokenRecord = z.infer<typeof tokenRecordSchema>;

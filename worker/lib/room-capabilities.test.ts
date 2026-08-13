@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { capabilitiesFor, capabilitiesInHeader } from "./room-capabilities";
+import {
+  capabilitiesFor,
+  capabilitiesInHeader,
+  kindsAtOrBelow,
+} from "./room-capabilities";
 
 describe("capabilitiesFor", () => {
   it("lets a view link read and nothing else", () => {
@@ -36,5 +40,19 @@ describe("capabilitiesInHeader", () => {
         canEdit: false,
       });
     }
+  });
+});
+
+describe("kindsAtOrBelow", () => {
+  it("offers nothing above a view link's own permission", () => {
+    expect(kindsAtOrBelow("view")).toEqual(["view"]);
+  });
+
+  it("lets a suggest link also offer view", () => {
+    expect(kindsAtOrBelow("suggest")).toEqual(["view", "suggest"]);
+  });
+
+  it("lets an edit link offer everything", () => {
+    expect(kindsAtOrBelow("edit")).toEqual(["view", "suggest", "edit"]);
   });
 });

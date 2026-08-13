@@ -181,15 +181,24 @@ describe("the sticky view", () => {
     expect(spoutCurves).toHaveLength(0);
   });
 
-  it("rests the tip node in the centre until a tail is given", () => {
+  it("rests the tip node just past the corner until a tail is given", () => {
     view.reconcile(index, [sticky()], null);
     const element = view.elementFor("s1");
     const tip = element?.querySelector<HTMLElement>('[data-node="tip"]');
 
-    expect(tip?.style.left).toBe("100px");
+    expect(tip?.style.left).toBe("216px");
+    expect(tip?.style.top).toBe("116px");
     expect(
       element?.querySelector<HTMLElement>('[data-node="first"]')?.style.display,
     ).toBe("none");
+  });
+
+  it("colors the tip node to match the sticky's own colour", () => {
+    view.reconcile(index, [sticky({ color: "purple", fill: null })], null);
+    const element = view.elementFor("s1");
+    const tip = element?.querySelector<HTMLElement>('[data-node="tip"]');
+
+    expect(tip?.style.borderColor).toBe("#9b7ad6");
   });
 
   it("puts the tip node back on the point it was left at", () => {

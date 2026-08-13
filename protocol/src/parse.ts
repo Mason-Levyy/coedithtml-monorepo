@@ -1,4 +1,5 @@
 import type { TextAnchor } from "./anchor";
+import { normalizeHex } from "./colors";
 import {
   BRIDGE_VERSION,
   MARK_TOOLS,
@@ -111,7 +112,15 @@ export function parseRuntimeToAppMessage(
 
   if (candidate.type === "placement") {
     const anchor = parseAnchor(candidate.anchor);
-    return anchor === null ? null : placementMessage(anchor);
+    const width = typeof candidate.width === "number" ? candidate.width : null;
+    const height =
+      typeof candidate.height === "number" ? candidate.height : null;
+    return anchor === null
+      ? null
+      : placementMessage(
+          anchor,
+          width !== null && height !== null ? { width, height } : null,
+        );
   }
 
   if (candidate.type === "placed") {
@@ -175,10 +184,16 @@ export function parseAppToRuntimeMessage(
     return parseRenderMarks(candidate);
   }
   if (candidate.type === "set-tool") {
+    const color =
+      candidate.color === null || candidate.color === undefined
+        ? null
+        : normalizeHex(candidate.color);
     if (candidate.tool === null || candidate.tool === undefined) {
-      return setToolMessage(null);
+      return setToolMessage(null, color);
     }
-    return isMarkTool(candidate.tool) ? setToolMessage(candidate.tool) : null;
+    return isMarkTool(candidate.tool)
+      ? setToolMessage(candidate.tool, color)
+      : null;
   }
   if (candidate.type === "set-capabilities") {
     return typeof candidate.canWrite === "boolean"

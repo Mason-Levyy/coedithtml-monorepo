@@ -29,6 +29,7 @@ export type ArtifactBridgeState = {
   selection: ArtifactSelection | null;
   activatedMarkId: string | null;
   placement: Anchor | null;
+  placementSize: { width: number; height: number } | null;
   marks: MarkPlacement;
   marksReported: boolean;
 };
@@ -40,6 +41,7 @@ const NOTHING_REPORTED: ArtifactBridgeState = {
   selection: null,
   activatedMarkId: null,
   placement: null,
+  placementSize: null,
   marks: { offscreen: [], hidden: [], orphaned: [] },
   marksReported: false,
 };
@@ -67,7 +69,14 @@ function applyMessage(
     case "mark-activated":
       return { ...previous, activatedMarkId: message.markId };
     case "placement":
-      return { ...previous, placement: message.anchor };
+      return {
+        ...previous,
+        placement: message.anchor,
+        placementSize:
+          message.width && message.height
+            ? { width: message.width, height: message.height }
+            : null,
+      };
     case "placed":
       return {
         ...previous,
