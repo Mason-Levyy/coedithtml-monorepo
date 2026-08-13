@@ -2,16 +2,15 @@ import { useEffect, useState } from "react";
 
 export type CopyState = "idle" | "copied" | "failed";
 
-const COPY_LABEL: Record<CopyState, string> = {
-  idle: "Copy link",
+const SETTLED_LABEL: Record<Exclude<CopyState, "idle">, string> = {
   copied: "Copied",
   failed: "Press Ctrl+C",
 };
 
 const RESET_AFTER_MS = 2000;
 
-export function copyLabel(state: CopyState): string {
-  return COPY_LABEL[state];
+export function copyLabel(state: CopyState, idleLabel = "Copy link"): string {
+  return state === "idle" ? idleLabel : SETTLED_LABEL[state];
 }
 
 export function useCopyToClipboard(): {

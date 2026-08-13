@@ -289,16 +289,17 @@ consequences, each of which shapes the tasks below:
 - [x] Anchors re-resolved when the artifact mutates its own DOM — a
       MutationObserver on `<body>` rebuilds the text index and repaints, which
       is what makes marks survive an artifact changing its own slide — 23
-- [ ] Targets that resolve but are off screen are reported as such, and the rail
+- [x] Targets that resolve but are off screen are reported as such, and the rail
       offers to reveal them rather than placing them wrongly. Two cases, and
       they are not the same: scrolled away, which the rail can fix, and hidden
       by the artifact itself, which it cannot and must simply say — 25b
-- [ ] Re-upload is a first-class screen: new revision, re-anchor, and a plain
-      report — "14 comments, 11 re-placed, 3 need review"
+- [x] Re-upload is a first-class screen: new revision, re-anchor, and a plain
+      report — "11 of 14 carried over, 3 need review"
 - [~] Orphans can be dragged back into place or dismissed by the owner —
       dismissal exists (an edit link can delete a thread, and its replies go
-      with it). Re-placing one was expected to land with the sticky drag and did
-      not: the pointer handling arrived, but an orphan has no position to grab.
+      with it). Re-placing lands in 26 for stickies, which have a point to drop
+      on. An orphaned text comment has no equivalent gesture: putting one back
+      means selecting text again, so it stays named rather than re-placeable.
       It re-places by arming the placement tool the rail already owns, and what
       is genuinely missing is `anchor` on `EntryPatch` — an entry's anchor is
       the one field nothing can currently change — 26
@@ -315,15 +316,13 @@ consequences, each of which shapes the tasks below:
 - [x] Presence: who is here, keyed by reader rather than socket so two tabs are
       one person
 - [x] Comment log persisted to DO SQLite
-- [~] Concurrent-connection and reconnect tests against the DO — the **state
-      transitions** are covered (`worker/lib/overlay-log.test.ts`: idempotent
-      re-add on reconnect, reply before parent, cascade delete, both caps) and
-      so is **socket reconnect** (`app/src/lib/room-socket.test.ts`). What is
-      not covered is two live sockets against a real DO: the worker package runs
-      on plain vitest, and that needs `@cloudflare/vitest-pool-workers`. Adding
-      the pool is its own change and belongs with the deploy work — `24b`, and
-      it runs *before* the first deploy, since that deploy applies a Durable
-      Object migration no real account has ever seen
+- [x] Concurrent-connection and reconnect tests against the DO — state
+      transitions in `worker/lib/overlay-log.test.ts`, socket reconnect in
+      `app/src/lib/room-socket.test.ts`, and since `24b` two live sockets
+      against a real `DocRoom` running in workerd
+      (`worker/src/doc-room.pool.test.ts`): fanout between sockets, presence on
+      join and on close, a read-only rejection reaching only the socket that
+      earned it, and state surviving into a later connection's snapshot
 
 ### How a reader marks up an artifact
 
@@ -389,12 +388,17 @@ sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arro
 
 ### Ship
 
-- [ ] **Copy feedback for your AI tool** — overlay rendered to markdown with
+- [x] **Copy feedback for your AI tool** — overlay rendered to markdown with
       quoted text and the comments against each, reached from a share menu at
       the right of the viewer bar alongside the copy-link button
-- [ ] Owner dashboard listing artifacts, links, and unresolved counts
 - [ ] One full regeneration loop: share, collect, export, regenerate, re-upload,
       re-anchor — run with people who are not you
+
+**The owner dashboard was cut on 2026-08-13**, not deferred. It needed an
+owner-scoped index that does not exist — KV is keyed by artifact and token — so
+building it meant inventing what "owner" means one phase before accounts do it
+properly. Anyone holding an edit link can already do everything the dashboard
+was for. It returns with accounts in Phase 4 or not at all.
 
 **Email notification on new comment was cut on 2026-08-12**, not deferred.
 Cloudflare's outbound Email Sending needs the Workers Paid plan — only sends to
@@ -449,8 +453,8 @@ below keeps each branch dependent only on the one before it.
       body, 64 connections
 - [x] `25-comment-rail` — the rail on the app origin: threads, reply, resolve,
       reopen, unresolved count, self-declared names, and orphans named rather
-      than hidden. Off-screen targets are still untreated — the rail does not
-      yet scroll the frame to a mark, which needs a scroll-to message — 25b
+      than hidden. Off-screen targets were left untreated here and picked up in
+      25b, which added the scroll-to message this branch did without.
       Anchors, colours, and the room protocol moved into `@coedithtml/protocol`
       so the rail and the runtime cannot disagree about them. The worker now
       depends on it too, which is what let `UNLOCK_QUERY_PARAM` stop being
@@ -476,30 +480,39 @@ below keeps each branch dependent only on the one before it.
   - [x] `one-bar-not-four` — the chrome had grown into four surfaces a
         first-time reader had to find before leaving a note. One bar: copy link,
         who you are, comments, sticky
-- [ ] `25b-reveal-offscreen` — the scroll-to message `25` left out, plus the
-      honest report behind it: a mark can resolve and still be invisible, either
-      scrolled away or on a slide the artifact is not currently showing. The
-      rail offers to reveal the first and says so about the second. Raises the
-      runtime ceiling to 40KB, since 35 bytes will not hold a new message
-      handler
-- [ ] `26-reupload-reanchor` — re-upload as its own screen, new revision, the
-      re-anchor report, and putting orphans back into place.
-      **There is no real revision yet.** The room stamps its overlay with the
-      artifact id and the runtime stamps anchors with whatever
-      `window.__coedit__.config.revision` says, which is `"unknown"` because
-      nothing sets it. Nothing compares the two today, so nothing is broken —
-      but re-anchoring is the feature that makes revisions mean something, and
-      both should become one content hash here.
-      The revision has nowhere to ride in today: `/__coedit/runtime.js` is one
-      path shared by every artifact, which is why the config prefix can only
-      supply `appOrigin`. Putting the revision in that path also retires the
-      cache-busting workaround around it
-- [ ] `27-overlay-export` — **Copy feedback for your AI tool**, overlay to
-      markdown, reached from a share menu at the right of the bar. Small, and it
-      closes the regeneration loop
-- [ ] `28-owner-dashboard` — owner dashboard with unresolved counts. Needs to
-      decide what "owner" means before accounts exist, since KV is keyed by
-      artifact and token today with no per-owner index
+- [x] `25b-reveal-offscreen` — the scroll-to message `25` left out, plus the
+      honest report behind it. The runtime had been collapsing two different
+      failures into one `orphaned` bucket, so a comment on a slide the artifact
+      was not showing read "the text this points at is gone", which was false.
+      `Located` now separates an anchor that resolves nowhere from one that
+      resolves onto a box with no area, and `placed` reports offscreen, hidden,
+      and orphaned as three lists. Ceiling raised to 40KB; the bundle is 32.9KB
+- [x] `26-reupload-reanchor` — revision is a truncated SHA-256 of the uploaded
+      bytes, computed at the boundary and carried in the R2 key
+      (`artifacts/<id>/<revision>.html`) and in the injected script path
+      (`/__coedit/<revision>/runtime.js`), which is what finally gives
+      `window.__coedit__.config.revision` a real value. `POST
+      /api/artifacts/:editToken/revisions` adds a revision instead of
+      overwriting one, so the artifact id — and with it the room and its
+      overlay — survives the replacement. The report is derived from the
+      placement message rather than computed twice.
+      The cache workaround did **not** retire: the revision in that path names
+      the artifact, not the runtime build, so `no-cache` stays or a redeploy
+      would serve a stale runtime.
+      Orphan re-placement covers stickies, which have a point to drop. An
+      orphaned text comment still only says its target is gone — re-anchoring
+      one means selecting new text, which belongs with the selection affordance
+      and is not built
+- [x] `27-overlay-export` — **Copy feedback for your AI tool**. `overlayToMarkdown`
+      is a pure function in `protocol/`, so the rail and any later export path
+      cannot disagree about the format. Resolved threads are labelled rather than
+      dropped and orphans get their own section, because an export that silently
+      loses feedback is worse than a longer one.
+      The bar now splits at one seam: what a reader does on the left, what an
+      owner does on the right. `CopyLinkButton` was folded into the menu and
+      deleted, and the popover shell `ReaderChip` had grown moved to
+      `ui/popover.tsx` on its second use — no dropdown dependency added
+- ~~`28-owner-dashboard`~~ — cut on 2026-08-13, see the Ship list above
 
 ---
 
@@ -617,18 +630,29 @@ Not a phase, and deliberately last: it is the one thing standing between the
 code and a link somebody else can open. Written for Phase 1 and now carrying
 Phase 2 as well, which is why Phase 2's exit criterion waits on it.
 
-**What is live as of 2026-08-04.** The plumbing, and nothing else. Both hosts
-answer and the DNS and routes are correct, but the Worker behind them is an
-early placeholder from around `03-two-origins`:
+**What is live as of 2026-08-13.** The real Worker, verified against production
+rather than `wrangler dev`. Version `9cac3c0c`, deployed from the `production`
+environment:
 
-- `app.coedithtml.com` → `200`, body `Coedit app origin`, `content-type:
-  text/plain`
-- `coedit.coedithtml-worker.workers.dev` → `200`, body `Artifact sandbox origin`
-- `coedithtml.com` (apex, marketing) → does not resolve to anything serving
+- `app.coedithtml.com` → the app; serves its own shell for an artifact token and
+  never the artifact
+- `coedit.coedithtml-worker.workers.dev` → artifacts, with
+  `frame-ancestors app.coedithtml.com` and `nosniff`; app assets 404 here
+- `coedithtml.com` (apex, marketing) → still parked
 
-So no upload route, no viewer, no runtime. Phase 1's exit criterion — hand the
-link to someone on their phone — has never actually been available to test,
-because everything above was verified against `wrangler dev` on localhost.
+Checked live: upload → link → fetch, with the stored bytes byte-identical and
+exactly one appended script; the revision path `/__coedit/<revision>/runtime.js`
+serving the runtime with `appOrigin` and `revision` injected; a websocket
+upgrade to a real `DocRoom` answering `101`, so the `v1` SQLite migration
+applied; that same upgrade refused `404` from a forged `Origin`; the password
+gate refusing without a grant and issuing one for the right password; re-upload
+minting a new revision, refusing a view token `403`, and changing what is
+served; and revoking the view token killing it on both origins while the edit
+token stays live.
+
+**One defect the deploy surfaced.** `room.ts` was stamping the overlay with the
+artifact id where the revision belongs — correct before `26`, wrong the moment a
+real revision existed. Fixed and redeployed.
 
 **Decided on 2026-08-12.** The app ships to `app.coedithtml.com`, which is what
 the `production` block already declares, so no host config changes. Cloudflare
@@ -646,29 +670,32 @@ suffix list, so today's host is genuinely cross-site. If its shared reputation
 becomes a problem, the answer is a second *registrable domain*, not a subdomain
 of this one.
 
-- [ ] `pnpm deploy` against the production environment. The script did not exist
+- [x] `pnpm deploy` against the production environment. The script did not exist
       until the post-merge audit added it; a bare `wrangler deploy` picks up the
       top-level vars, which are the localhost dev hosts, and every real request
       would classify as an unknown origin and 404
-- [ ] Create the production KV namespace and R2 bucket if the ids in
-      `wrangler.jsonc` are not real — the KV id is currently the same string in
-      both the top-level and production blocks, which is either deliberate reuse
-      or a copy-paste that has never been exercised
-- [ ] Confirm the two origins are genuinely separate in production, which the
-      roadmap has claimed since `03` on the strength of config alone
-- [ ] The first deploy now also carries a Durable Object. `migrations` tag `v1`
-      declares `DocRoom` as a `new_sqlite_classes` entry, and that migration has
-      never been applied to a real account — a deploy that fails here fails
-      before the Worker is replaced, so Phase 1's routes are not at risk, but it
-      does mean the room is unexercised outside tests
-- [ ] Upload a real artifact through the deployed landing page, open the
-      returned link in a private window, and read it on a phone
-- [ ] Check the password gate, revocation, and the upload ceiling against the
-      deployed Worker rather than a local one
-- [ ] Confirm the account's `workers.dev` subdomain really is
-      `coedithtml-worker`. The sandbox host is asserted in config and has never
-      been checked against the account; if it is wrong, every artifact request
-      classifies as an unknown origin and 404s
+- [x] Create the production KV namespace and R2 bucket. The buckets already
+      existed; the KV id was indeed one namespace shared by both blocks, so
+      production now has `4ec09f8643814541ba2471dad38a887a` of its own and local
+      dev can no longer write production metadata
+- [x] Confirm the two origins are genuinely separate in production, which the
+      roadmap had claimed since `03` on the strength of config alone
+- [x] The first deploy also carried a Durable Object. `migrations` tag `v1`
+      declares `DocRoom` as a `new_sqlite_classes` entry; it applied cleanly and
+      a live upgrade answers `101`. `24b` exercised it in workerd first, though
+      two things that run did not prove: the pool pins an older workerd that
+      falls back from the `2026-07-01` compatibility date, and storage isolation
+      is off because Windows will not unlink the room's SQLite file mid-run, so
+      tests are kept apart by naming a room each instead
+- [x] Check the password gate, revocation, and re-upload against the deployed
+      Worker rather than a local one
+- [ ] The upload ceiling is the one gate still only tested locally — refusing a
+      5MB body against production means actually pushing one
+- [ ] Upload a real artifact through the deployed landing page **in a browser**,
+      open the returned link in a private window, and read it on a phone. The
+      API path is verified; the UI path over the wire is not
+- [x] Confirm the account's `workers.dev` subdomain really is
+      `coedithtml-worker` — it is, so the sandbox host in config was right
 - [ ] Deploy the marketing site to the apex, or leave it parked deliberately.
       Vercel is fine for it — no app logic lives there — as long as
       `coedithtml.com` stays on Cloudflare DNS, which the `app.` custom domain

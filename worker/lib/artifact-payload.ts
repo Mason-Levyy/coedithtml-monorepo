@@ -15,6 +15,7 @@ export function unlockedArtifactPayload(
     fileName: metadata.fileName,
     size: metadata.size,
     uploadedAt: metadata.uploadedAt,
+    revision: metadata.revision,
     requiresPassword: false as const,
     sandboxOrigin: originFor(request, env.SANDBOX_HOST),
     artifactUrl: artifactUrl(request, env, artifact.token, grant),

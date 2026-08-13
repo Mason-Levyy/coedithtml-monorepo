@@ -85,7 +85,6 @@ describe("applyClientMessage", () => {
     expect(store.list()).toHaveLength(1);
   });
 
-  // Client clocks lie, and the rail orders threads by this field.
   it("stamps the server's time over whatever the client claimed", () => {
     const store = memoryEntryStore();
     apply(store, addEntryMessage(comment({ createdAt: "not-a-time" })));
@@ -162,7 +161,6 @@ describe("applyClientMessage", () => {
     expect(store.get("s1")).toMatchObject({ tail: null });
   });
 
-  // offsetX on a comment would be a field the rail can never show or move.
   it("refuses to move something that does not float", () => {
     const store = memoryEntryStore([comment()]);
     const outcome = apply(store, patchEntryMessage("c1", { offsetX: 40 }));
@@ -170,7 +168,6 @@ describe("applyClientMessage", () => {
     expect(outcome).toMatchObject({ ok: false, reason: "malformed" });
   });
 
-  // Without the id the client cannot tell which optimistic change to undo.
   it("names the entry it refused", () => {
     const store = memoryEntryStore([comment(), sticky()]);
 
@@ -195,7 +192,6 @@ describe("applyClientMessage", () => {
     expect(outcome).toMatchObject({ ok: false, reason: "unknown-entry" });
   });
 
-  // A reply outliving its parent is an orphan no thread can render.
   it("takes a thread's replies with it when the parent is removed", () => {
     const store = memoryEntryStore([
       comment(),

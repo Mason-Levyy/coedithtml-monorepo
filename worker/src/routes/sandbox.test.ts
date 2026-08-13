@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RUNTIME_SCRIPT_PATH } from "@/lib/artifact-render";
+import { runtimeScriptPath } from "@/lib/artifact-render";
 import type { WorkerEnv } from "@/lib/env";
 import {
   fakeAssets,
@@ -20,10 +20,13 @@ import { handleSandboxRequest } from "./sandbox";
 const ARTIFACT_ID = "b".repeat(32);
 const VIEW_TOKEN = "d".repeat(32);
 const VALID_HTML = "<!doctype html><html><body>Hi</body></html>";
+const REVISION = "9f2c1a04b7e35d68";
 const METADATA = {
   fileName: "deck.html",
   size: VALID_HTML.length,
   uploadedAt: "2026-08-01T00:00:00.000Z",
+  revision: REVISION,
+  previousRevisions: [],
 };
 
 function envWith(
@@ -43,6 +46,7 @@ function knownArtifactEnv(metadata: unknown = METADATA): WorkerEnv {
     stubArtifactStore([
       {
         artifactId: ARTIFACT_ID,
+        revision: REVISION,
         bytes: new Uint8Array(new TextEncoder().encode(VALID_HTML)).buffer,
       },
     ]),
@@ -75,7 +79,7 @@ describe("handleSandboxRequest", () => {
       "text/html; charset=utf-8",
     );
     expect(body.startsWith(VALID_HTML)).toBe(true);
-    expect(body).toContain(RUNTIME_SCRIPT_PATH);
+    expect(body).toContain(runtimeScriptPath(REVISION));
   });
 
   it("sets a frame-ancestors CSP allowing only the app origin", async () => {
@@ -116,7 +120,7 @@ describe("handleSandboxRequest", () => {
       },
     ]);
     const response = await handleSandboxRequest(
-      request(RUNTIME_SCRIPT_PATH),
+      request(runtimeScriptPath(REVISION)),
       envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([])), assets),
     );
     const body = await response.text();
@@ -137,7 +141,7 @@ describe("handleSandboxRequest", () => {
       },
     ]);
     const response = await handleSandboxRequest(
-      request(RUNTIME_SCRIPT_PATH),
+      request(runtimeScriptPath(REVISION)),
       envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([])), assets),
     );
     const body = await response.text();
@@ -159,7 +163,7 @@ describe("handleSandboxRequest", () => {
       },
     ]);
     const response = await handleSandboxRequest(
-      request(RUNTIME_SCRIPT_PATH),
+      request(runtimeScriptPath(REVISION)),
       envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([])), assets),
     );
 
@@ -170,7 +174,7 @@ describe("handleSandboxRequest", () => {
 
   it("returns 404 for the runtime script path when no bundle asset exists", async () => {
     const response = await handleSandboxRequest(
-      request(RUNTIME_SCRIPT_PATH),
+      request(runtimeScriptPath(REVISION)),
       envWith(stubArtifactStore([]), mergeKv(stubAccessTokens([]))),
     );
 
@@ -255,6 +259,7 @@ describe("handleSandboxRequest", () => {
           stubArtifactStore([
             {
               artifactId: ARTIFACT_ID,
+              revision: REVISION,
               bytes: new Uint8Array(new TextEncoder().encode(VALID_HTML))
                 .buffer,
             },

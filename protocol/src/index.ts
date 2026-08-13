@@ -4,6 +4,7 @@ export * from "./anchor";
 export * from "./parse-anchor";
 export * from "./parse-values";
 export * from "./overlay";
+export * from "./export-markdown";
 export * from "./colors";
 export * from "./parse-overlay";
 export * from "./room";

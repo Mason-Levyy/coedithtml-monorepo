@@ -7,15 +7,20 @@ import {
   setToolMessage,
   type Anchor,
   type AppToRuntimeMessage,
+  type EntryPatch,
   type OverlayEntry,
   type ReaderPresence,
 } from "@/lib/protocol";
 
 export type FramePoint = { x: number; y: number };
 
+type Intent = { kind: "new" } | { kind: "replace"; markId: string };
+
 export type StickyPlacement = {
   armed: boolean;
+  replacingMarkId: string | null;
   toggleArmed: () => void;
+  armForMark: (markId: string) => void;
   disarm: () => void;
   dropAt: (point: FramePoint) => void;
 };
@@ -27,46 +32,56 @@ export function useStickyPlacement(options: {
   reader: ReaderPresence;
   color: string;
   addEntry: (entry: OverlayEntry) => void;
+  patchEntry: (markId: string, patch: EntryPatch) => void;
   send: (message: AppToRuntimeMessage) => void;
 }): StickyPlacement {
   const { placement, ready, canMarkUp, send } = options;
-  const [armed, setArmed] = useState(false);
+  const [intent, setIntent] = useState<Intent | null>(null);
 
   const latest = useRef(options);
   latest.current = options;
 
+  const droppedIntentRef = useRef<Intent | null>(null);
+
   useEffect(() => {
     if (ready) {
-      send(setToolMessage(armed ? "sticky" : null));
+      send(setToolMessage(intent === null ? null : "sticky"));
     }
-  }, [armed, ready, send]);
+  }, [intent, ready, send]);
 
   useEffect(() => {
     if (!canMarkUp) {
-      setArmed(false);
+      setIntent(null);
     }
   }, [canMarkUp]);
 
   useEffect(() => {
-    if (!armed) {
+    if (intent === null) {
       return;
     }
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === "Escape") {
-        setArmed(false);
+        setIntent(null);
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [armed]);
+  }, [intent]);
 
   useEffect(() => {
     if (placement === null) {
       return;
     }
-    setArmed(false);
+    setIntent(null);
+    const reason = droppedIntentRef.current ?? { kind: "new" };
+    droppedIntentRef.current = null;
+
     const { canMarkUp: allowed, reader, color, addEntry } = latest.current;
     if (!allowed) {
+      return;
+    }
+    if (reason.kind === "replace") {
+      latest.current.patchEntry(reason.markId, { anchor: placement });
       return;
     }
     const sticky = newSticky({
@@ -83,16 +98,27 @@ export function useStickyPlacement(options: {
 
   const dropAt = useCallback(
     (point: FramePoint) => {
-      setArmed(false);
+      setIntent((current) => {
+        droppedIntentRef.current = current;
+        return null;
+      });
       send(placeAtMessage(point.x, point.y));
     },
     [send],
   );
 
   return {
-    armed,
-    toggleArmed: useCallback(() => setArmed((on) => !on), []),
-    disarm: useCallback(() => setArmed(false), []),
+    armed: intent !== null,
+    replacingMarkId: intent?.kind === "replace" ? intent.markId : null,
+    toggleArmed: useCallback(
+      () => setIntent((current) => (current === null ? { kind: "new" } : null)),
+      [],
+    ),
+    armForMark: useCallback(
+      (markId: string) => setIntent({ kind: "replace", markId }),
+      [],
+    ),
+    disarm: useCallback(() => setIntent(null), []),
     dropAt,
   };
 }

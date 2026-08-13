@@ -4,8 +4,6 @@ import { defineConfig } from "vitest/config";
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 
-// Mirrors tsconfig.json. `@/lib` comes first because these match in order, and
-// the trailing slash keeps `@/` off scoped packages like `@coedithtml/protocol`.
 export default defineConfig({
   resolve: {
     alias: [
@@ -15,5 +13,9 @@ export default defineConfig({
       },
       { find: /^@\//, replacement: `${path.resolve(packageRoot, "src")}/` },
     ],
+  },
+  test: {
+    name: "node",
+    exclude: ["**/node_modules/**", "**/dist/**", "**/*.pool.test.ts"],
   },
 });

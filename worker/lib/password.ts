@@ -18,9 +18,6 @@ function fromHex(hex: string): Uint8Array | null {
   return bytes;
 }
 
-// A single SHA-256 round is a digest, not a password hash: link passwords are
-// short and human-chosen, so anyone reaching the stored value could try them
-// at billions per second. A work factor is what makes that expensive.
 async function derive(
   password: string,
   salt: Uint8Array,
@@ -52,8 +49,6 @@ function equalsInConstantTime(a: string, b: string): boolean {
   return difference === 0;
 }
 
-// Parameters travel with the hash so the iteration count can be raised later
-// without invalidating passwords already stored under the old one.
 export async function hashArtifactPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const derived = await derive(password, salt, ITERATIONS);

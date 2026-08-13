@@ -1,3 +1,14 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, type RenderResult } from "@testing-library/react";
+import { createElement, type ReactElement } from "react";
+
+export function renderWithQueryClient(node: ReactElement): RenderResult {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(createElement(QueryClientProvider, { client, children: node }));
+}
+
 export class FakeWebSocket extends EventTarget {
   static readonly OPEN = 1;
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useDismissOnOutside } from "@/hooks/useDismissOnOutside";
+import { Popover } from "@/components/ui/popover";
 import type { ReaderIdentity } from "@/hooks/useReaderIdentity";
 import { PALETTE_COLUMNS, READER_PALETTE } from "@/lib/palette";
 import { cn } from "@/lib/utils";
@@ -14,28 +14,30 @@ type ReaderChipProps = {
 };
 
 export function ReaderChip({ identity, open, onOpenChange }: ReaderChipProps) {
-  const wrapper = useDismissOnOutside(open, () => onOpenChange(false));
-
   return (
-    <div ref={wrapper} className="relative flex-none">
-      <button
-        type="button"
-        aria-label="Your name and colour"
-        aria-expanded={open}
-        onClick={() => onOpenChange(!open)}
-        className="flex h-8 max-w-40 items-center gap-2 border-2 border-ink bg-card px-2 font-mono text-xs tracking-wide uppercase hover:bg-paper focus-visible:outline-2 focus-visible:outline-ring"
-      >
-        <span
-          className="size-3 flex-none border border-ink"
-          style={{ background: identity.color }}
-        />
-        <span className="truncate">
-          {identity.named ? identity.reader.displayName : "Add your name"}
-        </span>
-      </button>
-
-      {open && <IdentityPanel identity={identity} />}
-    </div>
+    <Popover
+      open={open}
+      onOpenChange={onOpenChange}
+      className="w-64"
+      trigger={(props) => (
+        <button
+          type="button"
+          aria-label="Your name and colour"
+          className="flex h-8 max-w-40 items-center gap-2 border-2 border-ink bg-card px-2 font-mono text-xs tracking-wide uppercase hover:bg-paper focus-visible:outline-2 focus-visible:outline-ring"
+          {...props}
+        >
+          <span
+            className="size-3 flex-none border border-ink"
+            style={{ background: identity.color }}
+          />
+          <span className="truncate">
+            {identity.named ? identity.reader.displayName : "Add your name"}
+          </span>
+        </button>
+      )}
+    >
+      <IdentityPanel identity={identity} />
+    </Popover>
   );
 }
 
@@ -44,7 +46,7 @@ function IdentityPanel({ identity }: { identity: ReaderIdentity }) {
   const changed = draft.trim() !== identity.reader.displayName;
 
   return (
-    <div className="absolute top-full left-0 z-30 mt-1 flex w-64 flex-col gap-2 border-2 border-ink bg-paper-2 p-2 shadow-lg">
+    <>
       {!identity.named && (
         <p className="text-[11px]">
           Put your name in to comment. Everyone here will see it against what
@@ -101,6 +103,6 @@ function IdentityPanel({ identity }: { identity: ReaderIdentity }) {
       </div>
 
       <p className="text-[11px] text-muted-foreground">{COLOUR_HINT}</p>
-    </div>
+    </>
   );
 }

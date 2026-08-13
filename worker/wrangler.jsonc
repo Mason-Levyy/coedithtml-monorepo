@@ -7,8 +7,6 @@
     "enabled": true
   },
 
-  // `.localhost` subdomains all resolve to 127.0.0.1, which is what makes two
-  // genuinely distinct origins reachable from one local `wrangler dev` port.
   "vars": {
     "APP_HOST": "app.localhost:8787",
     "SANDBOX_HOST": "sandbox.localhost:8787",
@@ -47,7 +45,6 @@
     }
   ],
 
-  // Staged by assemble-assets.mjs: the app build plus the runtime bundle.
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
@@ -57,9 +54,6 @@
   "env": {
     "production": {
       "name": "coedit",
-      // The apex is deliberately absent: it belongs to the marketing site.
-      // The app lives on its own subdomain, and www only exists to bounce
-      // visitors to the apex.
       "vars": {
         "APP_HOST": "app.coedithtml.com",
         "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev",
@@ -67,8 +61,6 @@
         "REDIRECT_TARGET": "coedithtml.com"
       },
 
-      // The sandbox origin IS the workers.dev hostname, so this stays on.
-      // Defining routes below must not be read as a reason to turn it off.
       "workers_dev": true,
       "routes": [
         {
@@ -89,7 +81,7 @@
       "kv_namespaces": [
         {
           "binding": "ARTIFACT_METADATA",
-          "id": "c2a45fd936ac4d798f9c3251e813020f"
+          "id": "4ec09f8643814541ba2471dad38a887a"
         }
       ],
       "durable_objects": {
