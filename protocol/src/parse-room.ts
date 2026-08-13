@@ -71,6 +71,13 @@ export function parseEntryPatch(value: unknown): EntryPatch | null {
   }
   const patch: EntryPatch = {};
 
+  if (record.ifRev !== undefined) {
+    const ifRev = asFiniteNumber(record.ifRev);
+    if (ifRev === null || !Number.isInteger(ifRev) || ifRev < 0) {
+      return null;
+    }
+    patch.ifRev = ifRev;
+  }
   if (record.anchor !== undefined) {
     const anchor = parseAnchor(record.anchor);
     if (anchor === null) {

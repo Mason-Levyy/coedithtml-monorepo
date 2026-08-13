@@ -74,7 +74,21 @@ export function clampStickySize(size: {
   };
 }
 
-export type OverlayEntry = CommentEntry | ReplyEntry | StickyEntry;
+export type EditEntry = EntryBase & {
+  kind: "edit";
+  parentId: null;
+  rev: number;
+};
+
+export type OverlayEntry = CommentEntry | ReplyEntry | StickyEntry | EditEntry;
+
+export function isEdit(entry: OverlayEntry): entry is EditEntry {
+  return entry.kind === "edit";
+}
+
+export function editsAmong(entries: OverlayEntry[]): EditEntry[] {
+  return entries.filter(isEdit);
+}
 
 export type OverlayDocument = {
   version: typeof OVERLAY_VERSION;
@@ -91,7 +105,9 @@ export function isFloating(entry: OverlayEntry): entry is StickyEntry {
 }
 
 export function threadsIn(entries: OverlayEntry[]): OverlayEntry[] {
-  return entries.filter((entry) => entry.kind !== "reply");
+  return entries.filter(
+    (entry) => entry.kind !== "reply" && entry.kind !== "edit",
+  );
 }
 
 export function unresolvedCount(entries: OverlayEntry[]): number {
@@ -109,6 +125,7 @@ export function repliesTo(
 }
 
 export type EntryPatch = {
+  ifRev?: number;
   anchor?: Anchor;
   body?: string;
   color?: MarkColor;
@@ -147,6 +164,11 @@ export function patchEntry(
     status: patch.status ?? entry.status,
   };
 
+  if (isEdit(entry)) {
+    return movesOrPoints(patch)
+      ? null
+      : { ...entry, ...shared, rev: entry.rev + 1 };
+  }
   if (isFloating(entry)) {
     const size = clampStickySize({
       width: patch.width === undefined ? entry.width : patch.width,

@@ -12,6 +12,7 @@ import {
   unresolvedCount,
   type Author,
   type CommentEntry,
+  type EditEntry,
   type OverlayEntry,
   type ReplyEntry,
   type StickyEntry,
@@ -72,6 +73,16 @@ function comment(overrides: Partial<CommentEntry> = {}): CommentEntry {
 
 function reply(overrides: Partial<ReplyEntry> = {}): ReplyEntry {
   return { ...comment(), kind: "reply", parentId: "entry-1", ...overrides };
+}
+
+function textEdit(overrides: Partial<EditEntry> = {}): EditEntry {
+  return {
+    ...comment(),
+    kind: "edit",
+    body: "Revenue fell 4%",
+    rev: 0,
+    ...overrides,
+  };
 }
 
 function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
@@ -241,6 +252,12 @@ describe("threadsIn", () => {
 
     expect(threadsIn(entries).map((entry) => entry.id)).toEqual(["a", "c"]);
   });
+
+  it("leaves edits out, since changed text is not something to reply to", () => {
+    const entries = [comment({ id: "a" }), textEdit({ id: "e" })];
+
+    expect(threadsIn(entries).map((entry) => entry.id)).toEqual(["a"]);
+  });
 });
 
 describe("unresolvedCount", () => {
@@ -288,16 +305,41 @@ describe("a callout is a sticky whose tail is set", () => {
 });
 
 describe("parseOverlayEntry", () => {
-  it("round-trips a comment, a reply and a sticky", () => {
+  it("round-trips a comment, a reply, a sticky and an edit", () => {
     expect(roundTrip(comment())).toEqual(comment());
     expect(roundTrip(reply())).toEqual(reply());
     expect(roundTrip(sticky())).toEqual(sticky());
+    expect(roundTrip(textEdit())).toEqual(textEdit());
   });
 
   it("rejects an unknown kind, status or colour", () => {
-    expect(parseOverlayEntry({ ...comment(), kind: "edit" })).toBeNull();
+    expect(parseOverlayEntry({ ...comment(), kind: "erasure" })).toBeNull();
     expect(parseOverlayEntry({ ...comment(), status: "archived" })).toBeNull();
     expect(parseOverlayEntry({ ...comment(), color: "chartreuse" })).toBeNull();
+  });
+
+  it("rejects an edit that carries no revision count", () => {
+    const withoutRev: Record<string, unknown> = { ...textEdit() };
+    delete withoutRev.rev;
+
+    expect(parseOverlayEntry(withoutRev)).toBeNull();
+    expect(parseOverlayEntry({ ...textEdit(), rev: 1.5 })).toBeNull();
+    expect(parseOverlayEntry({ ...textEdit(), rev: -1 })).toBeNull();
+  });
+
+  it("rejects an edit anchored to a region, since a region has no words", () => {
+    expect(
+      parseOverlayEntry({
+        ...textEdit(),
+        anchor: {
+          kind: "region",
+          path: "section[2]",
+          fractionX: 0.5,
+          fractionY: 0.5,
+          revision: "r1",
+        },
+      }),
+    ).toBeNull();
   });
 
   it("rejects an author that does not declare a source", () => {

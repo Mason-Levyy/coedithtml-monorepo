@@ -92,11 +92,10 @@ export class DocRoom extends DurableObject<Env> {
       return;
     }
 
-    const outcome = applyClientMessage(
-      this.entries,
-      message,
-      new Date().toISOString(),
-    );
+    const outcome = applyClientMessage(this.entries, message, {
+      now: new Date().toISOString(),
+      canEdit: attachment.canEdit,
+    });
     if (outcome === null) {
       return;
     }
