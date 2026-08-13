@@ -182,7 +182,10 @@ export function parseAppToRuntimeMessage(
   }
   if (candidate.type === "set-capabilities") {
     return typeof candidate.canWrite === "boolean"
-      ? setCapabilitiesMessage(candidate.canWrite)
+      ? setCapabilitiesMessage({
+          canWrite: candidate.canWrite,
+          canEdit: candidate.canEdit === true,
+        })
       : null;
   }
   if (candidate.type === "place-at") {

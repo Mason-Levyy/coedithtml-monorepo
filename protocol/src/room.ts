@@ -40,6 +40,7 @@ export type RoomSnapshotMessage = Versioned & {
   overlay: OverlayDocument;
   readers: ReaderPresence[];
   canWrite: boolean;
+  canEdit: boolean;
 };
 
 export type RoomEntryAddedMessage = Versioned & {
@@ -109,6 +110,7 @@ export function snapshotMessage(options: {
   overlay: OverlayDocument;
   readers: ReaderPresence[];
   canWrite: boolean;
+  canEdit: boolean;
 }): RoomSnapshotMessage {
   return { version: ROOM_VERSION, type: "snapshot", ...options };
 }

@@ -86,6 +86,7 @@ export type AppSetToolMessage = Versioned & {
 export type AppSetCapabilitiesMessage = Versioned & {
   type: "set-capabilities";
   canWrite: boolean;
+  canEdit: boolean;
 };
 
 export type AppPlaceAtMessage = Versioned & {
@@ -178,10 +179,11 @@ export function patchMarkMessage(
   return { version: BRIDGE_VERSION, type: "patch-mark", markId, patch };
 }
 
-export function setCapabilitiesMessage(
-  canWrite: boolean,
-): AppSetCapabilitiesMessage {
-  return { version: BRIDGE_VERSION, type: "set-capabilities", canWrite };
+export function setCapabilitiesMessage(capabilities: {
+  canWrite: boolean;
+  canEdit: boolean;
+}): AppSetCapabilitiesMessage {
+  return { version: BRIDGE_VERSION, type: "set-capabilities", ...capabilities };
 }
 
 export function placeAtMessage(x: number, y: number): AppPlaceAtMessage {

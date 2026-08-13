@@ -1,9 +1,10 @@
 import { z } from "zod";
+import { TOKEN_KINDS } from "./room-capabilities";
 import { accessTokenKey } from "./storage-keys";
 
 export const tokenRecordSchema = z.object({
   artifactId: z.string(),
-  kind: z.enum(["view", "suggest", "edit"]),
+  kind: z.enum(TOKEN_KINDS),
 });
 
 export type TokenRecord = z.infer<typeof tokenRecordSchema>;

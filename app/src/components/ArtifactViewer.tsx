@@ -113,9 +113,11 @@ export function ArtifactViewer({
 
   useEffect(() => {
     if (bridge.ready) {
-      sendToRuntime(setCapabilitiesMessage(canMarkUp));
+      sendToRuntime(
+        setCapabilitiesMessage({ canWrite: canMarkUp, canEdit: room.canEdit }),
+      );
     }
-  }, [bridge.ready, canMarkUp, sendToRuntime]);
+  }, [bridge.ready, canMarkUp, room.canEdit, sendToRuntime]);
 
   useEffect(() => {
     if (bridge.activatedMarkId !== null) {

@@ -29,7 +29,7 @@ export function LandingPage() {
     <div className="mx-auto flex max-w-xl flex-col gap-8 px-6 py-16">
       <div className="flex flex-col gap-3">
         <h1 className="font-sans text-3xl font-extrabold tracking-tight text-foreground uppercase">
-          Turn an HTML file into a link
+          HTML made collaborative
         </h1>
         <p className="text-sm text-muted-foreground">
           Anyone who opens your link can read, comment, or edit the file,

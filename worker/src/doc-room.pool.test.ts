@@ -10,7 +10,8 @@ import {
   type OverlayEntry,
   type RoomToClientMessage,
 } from "@coedithtml/protocol";
-import { ROOM_REVISION_HEADER, ROOM_WRITE_HEADER } from "@/lib/room-headers";
+import { ROOM_KIND_HEADER, ROOM_REVISION_HEADER } from "@/lib/room-headers";
+import type { TokenKind } from "@/lib/room-capabilities";
 
 const REVISION = "9f2c1a04b7e35d68";
 
@@ -97,15 +98,12 @@ afterEach(() => {
   }
 });
 
-async function connect(
-  roomName: string,
-  canWrite: boolean,
-): Promise<Connection> {
+async function connect(roomName: string, kind: TokenKind): Promise<Connection> {
   const stub = env.DOC_ROOM.get(env.DOC_ROOM.idFromName(roomName));
   const response = await stub.fetch("https://room.invalid/", {
     headers: {
       upgrade: "websocket",
-      [ROOM_WRITE_HEADER]: canWrite ? "yes" : "no",
+      [ROOM_KIND_HEADER]: kind,
       [ROOM_REVISION_HEADER]: REVISION,
     },
   });
@@ -132,7 +130,7 @@ function entriesIn(message: RoomToClientMessage): OverlayEntry[] {
 
 describe("a live DocRoom", () => {
   it("hands a new connection a snapshot stamped with the revision it was told", async () => {
-    const reader = await connect("snapshot-room", true);
+    const reader = await connect("snapshot-room", "edit");
     const snapshot = await reader.next();
 
     expect(snapshot).toMatchObject({
@@ -143,8 +141,8 @@ describe("a live DocRoom", () => {
   });
 
   it("carries an entry one socket writes to the other", async () => {
-    const writer = await connect("fanout-room", true);
-    const watcher = await connect("fanout-room", true);
+    const writer = await connect("fanout-room", "edit");
+    const watcher = await connect("fanout-room", "edit");
     await writer.next();
     await watcher.next();
 
@@ -157,7 +155,7 @@ describe("a live DocRoom", () => {
   });
 
   it("tells the writer as well, so both sides settle on one version", async () => {
-    const writer = await connect("echo-room", true);
+    const writer = await connect("echo-room", "edit");
     await writer.next();
 
     send(writer, addEntryMessage(comment()));
@@ -166,18 +164,18 @@ describe("a live DocRoom", () => {
   });
 
   it("keeps what was written in SQLite, so a later reader sees it", async () => {
-    const writer = await connect("durable-room", true);
+    const writer = await connect("durable-room", "edit");
     await writer.next();
     send(writer, addEntryMessage(comment()));
     await writer.next();
 
-    const arriving = await connect("durable-room", false);
+    const arriving = await connect("durable-room", "view");
 
     expect(entriesIn(await arriving.next())).toMatchObject([{ id: "c1" }]);
   });
 
   it("stamps the entry with its own clock rather than trusting the client", async () => {
-    const writer = await connect("clock-room", true);
+    const writer = await connect("clock-room", "edit");
     await writer.next();
 
     send(
@@ -193,8 +191,8 @@ describe("a live DocRoom", () => {
   });
 
   it("refuses a write from a read-only connection and tells only that socket", async () => {
-    const writer = await connect("read-only-room", true);
-    const viewer = await connect("read-only-room", false);
+    const writer = await connect("read-only-room", "edit");
+    const viewer = await connect("read-only-room", "view");
     await writer.next();
     await viewer.next();
 
@@ -210,9 +208,37 @@ describe("a live DocRoom", () => {
     );
   });
 
+  it("tells each connection what its own link may do", async () => {
+    const viewer = await connect("capability-room", "view");
+    const suggester = await connect("capability-room", "suggest");
+    const editor = await connect("capability-room", "edit");
+
+    expect(await viewer.next()).toMatchObject({
+      canWrite: false,
+      canEdit: false,
+    });
+    expect(await suggester.next()).toMatchObject({
+      canWrite: true,
+      canEdit: false,
+    });
+    expect(await editor.next()).toMatchObject({
+      canWrite: true,
+      canEdit: true,
+    });
+  });
+
+  it("lets a suggest connection mark up the artifact", async () => {
+    const suggester = await connect("suggest-room", "suggest");
+    await suggester.next();
+
+    send(suggester, addEntryMessage(comment({ id: "s1" })));
+
+    expect(await suggester.next()).toMatchObject({ type: "entry-added" });
+  });
+
   it("announces a reader to everyone once it says who it is", async () => {
-    const first = await connect("presence-room", true);
-    const second = await connect("presence-room", true);
+    const first = await connect("presence-room", "edit");
+    const second = await connect("presence-room", "edit");
     await first.next();
     await second.next();
 
@@ -225,8 +251,8 @@ describe("a live DocRoom", () => {
   });
 
   it("drops a reader from presence when its socket closes", async () => {
-    const staying = await connect("closing-room", true);
-    const leaving = await connect("closing-room", true);
+    const staying = await connect("closing-room", "edit");
+    const leaving = await connect("closing-room", "edit");
     await staying.next();
     await leaving.next();
     send(leaving, helloMessage({ id: "reader-2", displayName: "Sam" }));
@@ -241,7 +267,7 @@ describe("a live DocRoom", () => {
   });
 
   it("applies a patch against stored state, not against what the client sent", async () => {
-    const writer = await connect("patch-room", true);
+    const writer = await connect("patch-room", "edit");
     await writer.next();
     send(writer, addEntryMessage(comment()));
     await writer.next();
@@ -256,7 +282,7 @@ describe("a live DocRoom", () => {
   });
 
   it("takes a thread's replies with it when the thread is removed", async () => {
-    const writer = await connect("remove-room", true);
+    const writer = await connect("remove-room", "edit");
     await writer.next();
     send(writer, addEntryMessage(comment()));
     await writer.next();
@@ -274,12 +300,12 @@ describe("a live DocRoom", () => {
     send(writer, removeEntryMessage("c1"));
     await writer.next();
 
-    const arriving = await connect("remove-room", false);
+    const arriving = await connect("remove-room", "view");
     expect(entriesIn(await arriving.next())).toEqual([]);
   });
 
   it("treats a resent entry as the one it already has rather than a duplicate", async () => {
-    const writer = await connect("reconnect-room", true);
+    const writer = await connect("reconnect-room", "edit");
     await writer.next();
     send(writer, addEntryMessage(comment()));
     await writer.next();
@@ -290,7 +316,7 @@ describe("a live DocRoom", () => {
     );
     await writer.next();
 
-    const arriving = await connect("reconnect-room", false);
+    const arriving = await connect("reconnect-room", "view");
     expect(entriesIn(await arriving.next())).toMatchObject([
       { id: "c1", body: "Net or gross?" },
     ]);
@@ -305,7 +331,7 @@ describe("a live DocRoom", () => {
   });
 
   it("rejects a message it cannot parse without dropping the connection", async () => {
-    const writer = await connect("garbage-room", true);
+    const writer = await connect("garbage-room", "edit");
     await writer.next();
 
     writer.socket.send("not json at all");
