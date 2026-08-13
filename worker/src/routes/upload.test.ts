@@ -160,17 +160,25 @@ describe("handleUpload", () => {
     const editPut = tokenPuts.find(
       (put) => put.key === `tokens/${body.editToken}`,
     );
+    const siblingTokens = {
+      view: body.viewToken,
+      suggest: body.suggestToken,
+      edit: body.editToken,
+    };
     expect(viewPut && JSON.parse(viewPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "view",
+      siblingTokens,
     });
     expect(suggestPut && JSON.parse(suggestPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "suggest",
+      siblingTokens,
     });
     expect(editPut && JSON.parse(editPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "edit",
+      siblingTokens,
     });
   });
 

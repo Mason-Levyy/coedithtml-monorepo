@@ -39,6 +39,8 @@ export type RuntimeMarkActivatedMessage = Versioned & {
 export type RuntimePlacementMessage = Versioned & {
   type: "placement";
   anchor: Anchor;
+  width?: number | null;
+  height?: number | null;
 };
 
 export type RuntimePlacedMessage = Versioned & {
@@ -81,6 +83,7 @@ export type MarkTool = (typeof MARK_TOOLS)[number];
 export type AppSetToolMessage = Versioned & {
   type: "set-tool";
   tool: MarkTool | null;
+  color: string | null;
 };
 
 export type AppSetCapabilitiesMessage = Versioned & {
@@ -148,8 +151,17 @@ export function renderMarksMessage(
   return { version: BRIDGE_VERSION, type: "render-marks", marks };
 }
 
-export function placementMessage(anchor: Anchor): RuntimePlacementMessage {
-  return { version: BRIDGE_VERSION, type: "placement", anchor };
+export function placementMessage(
+  anchor: Anchor,
+  size?: { width: number; height: number } | null,
+): RuntimePlacementMessage {
+  return {
+    version: BRIDGE_VERSION,
+    type: "placement",
+    anchor,
+    width: size?.width ?? null,
+    height: size?.height ?? null,
+  };
 }
 
 export function placedMessage(placement: {
@@ -168,8 +180,11 @@ export function toolCancelledMessage(): RuntimeToolCancelledMessage {
   return { version: BRIDGE_VERSION, type: "tool-cancelled" };
 }
 
-export function setToolMessage(tool: MarkTool | null): AppSetToolMessage {
-  return { version: BRIDGE_VERSION, type: "set-tool", tool };
+export function setToolMessage(
+  tool: MarkTool | null,
+  color: string | null = null,
+): AppSetToolMessage {
+  return { version: BRIDGE_VERSION, type: "set-tool", tool, color };
 }
 
 export function patchMarkMessage(

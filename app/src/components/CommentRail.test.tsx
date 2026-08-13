@@ -55,6 +55,7 @@ function renderViewer({ named = true }: { named?: boolean } = {}) {
       sandboxOrigin={SANDBOX_ORIGIN}
       fileName="q3-review.html"
       revision="9f2c1a04b7e35d68"
+      shareLinks={{ view: `https://app.example.com/a/${TOKEN}` }}
     />,
   );
 }

@@ -18,6 +18,7 @@ import { useMarkAuthoring } from "@/hooks/useMarkAuthoring";
 import { useSelectionAnchor } from "@/hooks/useSelectionAnchor";
 import { useStickyPlacement } from "@/hooks/useStickyPlacement";
 import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
+import type { LinkPermission } from "@/lib/link-permission";
 import { describeReanchoring, reanchorCounts } from "@/lib/reanchor-report";
 import {
   overlayToMarkdown,
@@ -39,6 +40,7 @@ type ArtifactViewerProps = {
   sandboxOrigin: string;
   fileName: string;
   revision: string;
+  shareLinks: Partial<Record<LinkPermission, string>>;
 };
 
 export function ArtifactViewer({
@@ -47,6 +49,7 @@ export function ArtifactViewer({
   sandboxOrigin,
   fileName,
   revision,
+  shareLinks,
 }: ArtifactViewerProps) {
   const frame = useRef<HTMLIFrameElement>(null);
   const acted = useRef({
@@ -134,6 +137,7 @@ export function ArtifactViewer({
 
   const sticky = useStickyPlacement({
     placement: bridge.placement,
+    placementSize: bridge.placementSize,
     ready: bridge.ready,
     canMarkUp,
     reader: identity.reader,
@@ -261,23 +265,7 @@ export function ArtifactViewer({
     <div className={`flex ${columnHeight} bg-card`}>
       <div className="relative flex min-w-0 flex-1 flex-col">
         <div className="sticky top-0 z-20">
-          <ViewerBar
-            title={bridge.title ?? fileName}
-            fileName={fileName}
-            trailing={<ShareMenu feedback={feedback} artifactUrl={src} />}
-          >
-            {canMarkUp && (
-              <ReaderChip
-                identity={identity}
-                open={identityOpen}
-                onOpenChange={setIdentityOpen}
-              />
-            )}
-            <RailButton
-              open={railOpen}
-              unresolved={unresolvedCount(room.entries)}
-              onToggle={() => setRailOpen((shown) => !shown)}
-            />
+          <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
             {canMarkUp && (
               <StickyPad
                 armed={sticky.armed}
@@ -287,12 +275,29 @@ export function ArtifactViewer({
               />
             )}
             {canMarkUp && (
+              <ReaderChip
+                identity={identity}
+                open={identityOpen}
+                onOpenChange={setIdentityOpen}
+              />
+            )}
+            {canMarkUp && (
               <ReplaceFileButton
                 pending={replace.isPending}
                 onReplace={replaceFile}
                 onReject={(message) => setNotice({ tone: "error", message })}
               />
             )}
+            <ShareMenu
+              feedback={feedback}
+              artifactUrl={src}
+              shareLinks={shareLinks}
+            />
+            <RailButton
+              open={railOpen}
+              unresolved={unresolvedCount(room.entries)}
+              onToggle={() => setRailOpen((shown) => !shown)}
+            />
           </ViewerBar>
           {banner !== null && (
             <ReanchorBanner

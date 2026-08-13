@@ -72,18 +72,26 @@ async function mintShareTokens(
     suggestToken: newToken(),
     editToken: newToken(),
   };
+  const siblingTokens = {
+    view: tokens.viewToken,
+    suggest: tokens.suggestToken,
+    edit: tokens.editToken,
+  };
   const results = await Promise.all([
     putAccessToken(env.ARTIFACT_METADATA, tokens.viewToken, {
       artifactId,
       kind: "view",
+      siblingTokens,
     }),
     putAccessToken(env.ARTIFACT_METADATA, tokens.suggestToken, {
       artifactId,
       kind: "suggest",
+      siblingTokens,
     }),
     putAccessToken(env.ARTIFACT_METADATA, tokens.editToken, {
       artifactId,
       kind: "edit",
+      siblingTokens,
     }),
   ]);
 
