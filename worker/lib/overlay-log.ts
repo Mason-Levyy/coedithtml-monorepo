@@ -2,6 +2,7 @@ import {
   entryAddedMessage,
   entryPatchedMessage,
   entryRemovedMessage,
+  isEdit,
   patchEntry,
   type ClientToRoomMessage,
   type OverlayEntry,
@@ -41,6 +42,9 @@ function addEntry(
   if (entry.body.length > MAX_BODY_LENGTH) {
     return rejected("too-long", entry.id);
   }
+  if (isEdit(entry) && entry.rev !== 0) {
+    return rejected("malformed", entry.id);
+  }
   if (store.count() >= MAX_ENTRIES_PER_ROOM) {
     return rejected("limit-reached", entry.id);
   }
@@ -67,6 +71,12 @@ function patchStoredEntry(
     message.patch.body.length > MAX_BODY_LENGTH
   ) {
     return rejected("too-long", id);
+  }
+  if (
+    message.patch.ifRev !== undefined &&
+    (!isEdit(existing) || existing.rev !== message.patch.ifRev)
+  ) {
+    return rejected("stale", id);
   }
 
   const patched = patchEntry(existing, message.patch);
@@ -102,16 +112,30 @@ export function entryIdIn(message: ClientToRoomMessage): string | null {
   }
 }
 
+function touchesText(store: EntryStore, message: ClientToRoomMessage): boolean {
+  if (message.type === "add-entry") {
+    return isEdit(message.entry);
+  }
+  if (message.type === "patch-entry" || message.type === "remove-entry") {
+    const existing = store.get(message.id);
+    return existing !== null && isEdit(existing);
+  }
+  return false;
+}
+
 export function applyClientMessage(
   store: EntryStore,
   message: ClientToRoomMessage,
-  now: string,
+  session: { now: string; canEdit: boolean },
 ): LogOutcome | null {
+  if (!session.canEdit && touchesText(store, message)) {
+    return rejected("not-editable", entryIdIn(message));
+  }
   switch (message.type) {
     case "hello":
       return null;
     case "add-entry":
-      return addEntry(store, message.entry, now);
+      return addEntry(store, message.entry, session.now);
     case "patch-entry":
       return patchStoredEntry(store, message.id, message);
     case "remove-entry":

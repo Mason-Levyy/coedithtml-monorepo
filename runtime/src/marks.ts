@@ -1,4 +1,5 @@
 import {
+  editsAmong,
   markActivatedMessage,
   patchMarkMessage,
   placedMessage,
@@ -12,6 +13,7 @@ import {
 import { resolveRevision } from "./config";
 import { anchorFromRange } from "./dom/anchor-dom";
 import { buildTextIndex, type TextIndex } from "./dom/text-index";
+import { applyEdits } from "./edits/apply";
 import { createBodyEditor } from "./overlay/edit-body";
 import { createOverlayLayer, type OverlayLayer } from "./overlay/layer";
 import { startPlaceTool } from "./overlay/place-tool";
@@ -39,6 +41,7 @@ export function startMarks(): () => void {
   let reportedPlacement = "";
 
   let awaitingEdit: string | null = null;
+  const replayed = new Set<string>();
 
   function openAwaitedEdit(): void {
     const markId = awaitingEdit;
@@ -77,6 +80,20 @@ export function startMarks(): () => void {
   function stickyById(markId: string): StickyEntry | null {
     const found = marks.find((mark) => mark.id === markId);
     return found !== undefined && found.kind === "sticky" ? found : null;
+  }
+
+  function replayEdits(): void {
+    const arriving = editsAmong(marks).filter((edit) => !replayed.has(edit.id));
+    if (arriving.length === 0) {
+      return;
+    }
+    const outcome = applyEdits(index, arriving);
+    for (const id of outcome.applied) {
+      replayed.add(id);
+    }
+    // An edit moves the text every comment anchor is measured against, so
+    // the index is rebuilt before anything is resolved against it.
+    index = buildTextIndex(document.body);
   }
 
   function revealMark(markId: string): void {
@@ -186,6 +203,7 @@ export function startMarks(): () => void {
       return;
     }
     marks = message.marks;
+    replayEdits();
     scheduler.repaint();
   });
 

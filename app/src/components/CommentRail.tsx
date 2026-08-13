@@ -25,6 +25,8 @@ const REJECTION_LABEL: Record<RejectionReason, string> = {
   "unknown-entry": "That comment is no longer here.",
   "limit-reached": "This artifact has all the comments it can hold.",
   "too-long": "That comment is too long.",
+  "not-editable": "This link can mark the file up but not change its text.",
+  stale: "Someone else changed that text while you were typing.",
 };
 
 type CommentRailProps = {

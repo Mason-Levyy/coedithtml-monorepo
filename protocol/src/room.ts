@@ -69,6 +69,8 @@ export const REJECTION_REASONS = [
   "unknown-entry",
   "limit-reached",
   "too-long",
+  "not-editable",
+  "stale",
 ] as const;
 
 export type RejectionReason = (typeof REJECTION_REASONS)[number];
