@@ -41,7 +41,7 @@ export function ArtifactPage({ token }: ArtifactPageProps) {
       src={artifactSrcFor(artifact.data)}
       sandboxOrigin={artifact.data.sandboxOrigin}
       fileName={artifact.data.fileName}
-      revision={artifact.data.revision}
+      shareLinks={artifact.data.shareLinks}
     />
   );
 }

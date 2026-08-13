@@ -2,6 +2,12 @@ export const TOKEN_KINDS = ["view", "suggest", "edit"] as const;
 
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 
+export type SiblingTokens = Record<TokenKind, string>;
+
+export function kindsAtOrBelow(kind: TokenKind): TokenKind[] {
+  return TOKEN_KINDS.slice(0, TOKEN_KINDS.indexOf(kind) + 1);
+}
+
 export type RoomCapabilities = { canWrite: boolean; canEdit: boolean };
 
 const NOTHING: RoomCapabilities = { canWrite: false, canEdit: false };

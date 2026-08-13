@@ -5,6 +5,12 @@ const unavailable = "Could not load the file. Try again.";
 
 const lockedSchema = z.object({ requiresPassword: z.literal(true) });
 
+const shareLinksSchema = z.object({
+  view: z.string().optional(),
+  suggest: z.string().optional(),
+  edit: z.string().optional(),
+});
+
 const unlockedSchema = z.object({
   requiresPassword: z.literal(false),
   artifactId: z.string(),
@@ -14,6 +20,7 @@ const unlockedSchema = z.object({
   revision: z.string(),
   sandboxOrigin: z.string(),
   artifactUrl: z.string(),
+  shareLinks: shareLinksSchema,
 });
 
 const artifactSchema = z.union([lockedSchema, unlockedSchema]);

@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useUploadArtifact } from "@/hooks/useUploadArtifact";
 import { ShareLinkResult } from "@/components/ShareLinkResult";
 import { UploadDropzone } from "@/components/UploadDropzone";
-
-type LinkPermission = "view" | "suggest" | "edit";
+import type { LinkPermission } from "@/lib/link-permission";
 
 function shareUrlFor(
   permission: LinkPermission,

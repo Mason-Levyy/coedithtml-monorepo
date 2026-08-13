@@ -3,14 +3,11 @@ import { ArtifactFrame } from "@/components/ArtifactFrame";
 import { CommentRail } from "@/components/CommentRail";
 import { RailButton } from "@/components/RailButton";
 import { ReaderChip } from "@/components/ReaderChip";
-import { ReanchorBanner } from "@/components/ReanchorBanner";
-import { ReplaceFileButton } from "@/components/ReplaceFileButton";
 import { SelectionAction } from "@/components/SelectionAction";
 import { ShareMenu } from "@/components/ShareMenu";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
 import { ViewerBar } from "@/components/ViewerBar";
 import { useArtifactBridge } from "@/hooks/useArtifactBridge";
-import { useReplaceArtifact } from "@/hooks/useArtifact";
 import { useDocRoom } from "@/hooks/useDocRoom";
 import { useReaderIdentity } from "@/hooks/useReaderIdentity";
 import { useRuntimeChannel } from "@/hooks/useRuntimeChannel";
@@ -18,7 +15,7 @@ import { useMarkAuthoring } from "@/hooks/useMarkAuthoring";
 import { useSelectionAnchor } from "@/hooks/useSelectionAnchor";
 import { useStickyPlacement } from "@/hooks/useStickyPlacement";
 import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
-import { describeReanchoring, reanchorCounts } from "@/lib/reanchor-report";
+import type { LinkPermission } from "@/lib/link-permission";
 import {
   overlayToMarkdown,
   renderMarksMessage,
@@ -31,14 +28,12 @@ import {
 } from "@/lib/protocol";
 import { roomUrl } from "@/lib/room-url";
 
-type Notice = { tone: "report" | "error"; message: string };
-
 type ArtifactViewerProps = {
   token: string;
   src: string;
   sandboxOrigin: string;
   fileName: string;
-  revision: string;
+  shareLinks: Partial<Record<LinkPermission, string>>;
 };
 
 export function ArtifactViewer({
@@ -46,7 +41,7 @@ export function ArtifactViewer({
   src,
   sandboxOrigin,
   fileName,
-  revision,
+  shareLinks,
 }: ArtifactViewerProps) {
   const frame = useRef<HTMLIFrameElement>(null);
   const acted = useRef({
@@ -78,11 +73,8 @@ export function ArtifactViewer({
   const [railOpen, setRailOpen] = useState(() => window.innerWidth >= 1024);
   const [identityOpen, setIdentityOpen] = useState(false);
   const [composing, setComposing] = useState<TextAnchor | null>(null);
-  const [awaitedRevision, setAwaitedRevision] = useState<string | null>(null);
-  const [notice, setNotice] = useState<Notice | null>(null);
 
   const canMarkUp = room.canWrite;
-  const replace = useReplaceArtifact(token);
 
   const feedback = useMemo(
     () =>
@@ -93,17 +85,6 @@ export function ArtifactViewer({
       }),
     [fileName, room.entries, bridge.marks.orphaned],
   );
-
-  const reporting =
-    awaitedRevision === revision && bridge.ready && bridge.marksReported;
-  const banner: Notice | null = reporting
-    ? {
-        tone: "report",
-        message: describeReanchoring(
-          reanchorCounts(room.entries, bridge.marks),
-        ),
-      }
-    : notice;
 
   useEffect(() => {
     if (bridge.ready) {
@@ -134,6 +115,7 @@ export function ArtifactViewer({
 
   const sticky = useStickyPlacement({
     placement: bridge.placement,
+    placementSize: bridge.placementSize,
     ready: bridge.ready,
     canMarkUp,
     reader: identity.reader,
@@ -223,29 +205,6 @@ export function ArtifactViewer({
     askForName();
   }
 
-  function replaceFile(file: File): void {
-    setNotice(null);
-    setAwaitedRevision(null);
-    replace.mutate(file, {
-      onSuccess: (result) => {
-        if (result.replaced) {
-          setAwaitedRevision(result.revision);
-        } else {
-          setNotice({
-            tone: "report",
-            message: "That file is identical to the one already here.",
-          });
-        }
-      },
-      onError: (error) => setNotice({ tone: "error", message: error.message }),
-    });
-  }
-
-  function dismissBanner(): void {
-    setNotice(null);
-    setAwaitedRevision(null);
-  }
-
   function dropSticky(point: PadPoint): void {
     if (!identity.named) {
       askForName();
@@ -261,23 +220,7 @@ export function ArtifactViewer({
     <div className={`flex ${columnHeight} bg-card`}>
       <div className="relative flex min-w-0 flex-1 flex-col">
         <div className="sticky top-0 z-20">
-          <ViewerBar
-            title={bridge.title ?? fileName}
-            fileName={fileName}
-            trailing={<ShareMenu feedback={feedback} />}
-          >
-            {canMarkUp && (
-              <ReaderChip
-                identity={identity}
-                open={identityOpen}
-                onOpenChange={setIdentityOpen}
-              />
-            )}
-            <RailButton
-              open={railOpen}
-              unresolved={unresolvedCount(room.entries)}
-              onToggle={() => setRailOpen((shown) => !shown)}
-            />
+          <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
             {canMarkUp && (
               <StickyPad
                 armed={sticky.armed}
@@ -287,20 +230,19 @@ export function ArtifactViewer({
               />
             )}
             {canMarkUp && (
-              <ReplaceFileButton
-                pending={replace.isPending}
-                onReplace={replaceFile}
-                onReject={(message) => setNotice({ tone: "error", message })}
+              <ReaderChip
+                identity={identity}
+                open={identityOpen}
+                onOpenChange={setIdentityOpen}
               />
             )}
-          </ViewerBar>
-          {banner !== null && (
-            <ReanchorBanner
-              message={banner.message}
-              tone={banner.tone}
-              onDismiss={dismissBanner}
+            <ShareMenu feedback={feedback} shareLinks={shareLinks} />
+            <RailButton
+              open={railOpen}
+              unresolved={unresolvedCount(room.entries)}
+              onToggle={() => setRailOpen((shown) => !shown)}
             />
-          )}
+          </ViewerBar>
         </div>
         <div className={frameHeight ? undefined : "min-h-0 flex-1"}>
           <ArtifactFrame
