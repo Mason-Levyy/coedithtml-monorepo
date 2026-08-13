@@ -2,26 +2,21 @@ import {
   effectiveEdge,
   effectiveFill,
   textOn,
-  type OverlayEntry,
   type StickyEntry,
+  type TailTip,
 } from "@coedithtml/protocol";
 import type { Point, Rect } from "./geometry";
-import { stickyToolbar } from "./sticky-tools";
+import {
+  bubblePath,
+  defaultTip,
+  tailNodes,
+  RESIZE_EDGES,
+  type ResizeEdge,
+} from "./sticky-geometry";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
-export const RESIZE_EDGES = [
-  "nw",
-  "n",
-  "ne",
-  "e",
-  "se",
-  "s",
-  "sw",
-  "w",
-] as const;
-
-export type ResizeEdge = (typeof RESIZE_EDGES)[number];
+export { RESIZE_EDGES, type ResizeEdge };
 
 export type StickyGeometry = {
   at: Point;
@@ -31,21 +26,49 @@ export type StickyGeometry = {
   height: number | null;
 };
 
+export const TAIL_NODES = ["tip", "first", "second"] as const;
+
+export type TailNodeName = (typeof TAIL_NODES)[number];
+
+const STICKY_TOOLS = ["remove", "fit"] as const;
+
+export type StickyTool = (typeof STICKY_TOOLS)[number];
+
+const TOOL_LABEL: Record<StickyTool, string> = {
+  remove: "Delete this note",
+  fit: "Shrink to fit the text",
+};
+
+const TOOL_GLYPH: Record<StickyTool, string> = { remove: "✕", fit: "⤡" };
+
+function toolElement(tool: StickyTool): HTMLElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "tool";
+  button.dataset.tool = tool;
+  button.title = TOOL_LABEL[tool];
+  button.setAttribute("aria-label", TOOL_LABEL[tool]);
+  button.textContent = TOOL_GLYPH[tool];
+  return button;
+}
+
+export function stickyToolbar(): HTMLElement {
+  const tools = document.createElement("div");
+  tools.className = "tools";
+  for (const tool of STICKY_TOOLS) {
+    tools.appendChild(toolElement(tool));
+  }
+  return tools;
+}
+
+export function toolOf(target: HTMLElement): StickyTool | null {
+  const named = target.closest<HTMLElement>(".tool")?.dataset.tool;
+  return STICKY_TOOLS.find((tool) => tool === named) ?? null;
+}
+
 export function boxOf(element: HTMLElement): Rect {
   const box = element.getBoundingClientRect();
   return { x: box.left, y: box.top, width: box.width, height: box.height };
-}
-
-export function highlightElement(mark: OverlayEntry, rect: Rect): HTMLElement {
-  const element = document.createElement("div");
-  element.className = "highlight";
-  element.dataset.mark = mark.id;
-  element.style.background = effectiveFill(mark);
-  element.style.left = `${rect.x}px`;
-  element.style.top = `${rect.y}px`;
-  element.style.width = `${rect.width}px`;
-  element.style.height = `${rect.height}px`;
-  return element;
 }
 
 function handleElement(edge: string): HTMLElement {
@@ -54,10 +77,6 @@ function handleElement(edge: string): HTMLElement {
   handle.dataset.edge = edge;
   return handle;
 }
-
-export const TAIL_NODES = ["tip", "first", "second"] as const;
-
-export type TailNodeName = (typeof TAIL_NODES)[number];
 
 function nodeElement(name: TailNodeName): HTMLElement {
   const node = document.createElement("span");
@@ -144,21 +163,7 @@ export function updateStickyElement(
   }
 }
 
-export function paintStickyPath(
-  element: HTMLElement,
-  mark: StickyEntry,
-  d: string,
-): void {
-  const path = element.querySelector("path");
-  if (path === null) {
-    return;
-  }
-  path.setAttribute("d", d);
-  path.setAttribute("fill", effectiveFill(mark));
-  path.setAttribute("stroke", effectiveEdge(mark));
-}
-
-export function placeTailNode(
+function placeTailNode(
   element: HTMLElement,
   name: TailNodeName,
   at: Point | null,
@@ -174,12 +179,26 @@ export function placeTailNode(
   }
 }
 
-export function paintTailTip(element: HTMLElement, mark: StickyEntry): void {
-  const tip = element.querySelector<HTMLElement>('[data-node="tip"]');
-  if (tip === null) {
-    return;
+export function paintStickyShape(
+  element: HTMLElement,
+  mark: StickyEntry,
+  tip: TailTip | null,
+): void {
+  const size = boxOf(element);
+  const nodes = tailNodes(size, tip);
+  const path = element.querySelector("path");
+  if (path !== null) {
+    path.setAttribute("d", bubblePath(size, tip));
+    path.setAttribute("fill", effectiveFill(mark));
+    path.setAttribute("stroke", effectiveEdge(mark));
   }
   const edge = effectiveEdge(mark);
-  tip.style.borderColor = edge;
-  tip.style.background = edge;
+  const tipNode = element.querySelector<HTMLElement>('[data-node="tip"]');
+  if (tipNode !== null) {
+    tipNode.style.borderColor = edge;
+    tipNode.style.background = edge;
+  }
+  placeTailNode(element, "tip", tip ?? defaultTip(size));
+  placeTailNode(element, "first", nodes?.first ?? null);
+  placeTailNode(element, "second", nodes?.second ?? null);
 }

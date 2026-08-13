@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StickyEntry } from "@coedithtml/protocol";
 import { createBodyEditor, type BodyEditor } from "./edit-body";
-import { createStickyElement } from "./elements";
+import { createStickyElement } from "./sticky-element";
 
 const commits = vi.fn();
 const abandons = vi.fn();

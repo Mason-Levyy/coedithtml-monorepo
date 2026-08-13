@@ -1,9 +1,12 @@
-import type { OverlayEntry, StickyEntry } from "@coedithtml/protocol";
+import {
+  effectiveFill,
+  type OverlayEntry,
+  type StickyEntry,
+} from "@coedithtml/protocol";
 import type { TextIndex } from "../dom/text-index";
-import { highlightElement } from "./elements";
-import { isOnScreen, rectsForAnchor } from "./geometry";
+import { isOnScreen, rectsForAnchor, type Rect } from "./geometry";
 import type { OverlayLayer } from "./layer";
-import type { StickyOverride, StickyView } from "./sticky-view";
+import type { StickyOverride, StickyView } from "./sticky-controller";
 
 export type Placement = {
   offscreen: string[];
@@ -31,6 +34,18 @@ function isVisibleMark(mark: OverlayEntry): boolean {
 
 function isSticky(mark: OverlayEntry): mark is StickyEntry {
   return mark.kind === "sticky";
+}
+
+function highlightElement(mark: OverlayEntry, rect: Rect): HTMLElement {
+  const element = document.createElement("div");
+  element.className = "highlight";
+  element.dataset.mark = mark.id;
+  element.style.background = effectiveFill(mark);
+  element.style.left = `${rect.x}px`;
+  element.style.top = `${rect.y}px`;
+  element.style.width = `${rect.width}px`;
+  element.style.height = `${rect.height}px`;
+  return element;
 }
 
 function paintHighlights(
