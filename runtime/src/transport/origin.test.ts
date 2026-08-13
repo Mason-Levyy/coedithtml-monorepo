@@ -48,9 +48,6 @@ describe("resolveAppOrigin", () => {
     expect(resolveAppOrigin()).toBeNull();
   });
 
-  // document.referrer names whoever framed the artifact. Trusting it would
-  // make any page that can embed a link a trusted command origin, so a
-  // missing config has to fail closed rather than guess.
   it("never falls back to the referrer", () => {
     setReferrer("https://evil.example/embed");
 

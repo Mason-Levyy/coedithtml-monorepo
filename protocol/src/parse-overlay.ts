@@ -44,7 +44,6 @@ function parseAuthor(value: unknown): Author | null {
   return { id, displayName, source: "anonymous" };
 }
 
-// Absent is the old shape, not a bad one: rejecting it would blank a stored room.
 export function parseOptionalFill(value: unknown): string | null {
   return value === undefined || value === null ? null : normalizeHex(value);
 }
@@ -97,12 +96,10 @@ function parseReply(
   return parentId === null ? null : { ...shared, kind: "reply", parentId };
 }
 
-// Defaulted, not required: a stored sticky predates sizing and must still parse.
 export function parseOptionalSide(value: unknown): number | null {
   return value === undefined || value === null ? null : asFiniteNumber(value);
 }
 
-// A tail stored as an anchor is dropped, not refused: one bad entry blanks a room.
 export function parseTailTip(value: unknown): TailTip | null {
   const record = asRecord(value);
   if (record === null) {
@@ -159,14 +156,12 @@ export function parseOverlayEntry(value: unknown): OverlayEntry | null {
   if (record.kind === "sticky") {
     return parseSticky(record, shared);
   }
-  // A parented comment is a reply whose kind was lost, not a top-level comment.
   if (record.kind === "comment" && isUnparented(record.parentId)) {
     return { ...shared, kind: "comment", parentId: null };
   }
   return null;
 }
 
-// Dropping one bad entry would silently lose somebody's comment.
 export function parseOverlayDocument(value: unknown): OverlayDocument | null {
   const record = asRecord(value);
   if (record === null || record.version !== OVERLAY_VERSION) {

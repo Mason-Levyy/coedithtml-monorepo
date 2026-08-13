@@ -12,7 +12,6 @@ const ARTIFACT_UNLOCK_PATH = /^\/api\/artifacts\/([^/]+)\/unlock$/;
 const ARTIFACT_ROOM_PATH = /^\/api\/artifacts\/([^/]+)\/room$/;
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
-// Sandbox origin never reaches this router, so artifact scripts can't call the upload API.
 export function handleAppRequest(
   request: Request,
   env: WorkerEnv,

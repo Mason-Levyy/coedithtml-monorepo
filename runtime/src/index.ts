@@ -13,12 +13,10 @@ function guard(what: string, run: () => void): void {
   }
 }
 
-// Never inspect artifact structure here — artifacts are opaque applications.
 export function start(): void {
   guard("reporting ready", () => {
     const announceReady = (): void => sendToApp(readyMessage(document.title));
     announceReady();
-    // Repeated on load: the chrome may not have been listening the first time.
     window.addEventListener("load", announceReady);
     reportFit();
   });

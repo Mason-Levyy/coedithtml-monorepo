@@ -1,8 +1,10 @@
 import { CommentComposer } from "@/components/CommentComposer";
 import { CommentThread } from "@/components/CommentThread";
 import { Button } from "@/components/ui/button";
+import type { MarkPlacement } from "@/hooks/useArtifactBridge";
 import type { DocRoom } from "@/hooks/useDocRoom";
 import type { ReaderIdentity } from "@/hooks/useReaderIdentity";
+import { placementOf } from "@/lib/mark-placement";
 import {
   repliesTo,
   threadsIn,
@@ -30,8 +32,9 @@ type CommentRailProps = {
   identity: ReaderIdentity;
   composing: TextAnchor | null;
   activeMarkId: string | null;
-  orphanedMarkIds: string[];
+  marks: MarkPlacement;
   onActivate: (markId: string) => void;
+  onReveal: (markId: string) => void;
   onComment: (body: string, displayName: string | null) => void;
   onReply: (parentId: string, body: string, displayName: string | null) => void;
   onDismissSelection: () => void;
@@ -43,8 +46,9 @@ export function CommentRail({
   identity,
   composing,
   activeMarkId,
-  orphanedMarkIds,
+  marks,
   onActivate,
+  onReveal,
   onComment,
   onReply,
   onDismissSelection,
@@ -117,8 +121,9 @@ export function CommentRail({
             canWrite={canMarkUp}
             needsName={needsName}
             active={entry.id === activeMarkId}
-            orphaned={orphanedMarkIds.includes(entry.id)}
+            placement={placementOf(marks, entry.id)}
             onActivate={() => onActivate(entry.id)}
+            onReveal={() => onReveal(entry.id)}
             onReply={(body, displayName) =>
               onReply(entry.id, body, displayName)
             }

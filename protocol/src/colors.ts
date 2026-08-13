@@ -83,7 +83,6 @@ function fromHsl({ h, s, l }: Hsl): string {
   return toHex({ r: channel(0), g: channel(8), b: channel(4) });
 }
 
-// The hand-picked edges desaturate as they darken; a straight darken muddies them.
 export function deriveEdge(fill: string): string {
   const { h, s, l } = toHsl(fill);
   return fromHsl({
@@ -119,7 +118,6 @@ export function effectiveEdge(mark: Painted): string {
   return mark.fill === null ? MARK_EDGE[mark.color] : deriveEdge(mark.fill);
 }
 
-// Hue, not RGB: the presets share one pastel lightness, so a navy matches green.
 export function nearestPreset(fill: string): MarkColor {
   const target = toHsl(fill);
   if (target.s < 0.1) {

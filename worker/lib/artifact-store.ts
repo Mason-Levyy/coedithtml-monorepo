@@ -20,8 +20,6 @@ export async function getArtifact(
   }
 }
 
-// Takes the raw bytes rather than decoded text: re-encoding is how byte
-// fidelity is lost, and the whole product rests on returning what was given.
 export async function putArtifact(
   store: R2Bucket,
   artifactId: string,

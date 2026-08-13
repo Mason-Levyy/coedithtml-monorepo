@@ -8,8 +8,6 @@ import { UNLOCK_QUERY_PARAM } from "@/lib/share-links";
 
 const UNAVAILABLE = "Could not open the comment room. Try again.";
 
-// The room is reachable from the app page only: an artifact script that could
-// open it would be reading and writing every reader's comments.
 function isFromAppOrigin(request: Request, env: WorkerEnv): boolean {
   const declared = request.headers.get("origin");
   return declared !== null && declared === originFor(request, env.APP_HOST);

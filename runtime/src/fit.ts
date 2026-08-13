@@ -26,7 +26,6 @@ export function reportFit(): () => void {
 
   function publish(force: boolean): void {
     const { mode, contentHeight } = currentFit();
-    // A frame sized to a pre-layout zero can never measure anything but zero again.
     if (contentHeight <= 0) {
       return;
     }
@@ -42,7 +41,6 @@ export function reportFit(): () => void {
     pending = window.requestAnimationFrame(() => publish(false));
   }
 
-  // Forced: a listener attached after load missed the send, and dedupe suppresses a resend.
   function announce(): void {
     publish(true);
   }

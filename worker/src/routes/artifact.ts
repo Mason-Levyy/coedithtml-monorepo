@@ -33,8 +33,6 @@ export async function handleGetArtifact(
       console.error("Failed to check the password gate", gate.cause);
       return jsonError(UNAVAILABLE, 500);
     }
-    // Not an error: the viewer needs to know to ask for a password, and the
-    // file name is withheld until it has one.
     return jsonResponse({ requiresPassword: true }, 200);
   }
 

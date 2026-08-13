@@ -2,9 +2,6 @@ export type CappedBody =
   | { ok: true; bytes: Uint8Array }
   | { ok: false; reason: "too-large" | "unreadable" };
 
-// formData() buffers the whole body before any per-file size check can run, so
-// the cap has to be applied while reading rather than after. A declared
-// content-length is only a fast path: chunked uploads do not carry one.
 export async function readBodyWithinLimit(
   request: Request,
   maxBytes: number,

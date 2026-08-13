@@ -63,7 +63,6 @@ function parseReaderList(value: unknown): ReaderPresence[] | null {
   return readers;
 }
 
-// Absent stays absent: a patch that names no field must not clear the others.
 export function parseEntryPatch(value: unknown): EntryPatch | null {
   const record = asRecord(value);
   if (record === null) {
@@ -203,7 +202,6 @@ export function parseRoomToClientMessage(
     return readers === null ? null : presenceMessage(readers);
   }
   if (record.type === "rejected") {
-    // Absent stays null: a room too old to name the entry still rejects.
     return isRejectionReason(record.reason)
       ? rejectedMessage(record.reason, asFilledString(record.id))
       : null;

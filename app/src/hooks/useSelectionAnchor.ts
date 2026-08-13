@@ -8,7 +8,6 @@ export function useSelectionAnchor(
 ): ViewportPoint | null {
   const [, remeasure] = useReducer((count: number) => count + 1, 0);
 
-  // The rect is the frame's own; scrolling the page moves the frame out from under it.
   useEffect(() => {
     window.addEventListener("scroll", remeasure, true);
     window.addEventListener("resize", remeasure);

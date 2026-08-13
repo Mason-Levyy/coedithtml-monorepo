@@ -26,7 +26,6 @@ function sandboxResponse(
   return new Response(body, { status, headers: merged });
 }
 
-// Runs before the IIFE in the same script, so the config is already set when the bundle reads it.
 async function serveRuntimeScript(
   request: Request,
   env: WorkerEnv,
@@ -41,15 +40,12 @@ async function serveRuntimeScript(
 
   const appOrigin = originFor(request, env.APP_HOST);
   const body = await assetResponse.text();
-  // Own "use strict" first, or prepending anything drops the bundle's own directive and the script runs sloppy-mode.
   const configured = `"use strict";\nwindow.__coedit__=${JSON.stringify({ config: { appOrigin } })};\n${body}`;
 
   const merged = new Headers(assetResponse.headers);
   for (const [name, value] of headers) {
     merged.set(name, value);
   }
-  // The asset's validators describe the body before the config was prepended,
-  // and the path is unhashed, so a stale bundle would outlive a deploy.
   merged.delete("etag");
   merged.delete("last-modified");
   merged.set("cache-control", "no-cache");

@@ -5,7 +5,6 @@ export type RepaintScheduler = {
   stop(): void;
 };
 
-// A live artifact fires the observer every frame; reindexing walks the document.
 const MUTATION_QUIET_MS = 100;
 
 export function createRepaintScheduler(options: {
@@ -18,7 +17,6 @@ export function createRepaintScheduler(options: {
   let indexHeld = false;
 
   function schedule(reindex: boolean): void {
-    // Latched: a later scroll cancels the frame a mutation asked for.
     needsReindex ||= reindex;
     window.cancelAnimationFrame(frame);
     frame = window.requestAnimationFrame(() => {

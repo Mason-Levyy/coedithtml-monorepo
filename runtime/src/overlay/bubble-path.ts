@@ -12,7 +12,6 @@ export type TailNodes = {
 const CORNER = 8;
 const TAIL_HALF_BASE = 11;
 const TAPER = 0.28;
-// Below this the tail reads as a dent in the edge rather than a pointer.
 const MIN_REACH = 8;
 
 function round(value: number): number {
@@ -35,7 +34,6 @@ type Edge = "top" | "right" | "bottom" | "left";
 
 type Exit = { edge: Edge; along: number; reach: number };
 
-// A ray from the centre crosses exactly one edge, so the nearer scale wins.
 function exitThrough(size: Size, tip: Point): Exit | null {
   const towards = { x: tip.x - size.width / 2, y: tip.y - size.height / 2 };
   const span = Math.hypot(towards.x, towards.y);
@@ -89,7 +87,6 @@ export function tailNodes(size: Size, tip: Point | null): TailNodes | null {
   const near = centre - half;
   const far = centre + half;
 
-  // Clockwise travel runs backwards along the bottom and left edges.
   const reversed = exit.edge === "bottom" || exit.edge === "left";
   const firstAlong = reversed ? far : near;
   const secondAlong = reversed ? near : far;
@@ -138,7 +135,6 @@ function detour(nodes: TailNodes | null, on: Edge): string {
   return nodes === null || nodes.edge !== on ? "" : spout(nodes);
 }
 
-// One path, so the body and its pointer share a single fill and a single stroke.
 export function bubblePath(size: Size, tip: Point | null): string {
   const { width, height } = size;
   const r = cornerOf(size);

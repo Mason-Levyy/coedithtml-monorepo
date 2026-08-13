@@ -2,7 +2,6 @@ import { clampStickySize } from "@coedithtml/protocol";
 import type { ResizeEdge } from "./elements";
 import type { Point, Rect } from "./geometry";
 
-// -1 moves the left or top side, 1 the right or bottom, 0 leaves it fixed.
 type Side = -1 | 0 | 1;
 
 const HORIZONTAL: Record<ResizeEdge, Side> = {
@@ -64,7 +63,6 @@ export function resizeRect(
   const width = clamped.width ?? shaped.width;
   const height = clamped.height ?? shaped.height;
 
-  // The side the reader is not dragging has to stay where they left it.
   return {
     x: horizontal === -1 ? start.x + start.width - width : start.x,
     y: vertical === -1 ? start.y + start.height - height : start.y,

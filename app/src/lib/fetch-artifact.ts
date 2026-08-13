@@ -43,8 +43,6 @@ export async function unlockArtifact(
   token: string,
   password: string,
 ): Promise<Artifact> {
-  // A POST body, never a query string: a password in a URL is written to
-  // browser history and to every access log the request passes through.
   return parseArtifact(
     await fetch(artifactPath(token, "/unlock"), {
       method: "POST",

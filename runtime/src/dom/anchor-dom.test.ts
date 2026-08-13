@@ -36,7 +36,6 @@ function anchorOnQuote(
   return anchor;
 }
 
-// Enough copies that several windows of surrounding context saturate and tie.
 const COPIES = 12;
 
 function repeatedSections(): string {
@@ -140,7 +139,6 @@ describe("rangeForTextAnchor", () => {
 describe("region anchors", () => {
   const box = { left: 100, top: 50, width: 200, height: 100 };
 
-  // happy-dom has no elementsFromPoint, so it is assigned rather than spied on.
   function stubStack(...stack: Element[]): void {
     Object.defineProperty(document, "elementsFromPoint", {
       configurable: true,

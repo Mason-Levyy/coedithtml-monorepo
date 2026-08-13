@@ -53,7 +53,6 @@ describe("backoffDelay", () => {
     expect(backoffDelay(20, steady)).toBe(backoffDelay(30, steady));
   });
 
-  // Without jitter every reader in a room reconnects on the same tick.
   it("spreads two readers retrying at the same attempt", () => {
     expect(backoffDelay(4, () => 0)).not.toBe(backoffDelay(4, () => 1));
   });
@@ -90,7 +89,6 @@ describe("openRoom", () => {
     expect(received).toEqual([]);
   });
 
-  // Sending before the socket opens is the common case, not the edge case.
   it("holds what was sent before the socket opened and flushes it", () => {
     const { room, sockets } = harness();
     room.send(addEntryMessage(ENTRY));

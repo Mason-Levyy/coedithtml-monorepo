@@ -17,6 +17,7 @@ import { useStickyPlacement } from "@/hooks/useStickyPlacement";
 import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
 import {
   renderMarksMessage,
+  revealMarkMessage,
   setCapabilitiesMessage,
   unresolvedCount,
   type EntryPatch,
@@ -39,7 +40,6 @@ export function ArtifactViewer({
   fileName,
 }: ArtifactViewerProps) {
   const frame = useRef<HTMLIFrameElement>(null);
-  // Held in a ref: the bridge subscribes once, and the room arrives after it.
   const acted = useRef({
     patch: (markId: string, patch: EntryPatch) => {
       void markId;
@@ -126,7 +126,6 @@ export function ArtifactViewer({
       ? framePixelHeight(fit.contentHeight)
       : undefined;
 
-  // Without a definite parent height the frame's 100% resolves to 150px.
   const columnHeight = frameHeight ? "min-h-dvh" : "h-dvh";
 
   const selection =
@@ -137,7 +136,6 @@ export function ArtifactViewer({
 
   const selectionAt = useSelectionAnchor(frame, selection?.rect ?? null);
 
-  // Nowhere to put the button means the rail is the only answer a selection can get.
   useEffect(() => {
     if (selection !== null && selection.rect === null) {
       setComposing(selection.anchor);
@@ -176,7 +174,6 @@ export function ArtifactViewer({
     authoring.reply(parentId, body, authorOf(displayName));
   }
 
-  // A sticky carries a name the moment it lands, so one is asked for before it does.
   function askForName(): void {
     setIdentityOpen(true);
   }
@@ -203,7 +200,6 @@ export function ArtifactViewer({
   return (
     <div className={`flex ${columnHeight} bg-card`}>
       <div className="relative flex min-w-0 flex-1 flex-col">
-        {/* z-20: the pad's drag ghost renders in this subtree and must clear the frame. */}
         <div className="sticky top-0 z-20">
           <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
             <CopyLinkButton />
@@ -255,8 +251,9 @@ export function ArtifactViewer({
             identity={identity}
             composing={composing}
             activeMarkId={activeMarkId}
-            orphanedMarkIds={bridge.orphanedMarkIds}
+            marks={bridge.marks}
             onActivate={setActiveMarkId}
+            onReveal={(markId) => sendToRuntime(revealMarkMessage(markId))}
             onComment={writeComment}
             onReply={writeReply}
             onClose={() => setRailOpen(false)}

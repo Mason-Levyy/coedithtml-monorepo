@@ -16,6 +16,12 @@ export type ArtifactSelection = {
   rect: ViewportRect | null;
 };
 
+export type MarkPlacement = {
+  offscreen: string[];
+  hidden: string[];
+  orphaned: string[];
+};
+
 export type ArtifactBridgeState = {
   ready: boolean;
   title: string | null;
@@ -23,7 +29,7 @@ export type ArtifactBridgeState = {
   selection: ArtifactSelection | null;
   activatedMarkId: string | null;
   placement: Anchor | null;
-  orphanedMarkIds: string[];
+  marks: MarkPlacement;
 };
 
 const NOTHING_REPORTED: ArtifactBridgeState = {
@@ -33,7 +39,7 @@ const NOTHING_REPORTED: ArtifactBridgeState = {
   selection: null,
   activatedMarkId: null,
   placement: null,
-  orphanedMarkIds: [],
+  marks: { offscreen: [], hidden: [], orphaned: [] },
 };
 
 function applyMessage(
@@ -60,8 +66,15 @@ function applyMessage(
       return { ...previous, activatedMarkId: message.markId };
     case "placement":
       return { ...previous, placement: message.anchor };
-    case "orphans":
-      return { ...previous, orphanedMarkIds: message.markIds };
+    case "placed":
+      return {
+        ...previous,
+        marks: {
+          offscreen: message.offscreen,
+          hidden: message.hidden,
+          orphaned: message.orphaned,
+        },
+      };
     case "patch-mark":
     case "remove-mark":
     case "tool-cancelled":
@@ -73,7 +86,6 @@ export type PatchMark = (markId: string, patch: EntryPatch) => void;
 
 export type RemoveMark = (markId: string) => void;
 
-// Callbacks, not state: a second drag of one sticky would look like a re-render.
 export function useArtifactBridge(options: {
   sandboxOrigin: string;
   onPatchMark: PatchMark;
@@ -85,7 +97,6 @@ export function useArtifactBridge(options: {
   const acted = useRef(options);
   acted.current = options;
 
-  // Layout effect: a cached frame can post before a deferred effect attaches.
   useLayoutEffect(() => {
     setState(NOTHING_REPORTED);
 

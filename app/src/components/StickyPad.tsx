@@ -12,7 +12,6 @@ type StickyPadProps = {
   onDrop: (point: PadPoint) => void;
 };
 
-// Below this a press is a click, and a click arms the pad instead of dropping.
 const DRAG_THRESHOLD = 5;
 
 const FOLDED_EAR = "polygon(100% 0, 100% 100%, 0 100%)";

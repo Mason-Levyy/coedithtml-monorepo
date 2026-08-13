@@ -1,13 +1,29 @@
 import type { OverlayEntry, StickyEntry } from "@coedithtml/protocol";
 import type { TextIndex } from "../dom/text-index";
 import { highlightElement } from "./elements";
-import { rectsForAnchor } from "./geometry";
+import { isOnScreen, rectsForAnchor } from "./geometry";
 import type { OverlayLayer } from "./layer";
 import type { StickyOverride, StickyView } from "./sticky-view";
 
-export type PaintResult = { painted: string[]; orphaned: string[] };
+export type Placement = {
+  offscreen: string[];
+  hidden: string[];
+  orphaned: string[];
+};
 
 export type ActivateMark = (markId: string) => void;
+
+export function emptyPlacement(): Placement {
+  return { offscreen: [], hidden: [], orphaned: [] };
+}
+
+function mergePlacement(into: Placement, from: Placement): Placement {
+  return {
+    offscreen: [...into.offscreen, ...from.offscreen],
+    hidden: [...into.hidden, ...from.hidden],
+    orphaned: [...into.orphaned, ...from.orphaned],
+  };
+}
 
 function isVisibleMark(mark: OverlayEntry): boolean {
   return mark.kind !== "reply" && mark.status === "open";
@@ -17,24 +33,32 @@ function isSticky(mark: OverlayEntry): mark is StickyEntry {
   return mark.kind === "sticky";
 }
 
-// Highlights are rebuilt wholesale because nothing drags one; stickies are not.
 function paintHighlights(
   layer: OverlayLayer,
   index: TextIndex,
   marks: OverlayEntry[],
-): { painted: string[]; orphaned: string[] } {
+): Placement {
   layer.highlights.replaceChildren();
-  const painted: string[] = [];
-  const orphaned: string[] = [];
+  const placement = emptyPlacement();
 
   for (const mark of marks) {
     const rects = rectsForAnchor(index, mark.anchor);
+    if (rects === null) {
+      placement.orphaned.push(mark.id);
+      continue;
+    }
+    if (rects.length === 0) {
+      placement.hidden.push(mark.id);
+      continue;
+    }
     for (const rect of rects) {
       layer.highlights.appendChild(highlightElement(mark, rect));
     }
-    (rects.length > 0 ? painted : orphaned).push(mark.id);
+    if (!rects.some(isOnScreen)) {
+      placement.offscreen.push(mark.id);
+    }
   }
-  return { painted, orphaned };
+  return placement;
 }
 
 export function paintMarks(
@@ -43,22 +67,15 @@ export function paintMarks(
   index: TextIndex,
   marks: OverlayEntry[],
   override: StickyOverride | null = null,
-): PaintResult {
-  const visible = marks.filter(isVisibleMark);
-  const stickies = visible.filter(isSticky);
-  const highlights = visible.filter((mark) => !isSticky(mark));
+): Placement {
+  const open = marks.filter(isVisibleMark);
+  const stickies = open.filter(isSticky);
+  const highlights = open.filter((mark) => !isSticky(mark));
 
-  const drawn = paintHighlights(layer, index, highlights);
-  const strandedStickies = view.reconcile(index, stickies, override);
-
-  const orphaned = [...drawn.orphaned, ...strandedStickies];
-  const painted = [
-    ...drawn.painted,
-    ...stickies
-      .map((mark) => mark.id)
-      .filter((markId) => !orphaned.includes(markId)),
-  ];
-  return { painted, orphaned };
+  return mergePlacement(
+    paintHighlights(layer, index, highlights),
+    view.reconcile(index, stickies, override),
+  );
 }
 
 export function onMarkActivated(

@@ -9,7 +9,8 @@ import {
   updateStickyElement,
   type StickyGeometry,
 } from "./elements";
-import { pointForAnchor, type Rect } from "./geometry";
+import { locateAnchor, type Rect } from "./geometry";
+import { emptyPlacement, type Placement } from "./paint";
 import type { OverlayLayer } from "./layer";
 
 export type StickyOverride = {
@@ -26,7 +27,7 @@ export type StickyView = {
     index: TextIndex,
     marks: StickyEntry[],
     override: StickyOverride | null,
-  ): string[];
+  ): Placement;
   elementFor(markId: string): HTMLElement | null;
   markIdOf(element: HTMLElement): string | null;
   rectOf(markId: string): Rect | null;
@@ -74,7 +75,6 @@ export function createStickyView(layer: OverlayLayer): StickyView {
     held.delete(markId);
   }
 
-  // The tip is stored in the sticky's own space, so the shape is drawn there too.
   function paintShape(
     element: HTMLElement,
     mark: StickyEntry,
@@ -91,24 +91,31 @@ export function createStickyView(layer: OverlayLayer): StickyView {
 
   return {
     reconcile(index, marks, override) {
-      const orphaned: string[] = [];
+      const placement = emptyPlacement();
       const seen = new Set<string>();
 
       for (const mark of marks) {
-        const at = pointForAnchor(index, mark.anchor);
-        if (at === null) {
-          orphaned.push(mark.id);
+        const located = locateAnchor(index, mark.anchor);
+        if (located.at === null) {
+          placement[located.why].push(mark.id);
           drop(mark.id);
           continue;
         }
         seen.add(mark.id);
+        if (!located.onScreen) {
+          placement.offscreen.push(mark.id);
+        }
 
         let element = held.get(mark.id);
         if (element === undefined) {
           element = layer.stickies.appendChild(createStickyElement(mark));
           held.set(mark.id, element);
         }
-        updateStickyElement(element, mark, geometryFor(mark, at, override));
+        updateStickyElement(
+          element,
+          mark,
+          geometryFor(mark, located.at, override),
+        );
         paintShape(element, mark, tipFor(mark, override));
       }
 
@@ -117,7 +124,7 @@ export function createStickyView(layer: OverlayLayer): StickyView {
           drop(markId);
         }
       }
-      return orphaned;
+      return placement;
     },
     elementFor: (markId) => held.get(markId) ?? null,
     markIdOf: (element) =>

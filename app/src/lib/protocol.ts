@@ -20,6 +20,7 @@ export {
   removeEntryMessage,
   renderMarksMessage,
   repliesTo,
+  revealMarkMessage,
   setCapabilitiesMessage,
   setToolMessage,
   threadsIn,

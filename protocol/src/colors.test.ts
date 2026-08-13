@@ -44,7 +44,6 @@ describe("normalizeHex", () => {
 });
 
 describe("deriveEdge", () => {
-  // The presets keep their hand-picked edges; a wheel colour has to look like them.
   it("lands close to the edge each preset was given by hand", () => {
     for (const color of MARK_COLORS) {
       expect(

@@ -82,7 +82,6 @@ export function createStickyElement(mark: StickyEntry): HTMLElement {
   element.dataset.mark = mark.id;
   element.appendChild(shapeElement());
 
-  // Handles sit outside the box, so only this inner element may clip.
   const content = document.createElement("div");
   content.className = "content";
   element.appendChild(content);
@@ -112,7 +111,6 @@ function childBy(element: HTMLElement, className: string): HTMLElement | null {
 
 const TOOLS_HEADROOM = 34;
 
-// Written rather than rebuilt: a gesture holds the element it is dragging.
 export function updateStickyElement(
   element: HTMLElement,
   mark: StickyEntry,
@@ -133,7 +131,6 @@ export function updateStickyElement(
   );
 
   const body = childBy(element, "body");
-  // Left alone mid-edit, or a repaint would overwrite what is being typed.
   if (
     body !== null &&
     body.textContent !== mark.body &&

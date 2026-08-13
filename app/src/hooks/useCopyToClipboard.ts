@@ -28,7 +28,6 @@ export function useCopyToClipboard(): {
     return () => window.clearTimeout(timer);
   }, [state]);
 
-  // The Clipboard API is denied outright in embedded and insecure contexts.
   async function write(text: string): Promise<void> {
     try {
       await navigator.clipboard.writeText(text);

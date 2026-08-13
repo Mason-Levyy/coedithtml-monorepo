@@ -7,7 +7,6 @@ declare global {
   }
 }
 
-// No document.referrer fallback: it names whoever framed us, who could then drive the bridge.
 export function resolveAppOrigin(): string | null {
   const configured = window.__coedit__?.config?.appOrigin;
   if (typeof configured !== "string" || configured.length === 0) {

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { AuthorNameField } from "@/components/AuthorNameField";
+import { ThreadPlacement } from "@/components/ThreadPlacement";
 import { Button } from "@/components/ui/button";
+import type { MarkPlacementState } from "@/lib/mark-placement";
 import {
   effectiveEdge,
   effectiveFill,
@@ -25,8 +27,9 @@ type CommentThreadProps = {
   canWrite: boolean;
   needsName: boolean;
   active: boolean;
-  orphaned: boolean;
+  placement: MarkPlacementState;
   onActivate: () => void;
+  onReveal: () => void;
   onReply: (body: string, displayName: string | null) => void;
   onResolve: (resolved: boolean) => void;
   onRemove: () => void;
@@ -38,8 +41,9 @@ export function CommentThread({
   canWrite,
   needsName,
   active,
-  orphaned,
+  placement,
   onActivate,
+  onReveal,
   onReply,
   onResolve,
   onRemove,
@@ -97,12 +101,7 @@ export function CommentThread({
         </blockquote>
       )}
 
-      {/* An orphan is shown, never hidden: silently dropping it loses feedback. */}
-      {orphaned && (
-        <p className="mt-2 font-mono text-[10px] text-destructive uppercase">
-          The text this points at is gone
-        </p>
-      )}
+      <ThreadPlacement state={placement} onReveal={onReveal} />
 
       <p className="mt-2 whitespace-pre-wrap">{entry.body}</p>
 
@@ -145,7 +144,6 @@ export function CommentThread({
                 Send
               </Button>
             </div>
-            {/* Held back until there is a reply to sign, or every thread asks at once. */}
             {needsName && reply.length > 0 && (
               <AuthorNameField value={name} onChange={setName} />
             )}

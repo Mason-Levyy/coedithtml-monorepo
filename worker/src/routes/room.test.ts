@@ -114,7 +114,6 @@ describe("handleRoomConnect", () => {
     );
   });
 
-  // An artifact script reaching the room would read and write every comment.
   it("refuses an upgrade from the sandbox origin", async () => {
     const { response, room } = await connect(EDIT_TOKEN, {
       origin: `https://${FAKE_SANDBOX_HOST}`,

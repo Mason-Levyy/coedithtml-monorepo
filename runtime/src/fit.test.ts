@@ -63,7 +63,6 @@ describe("reportFit", () => {
     ]);
   });
 
-  // Overflow hidden means the artifact drives its own viewport; not a grow target.
   it("reports an artifact that hides its overflow as scrolling itself", () => {
     document.body.style.overflowY = "hidden";
     stubScrollHeight(900);
@@ -75,7 +74,6 @@ describe("reportFit", () => {
     ]);
   });
 
-  // A frame sized to zero measures its own content as zero forever after.
   it("says nothing when the document has not laid out yet", () => {
     stubScrollHeight(0);
 
@@ -84,7 +82,6 @@ describe("reportFit", () => {
     expect(postMessage).not.toHaveBeenCalled();
   });
 
-  // Deduping alone would leave a late listener with nothing, forever.
   it("repeats an unchanged height on load", () => {
     stubScrollHeight(1200);
 

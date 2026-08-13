@@ -93,7 +93,6 @@ function roundTrip(entry: OverlayEntry): OverlayEntry | null {
   return parseOverlayEntry(JSON.parse(JSON.stringify(entry)));
 }
 
-// One unparseable entry fails the whole document, so this empties live rooms.
 describe("entries stored before fill and sizing existed", () => {
   function stripped(entry: OverlayEntry, ...fields: string[]): unknown {
     const record = JSON.parse(JSON.stringify(entry)) as Record<string, unknown>;
@@ -157,7 +156,6 @@ describe("sticky sizing", () => {
     });
   });
 
-  // Silently dropping it would broadcast an entry-patched that changed nothing.
   it("refuses to size anything that does not float", () => {
     expect(patchEntry(comment(), { width: 300 })).toBeNull();
     expect(patchEntry(comment(), { height: 300 })).toBeNull();
@@ -241,7 +239,6 @@ describe("a callout is a sticky whose tail is set", () => {
     expect(roundTrip(callout)).toEqual(callout);
   });
 
-  // The tail used to anchor into the artifact; that shape must not blank a room.
   it("drops a tail stored in the old anchor shape instead of refusing it", () => {
     const parsed = parseOverlayEntry({ ...sticky(), tail: chartAnchor() });
 
@@ -277,7 +274,6 @@ describe("parseOverlayEntry", () => {
     expect(parseOverlayEntry({ ...reply(), parentId: 7 })).toBeNull();
   });
 
-  // Accepting it would silently demote a reply to a top-level comment.
   it("rejects a comment that claims a parent", () => {
     expect(parseOverlayEntry({ ...comment(), parentId: "entry-9" })).toBeNull();
   });
@@ -301,7 +297,6 @@ describe("parseOverlayEntry", () => {
     expect(parseOverlayEntry(withoutOffset)).toBeNull();
   });
 
-  // Refusing it would take the whole document down with one unreadable tip.
   it("drops a tip it cannot read rather than refusing the sticky", () => {
     expect(
       parseOverlayEntry({ ...sticky(), tail: { x: "far", y: 2 } }),
@@ -366,7 +361,6 @@ describe("parseOverlayDocument", () => {
     );
   });
 
-  // Dropping the bad one would silently lose somebody's comment.
   it("fails the whole document when one entry is malformed", () => {
     const overlay = {
       ...emptyOverlay("rev-1"),

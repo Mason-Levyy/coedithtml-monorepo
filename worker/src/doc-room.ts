@@ -37,7 +37,6 @@ export class DocRoom extends DurableObject<Env> {
     this.entries = createEntryStore(ctx.storage.sql);
   }
 
-  // Only reachable through a stub, so the route's headers are our own words.
   override fetch(request: Request): Response {
     if (request.headers.get("upgrade") !== "websocket") {
       return new Response("Expected a websocket upgrade.", { status: 426 });

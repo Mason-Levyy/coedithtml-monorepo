@@ -9,7 +9,6 @@ export function CopyLinkButton() {
       type="button"
       variant="ghost"
       size="sm"
-      // The label reports the outcome, so the name has to stay put for a reader.
       aria-label="Copy link"
       onClick={() => clipboard.copy(window.location.href)}
     >

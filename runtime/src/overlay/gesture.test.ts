@@ -86,7 +86,6 @@ describe("beginGesture", () => {
     expect(spy.commits[0]).toMatchObject({ dx: 40, dy: 30 });
   });
 
-  // A click and a drag arrive the same way; only the distance tells them apart.
   it("commits a press that never moved as a click", () => {
     const spy = record();
     beginGesture(down(), element, spy.handlers);
@@ -125,7 +124,6 @@ describe("beginGesture", () => {
     expect(spy.cancels).toBe(1);
   });
 
-  // Reconcile can remove the element mid-drag, and pointerup never arrives.
   it("cancels when the element it was capturing is taken away", () => {
     const spy = record();
     beginGesture(down(), element, spy.handlers);
@@ -158,7 +156,6 @@ describe("beginGesture", () => {
     expect(spy.updates).toEqual([]);
   });
 
-  // A frozen overlay on top of somebody else's document is the failure to avoid.
   it("tears down even when a handler throws", () => {
     let cancelled = false;
     beginGesture(down(), element, {

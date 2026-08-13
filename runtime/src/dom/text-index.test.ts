@@ -112,7 +112,6 @@ describe("rangeForOffsets", () => {
     expect(rangeFor(index, "grew 18%").toString()).toBe("grew 18%");
   });
 
-  // The separating space is ours, so the DOM range across the two cannot hold it.
   it("spans elements, landing on the same offsets it came from", () => {
     const index = render(`<p>Revenue grew.</p><p>Churn held flat.</p>`);
     const quote = "grew. Churn";

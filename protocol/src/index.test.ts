@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   BRIDGE_VERSION,
   fitMessage,
+  parseAppToRuntimeMessage,
   parseRuntimeToAppMessage,
+  placedMessage,
   readyMessage,
+  revealMarkMessage,
 } from "./index";
 
 describe("parseRuntimeToAppMessage", () => {
@@ -76,5 +79,51 @@ describe("parseRuntimeToAppMessage", () => {
         }),
       ).toBeNull();
     }
+  });
+
+  it("round-trips a placement report", () => {
+    const placed = placedMessage({
+      offscreen: ["c1"],
+      hidden: ["c2"],
+      orphaned: ["c3"],
+    });
+
+    expect(parseRuntimeToAppMessage(placed)).toEqual(placed);
+  });
+
+  it("rejects a placement report with a missing or unusable list", () => {
+    const lists = [
+      { offscreen: ["c1"], hidden: ["c2"] },
+      { offscreen: ["c1"], hidden: ["c2"], orphaned: [7] },
+      { offscreen: "c1", hidden: [], orphaned: [] },
+    ];
+
+    for (const list of lists) {
+      expect(
+        parseRuntimeToAppMessage({
+          version: BRIDGE_VERSION,
+          type: "placed",
+          ...list,
+        }),
+      ).toBeNull();
+    }
+  });
+});
+
+describe("parseAppToRuntimeMessage", () => {
+  it("round-trips a reveal request", () => {
+    const reveal = revealMarkMessage("c1");
+
+    expect(parseAppToRuntimeMessage(reveal)).toEqual(reveal);
+  });
+
+  it("rejects a reveal request naming no mark", () => {
+    expect(
+      parseAppToRuntimeMessage({
+        version: BRIDGE_VERSION,
+        type: "reveal-mark",
+        markId: "",
+      }),
+    ).toBeNull();
   });
 });

@@ -68,8 +68,6 @@ describe("handleUnlockArtifact", () => {
     expect(body.artifactUrl).toMatch(/\?u=[0-9a-f]{32}$/);
   });
 
-  // The whole point of the exchange: what ends up in the iframe URL unlocks
-  // only this artifact, and is not the secret the reader typed.
   it("never echoes the password back", async () => {
     const response = await handleUnlockArtifact(
       VIEW_TOKEN,
@@ -133,8 +131,6 @@ describe("handleUnlockArtifact", () => {
     }
   });
 
-  // The app parses both responses with one schema, so a field present on only
-  // one of them is a runtime failure the route tests would each still pass.
   it("answers with the same shape the metadata route does", async () => {
     const env = await envWithPassword();
     const unlocked = await handleUnlockArtifact(

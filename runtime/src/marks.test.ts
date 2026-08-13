@@ -40,7 +40,6 @@ beforeEach(() => {
     postMessage: (message: RuntimeToAppMessage) => posted.push(message),
   } as unknown as Window);
 
-  // happy-dom has no elementsFromPoint, so it is assigned rather than spied on.
   Object.defineProperty(document, "elementsFromPoint", {
     configurable: true,
     value: () => [document.querySelector("p")].filter((node) => node !== null),
@@ -84,7 +83,6 @@ describe("the sticky tool", () => {
     });
   });
 
-  // The reader is aiming at a mark, not at whatever the artifact does on click.
   it("keeps the placing click away from the artifact", () => {
     postFromApp(setToolMessage("sticky"));
     const event = clickAt(50, 25);
@@ -101,7 +99,6 @@ describe("the sticky tool", () => {
     expect(placements).toHaveLength(1);
   });
 
-  // Clobbering it with "" would erase a cursor the artifact set for itself.
   it("gives the artifact's own cursor back when disarmed", () => {
     document.body.style.cursor = "grab";
 
@@ -112,7 +109,6 @@ describe("the sticky tool", () => {
     expect(document.body.style.cursor).toBe("grab");
   });
 
-  // A drag off the pad ends outside the frame's own event stream, so the app aims it.
   it("resolves a point the app hands it without any arming", () => {
     postFromApp(placeAtMessage(50, 25));
 

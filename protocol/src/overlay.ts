@@ -2,7 +2,6 @@ import type { Anchor } from "./anchor";
 
 export const OVERLAY_VERSION = 1;
 
-// `source` exists from day one so accounts add a value later, not a migration.
 export type Author = {
   id: string;
   displayName: string;
@@ -31,7 +30,6 @@ type EntryBase = {
   body: string;
   author: Author;
   color: MarkColor;
-  // A client too old to know this field still paints the nearest named colour.
   fill: string | null;
   status: EntryStatus;
   createdAt: string;
@@ -41,10 +39,8 @@ export type CommentEntry = EntryBase & { kind: "comment"; parentId: null };
 
 export type ReplyEntry = EntryBase & { kind: "reply"; parentId: string };
 
-// Measured from the sticky's own top-left, so the tip travels with the shape.
 export type TailTip = { x: number; y: number };
 
-// A callout is a sticky whose tail is set, so there is no third kind.
 export type StickyEntry = EntryBase & {
   kind: "sticky";
   parentId: null;
@@ -57,7 +53,6 @@ export type StickyEntry = EntryBase & {
 
 export const MIN_STICKY_WIDTH = 120;
 export const MIN_STICKY_HEIGHT = 40;
-// Capped because a sticky takes pointer events, and a huge one eats the artifact.
 export const MAX_STICKY_WIDTH = 800;
 export const MAX_STICKY_HEIGHT = 2000;
 
@@ -135,7 +130,6 @@ function movesOrPoints(patch: EntryPatch): boolean {
   );
 }
 
-// An absent field means untouched, so `tail: null` stays available as "retract".
 export function patchEntry(
   entry: OverlayEntry,
   patch: EntryPatch,
@@ -148,7 +142,6 @@ export function patchEntry(
   };
 
   if (isFloating(entry)) {
-    // Clamped here so the server stores what the dragging client previewed.
     const size = clampStickySize({
       width: patch.width === undefined ? entry.width : patch.width,
       height: patch.height === undefined ? entry.height : patch.height,

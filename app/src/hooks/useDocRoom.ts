@@ -47,7 +47,6 @@ export function useDocRoom(
         setContents((previous) => applyRoomMessage(previous, message)),
       onStatus: (next) => {
         setStatus(next);
-        // Re-announced on every open: a reconnect is a new socket to the room.
         if (next === "open") {
           socket.send(helloMessage(readerRef.current));
         }
@@ -75,7 +74,6 @@ export function useDocRoom(
     (entry: OverlayEntry) => send(addEntryMessage(entry)),
     [send],
   );
-  // Applied locally first, or a dragged sticky snaps back for the round trip.
   const patchEntry = useCallback(
     (id: string, patch: EntryPatch) => {
       setContents((previous) => applyLocalPatch(previous, id, patch));

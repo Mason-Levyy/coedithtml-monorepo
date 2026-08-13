@@ -36,7 +36,6 @@ function entry(body: string): StickyEntry {
   };
 }
 
-// Built by the real factory: a hand-rolled shape hid a selector that never matched.
 function stickyWith(body: string): HTMLElement {
   const sticky = createStickyElement(entry(body));
   const field = sticky.querySelector<HTMLElement>(".body");
@@ -94,7 +93,6 @@ describe("editing a sticky in place", () => {
     expect(commits).toHaveBeenCalledWith("s1", "Use the cohort view");
   });
 
-  // Select-all on open would mean the first keystroke wipes an existing note.
   it("leaves the existing text alone when it opens", () => {
     element = stickyWith("Swap this chart");
     editor.begin(element, "s1", "Swap this chart");
@@ -124,7 +122,6 @@ describe("editing a sticky in place", () => {
     expect(commits).toHaveBeenCalledWith("s1", "Tighten this");
   });
 
-  // A note dropped and never written in would otherwise sit on the page empty.
   it("throws away a new note nobody wrote in", () => {
     element = stickyWith("");
     editor.begin(element, "s1", "");
@@ -145,7 +142,6 @@ describe("editing a sticky in place", () => {
     expect(abandons).toHaveBeenCalledWith("s1");
   });
 
-  // Emptying an existing note is an edit, not an accident to be undone.
   it("keeps an old note the reader deliberately emptied", () => {
     element = stickyWith("Swap this chart");
     editor.begin(element, "s1", "Swap this chart");
@@ -157,7 +153,6 @@ describe("editing a sticky in place", () => {
     expect(commits).toHaveBeenCalledWith("s1", "");
   });
 
-  // The note is drawn from its measured box, so it only grows if typing repaints.
   it("asks for a repaint on every keystroke", () => {
     element = stickyWith("");
     editor.begin(element, "s1", "");
@@ -180,7 +175,6 @@ describe("editing a sticky in place", () => {
     expect(changes).not.toHaveBeenCalled();
   });
 
-  // The artifact's own shortcuts must not fire under a reader who is typing.
   it("keeps ordinary keystrokes away from the artifact", () => {
     element = stickyWith("");
     editor.begin(element, "s1", "");

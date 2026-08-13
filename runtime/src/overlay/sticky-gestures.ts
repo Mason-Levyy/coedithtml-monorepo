@@ -19,7 +19,6 @@ type Intent =
 type Live = {
   markId: string;
   intent: Intent;
-  // Held in anchor-relative space so a scroll or reflow mid-drag stays honest.
   startBox: Rect;
   startTip: TailTip;
   gesture: Gesture;
@@ -124,7 +123,6 @@ export function startStickyGestures(options: {
     }
     const tip = draggedTip(update, live.startTip);
     const box = { x: 0, y: 0, width: startBox.width, height: startBox.height };
-    // Dropped back inside its own box means the reader wants no tail at all.
     return { tail: isInside(box, tip) ? null : tip };
   }
 
@@ -162,7 +160,6 @@ export function startStickyGestures(options: {
       return;
     }
 
-    // Kept from the artifact, which never sees a pointer landing on our overlay.
     event.stopPropagation();
     event.preventDefault();
 
@@ -205,7 +202,6 @@ export function startStickyGestures(options: {
     element.classList.add("dragging");
   }
 
-  // pointerup always synthesizes a click; onCommit already selected if it should.
   function onClick(event: Event): void {
     if (swallowClick) {
       swallowClick = false;
