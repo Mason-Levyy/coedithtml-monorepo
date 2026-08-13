@@ -8,7 +8,7 @@ import {
   testWorkerEnv,
 } from "@/lib/fakes";
 import { hashArtifactPassword } from "@/lib/password";
-import { ROOM_REVISION_HEADER, ROOM_WRITE_HEADER } from "@/lib/room-headers";
+import { ROOM_KIND_HEADER, ROOM_REVISION_HEADER } from "@/lib/room-headers";
 import { accessTokenKey, artifactMetadataKey } from "@/lib/storage-keys";
 import { handleRoomConnect } from "./room";
 
@@ -99,26 +99,15 @@ describe("handleRoomConnect", () => {
     expect(editSide.room.connects[0]?.name).toBe(ARTIFACT_ID);
   });
 
-  it("grants writing to an edit token", async () => {
-    const { room } = await connect(EDIT_TOKEN);
-
-    expect(room.connects[0]?.request.headers.get(ROOM_WRITE_HEADER)).toBe(
-      "yes",
+  it("hands the room the kind of token that opened it", async () => {
+    const kinds = await Promise.all(
+      [VIEW_TOKEN, SUGGEST_TOKEN, EDIT_TOKEN].map(async (token) => {
+        const { room } = await connect(token);
+        return room.connects[0]?.request.headers.get(ROOM_KIND_HEADER);
+      }),
     );
-  });
 
-  it("withholds writing from a view token", async () => {
-    const { room } = await connect(VIEW_TOKEN);
-
-    expect(room.connects[0]?.request.headers.get(ROOM_WRITE_HEADER)).toBe("no");
-  });
-
-  it("grants writing to a suggest token", async () => {
-    const { room } = await connect(SUGGEST_TOKEN);
-
-    expect(room.connects[0]?.request.headers.get(ROOM_WRITE_HEADER)).toBe(
-      "yes",
-    );
+    expect(kinds).toEqual(["view", "suggest", "edit"]);
   });
 
   it("stamps the overlay with the revision on show, not the artifact id", async () => {

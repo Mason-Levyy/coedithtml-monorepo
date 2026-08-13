@@ -3,7 +3,7 @@ import { originFor } from "@/lib/origins";
 import { checkPasswordGate } from "@/lib/password-gate";
 import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { jsonError } from "@/lib/responses";
-import { ROOM_REVISION_HEADER, ROOM_WRITE_HEADER } from "@/lib/room-headers";
+import { ROOM_KIND_HEADER, ROOM_REVISION_HEADER } from "@/lib/room-headers";
 import { UNLOCK_QUERY_PARAM } from "@/lib/share-links";
 
 const UNAVAILABLE = "Could not open the comment room. Try again.";
@@ -56,8 +56,7 @@ export async function handleRoomConnect(
     new Request(request.url, {
       headers: {
         upgrade: "websocket",
-        [ROOM_WRITE_HEADER]:
-          record.kind === "edit" || record.kind === "suggest" ? "yes" : "no",
+        [ROOM_KIND_HEADER]: record.kind,
         [ROOM_REVISION_HEADER]: metadata.revision,
       },
     }),

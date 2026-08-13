@@ -7,9 +7,14 @@ import {
 export type RoomAttachment = {
   reader: ReaderPresence | null;
   canWrite: boolean;
+  canEdit: boolean;
 };
 
-const ANONYMOUS_READER: RoomAttachment = { reader: null, canWrite: false };
+const ANONYMOUS_READER: RoomAttachment = {
+  reader: null,
+  canWrite: false,
+  canEdit: false,
+};
 
 export function attachmentOf(socket: WebSocket): RoomAttachment {
   const raw: unknown = socket.deserializeAttachment();
@@ -20,6 +25,7 @@ export function attachmentOf(socket: WebSocket): RoomAttachment {
   return {
     reader: parseReaderPresence(record.reader),
     canWrite: record.canWrite === true,
+    canEdit: record.canEdit === true,
   };
 }
 

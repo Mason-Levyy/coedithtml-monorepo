@@ -190,7 +190,12 @@ export function parseRoomToClientMessage(
     if (typeof record.canWrite !== "boolean") {
       return null;
     }
-    return snapshotMessage({ overlay, readers, canWrite: record.canWrite });
+    return snapshotMessage({
+      overlay,
+      readers,
+      canWrite: record.canWrite,
+      canEdit: record.canEdit === true,
+    });
   }
   if (record.type === "entry-added" || record.type === "entry-patched") {
     const entry = parseOverlayEntry(record.entry);

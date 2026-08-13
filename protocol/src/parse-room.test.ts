@@ -190,6 +190,7 @@ describe("parseRoomToClientMessage", () => {
         overlay: { version: 1, artifactRevision: "r1", entries: [COMMENT] },
         readers: [{ id: "reader-1", displayName: "Sam" }],
         canWrite: true,
+        canEdit: true,
       }),
       presenceMessage([{ id: "reader-1", displayName: "Sam" }]),
       rejectedMessage("read-only"),
