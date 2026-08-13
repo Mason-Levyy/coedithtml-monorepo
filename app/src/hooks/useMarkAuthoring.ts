@@ -27,7 +27,6 @@ export function useMarkAuthoring(options: {
     [addEntry, canMarkUp, color],
   );
 
-  // The reply takes the thread's colour, not the writer's: it reads as one thread.
   const reply = useCallback(
     (parentId: string, body: string, author: ReaderPresence) => {
       const parent = entries.find((entry) => entry.id === parentId);

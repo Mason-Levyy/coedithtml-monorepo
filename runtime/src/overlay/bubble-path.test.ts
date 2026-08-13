@@ -20,7 +20,6 @@ describe("tailNodes", () => {
     expect(nodes?.second).toEqual({ x: 200, y: 61 });
   });
 
-  // A base overrunning the corner arc would leave the outline with a notch.
   it("keeps the base clear of the rounded corners", () => {
     const nodes = tailNodes(size, { x: 500, y: -146 });
 
@@ -34,7 +33,6 @@ describe("tailNodes", () => {
     expect(tailNodes(size, null)).toBeNull();
   });
 
-  // A stub shorter than the stroke reads as a dent, not as something pointing.
   it("draws nothing for a tip barely past the edge", () => {
     expect(tailNodes(size, { x: 203, y: 50 })).toBeNull();
   });
@@ -63,7 +61,6 @@ describe("bubblePath", () => {
     );
   });
 
-  // A sticky at its minimum still has to draw a shape rather than fold over.
   it("shrinks the corner radius rather than overrunning a tiny box", () => {
     expect(bubblePath({ width: 10, height: 6 }, null)).toContain("A3,3");
   });

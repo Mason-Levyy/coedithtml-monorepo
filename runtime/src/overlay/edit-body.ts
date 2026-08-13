@@ -12,7 +12,6 @@ type Editing = {
   original: string;
 };
 
-// Not select-all: a click opens the note, and typing must not wipe what is there.
 function caretToEnd(field: HTMLElement): void {
   const range = document.createRange();
   range.selectNodeContents(field);
@@ -73,7 +72,6 @@ export function createBodyEditor(options: {
       close(true);
       return;
     }
-    // Swallowed so the artifact's own shortcuts do not fire while typing.
     event.stopPropagation();
   }
 
@@ -90,10 +88,8 @@ export function createBodyEditor(options: {
       }
       editing = { sticky, field, markId, original: body };
       sticky.classList.add("editing");
-      // plaintext-only keeps pasted markup out of a body we render as text.
       field.setAttribute("contenteditable", "plaintext-only");
       field.addEventListener("keydown", onKeyDown);
-      // The shape is drawn from the measured box, which every keystroke changes.
       field.addEventListener("input", options.onChanged);
       field.addEventListener("blur", onBlur);
       field.focus();

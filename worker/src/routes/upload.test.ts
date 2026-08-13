@@ -114,7 +114,6 @@ describe("handleUpload", () => {
     expect(body.viewToken).not.toBe(body.editToken);
   });
 
-  // The sandbox URL opens untrusted markup top-level, without the sandbox attrs.
   it("reports distinct view and edit URLs on the app origin", async () => {
     const { body } = await upload([{ name: "deck.html", body: VALID_HTML }]);
 

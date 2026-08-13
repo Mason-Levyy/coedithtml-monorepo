@@ -42,8 +42,6 @@ describe("handleRevokeToken", () => {
     expect(resolved.ok && resolved.record).toBeNull();
   });
 
-  // View and edit links are separate capabilities: killing a leaked view link
-  // must not cost the owner the edit link for the same artifact.
   it("leaves the artifact's other token working", async () => {
     const kv = seededKv();
     await handleRevokeToken(

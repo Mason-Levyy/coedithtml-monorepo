@@ -227,8 +227,6 @@ describe("handleSandboxRequest", () => {
       expect(response.status).toBe(401);
     });
 
-    // The password itself never reaches this origin: it is exchanged for a
-    // grant on the app origin, so it stays out of history and access logs.
     it("serves the artifact when a grant for it is presented", async () => {
       const kv = mergeKv(
         stubAccessTokens([

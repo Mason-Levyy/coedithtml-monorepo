@@ -43,7 +43,6 @@ describe("start", () => {
     );
   });
 
-  // Artifact markup is third-party; injection must be invisible to it.
   it("leaves the artifact's own markup untouched", () => {
     vi.stubGlobal("parent", { postMessage: vi.fn() });
     const before = artifactMarkup();
@@ -63,7 +62,6 @@ describe("start", () => {
     expect(hosts[0]?.parentElement).toBe(document.body);
   });
 
-  // Everything we draw lives in a closed shadow root the artifact cannot reach.
   it("keeps the host empty and untouchable in the light DOM", () => {
     vi.stubGlobal("parent", { postMessage: vi.fn() });
 

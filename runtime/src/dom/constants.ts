@@ -9,7 +9,6 @@ export const NON_TEXT_TAGS = new Set([
   "TITLE",
 ]);
 
-// Reading computed display for every node costs a layout pass on every mutation.
 export const BLOCK_TAGS = new Set([
   "ADDRESS",
   "ARTICLE",

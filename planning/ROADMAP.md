@@ -245,7 +245,9 @@ to the task group above it belongs to.
 changes, so there is no conflict resolution in this phase. Keep it that way.
 
 **Exit criteria:** two people on different devices can review the same artifact
-simultaneously, see each other, and disagree in writing.
+simultaneously, see each other, and disagree in writing. This has never been
+run, and cannot be until **Deploy** at the end of this file happens — two
+devices means two real devices, not two tabs against `wrangler dev`.
 
 - [ ] **Phase 2 complete**
 
@@ -288,13 +290,18 @@ consequences, each of which shapes the tasks below:
       MutationObserver on `<body>` rebuilds the text index and repaints, which
       is what makes marks survive an artifact changing its own slide — 23
 - [ ] Targets that resolve but are off screen are reported as such, and the rail
-      offers to reveal them rather than placing them wrongly
+      offers to reveal them rather than placing them wrongly. Two cases, and
+      they are not the same: scrolled away, which the rail can fix, and hidden
+      by the artifact itself, which it cannot and must simply say — 25b
 - [ ] Re-upload is a first-class screen: new revision, re-anchor, and a plain
       report — "14 comments, 11 re-placed, 3 need review"
 - [~] Orphans can be dragged back into place or dismissed by the owner —
       dismissal exists (an edit link can delete a thread, and its replies go
-      with it). Dragging one back into place needs the same pointer handling
-      the sticky drag needs, and lands with it
+      with it). Re-placing one was expected to land with the sticky drag and did
+      not: the pointer handling arrived, but an orphan has no position to grab.
+      It re-places by arming the placement tool the rail already owns, and what
+      is genuinely missing is `anchor` on `EntryPatch` — an entry's anchor is
+      the one field nothing can currently change — 26
 - [x] Test suite covering drift against regenerated artifacts rather than
       hand-edited ones: rewritten markup around identical wording, edited
       wording, deleted passages, and the same sentence appearing twice — 22
@@ -314,7 +321,9 @@ consequences, each of which shapes the tasks below:
       so is **socket reconnect** (`app/src/lib/room-socket.test.ts`). What is
       not covered is two live sockets against a real DO: the worker package runs
       on plain vitest, and that needs `@cloudflare/vitest-pool-workers`. Adding
-      the pool is its own change and belongs with the deploy work
+      the pool is its own change and belongs with the deploy work — `24b`, and
+      it runs *before* the first deploy, since that deploy applies a Durable
+      Object migration no real account has ever seen
 
 ### How a reader marks up an artifact
 
@@ -352,15 +361,14 @@ sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arro
 - [x] Element-level marks for artifacts with no selectable text, anchored to the
       element the reader clicked
 - [x] Stickies and callouts painted, coloured, and tailed in the shadow root
-- [~] Composer UI: drop a sticky, pick a colour, drag it, drag its tail —
-      dropping and colouring are done. **Dragging is not.** Placing a sticky
-      arms a tool in the runtime, and the next click on the artifact is
-      swallowed and answered with a region anchor; moving one afterwards needs
-      pointer handling inside the shadow root, which is its own piece of work.
-      `offsetX/offsetY` and `tail` already exist and are patchable, so dragging
-      is wiring, not schema. The retract predicate (tip dropped back inside the
-      box ⇒ `tail: null`) was written and then deleted as dead code — it is four
-      lines, and it belongs in the commit that can actually call it
+- [x] Composer UI: drop a sticky, pick a colour, drag it, drag its tail — the
+      runtime grew a pointer state machine, keyed reconcile so a gesture is not
+      destroyed mid-drag, and an in-place body editor. Drags are held in
+      anchor-relative space, so a scroll or a reflow mid-gesture stays honest.
+      The tail is part of the sticky's own outline — one SVG path for body and
+      spout — and its tip is stored relative to the sticky, so it travels with
+      the shape. The retract predicate finally has a caller: a tip dragged back
+      inside the box sets `tail: null`
 - [x] Comment rail beside the artifact, threads anchored to their selection
 - [x] Unresolved count shown in the rail
 - [x] Reply, resolve, and reopen
@@ -368,21 +376,32 @@ sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arro
 - [x] Orphans are named in the rail rather than hidden — the runtime reports
       which marks it could not place, and the rail says so against the thread
 - [x] Bridge protocol gains `selection`, `mark-activated`, `render-marks`,
-      `set-tool`, `placement`, and `orphans`. No version bump across any of
+      `set-tool`, `placement`, and `orphans`, then `fit`, `tool-cancelled`,
+      `patch-mark`, `set-capabilities`, `place-at`, `edit-mark`, and
+      `remove-mark` as direct manipulation landed. No version bump across any of
       them: an unknown type already parses to `null`, so a new message is
       backward-compatible by construction
-- [x] Runtime still under 20KB minified — 15.4KB with selection, highlights,
-      stickies, tails, and the placement tool. The socket never lands here: the
-      room is the app's connection, not the artifact's
+- [x] Runtime within its minified budget — 32.7KB of 32KB… which is the problem.
+      Selection, highlights, stickies, tails, the placement tool, the pointer
+      state machine, and the in-place editor left 35 bytes of headroom, so the
+      ceiling rises to 40KB with the next branch that needs it. The socket never
+      lands here: the room is the app's connection, not the artifact's
 
 ### Ship
 
 - [ ] **Copy feedback for your AI tool** — overlay rendered to markdown with
-      quoted text and the comments against each
-- [ ] Email notification on new comment, opt-in per link
+      quoted text and the comments against each, reached from a share menu at
+      the right of the viewer bar alongside the copy-link button
 - [ ] Owner dashboard listing artifacts, links, and unresolved counts
 - [ ] One full regeneration loop: share, collect, export, regenerate, re-upload,
       re-anchor — run with people who are not you
+
+**Email notification on new comment was cut on 2026-08-12**, not deferred.
+Cloudflare's outbound Email Sending needs the Workers Paid plan — only sends to
+addresses already verified in your own account are free — and nothing is
+deployed, so there is nobody to notify. If it comes back it comes back as its
+own decision with a reason attached, which is the treatment `PRODUCT.md` gives
+everything else that was dropped.
 
 ### Delivery stack
 
@@ -431,23 +450,56 @@ below keeps each branch dependent only on the one before it.
 - [x] `25-comment-rail` — the rail on the app origin: threads, reply, resolve,
       reopen, unresolved count, self-declared names, and orphans named rather
       than hidden. Off-screen targets are still untreated — the rail does not
-      yet scroll the frame to a mark, which needs a scroll-to message
+      yet scroll the frame to a mark, which needs a scroll-to message — 25b
       Anchors, colours, and the room protocol moved into `@coedithtml/protocol`
       so the rail and the runtime cannot disagree about them. The worker now
       depends on it too, which is what let `UNLOCK_QUERY_PARAM` stop being
       spelled twice
+- [x] Five branches landed between `25` and `26` without an entry here, which is
+      why this list read as stale for a fortnight. Recorded after the fact:
+  - [x] `sticky-direct-manipulation` — a sticky became a shape you can grab:
+        pointer state machine, resize, in-place body editing, and a tail drawn
+        as part of the note's own outline. Raised the runtime budget from 20KB
+        to 32KB and landed at 29.4KB
+  - [x] `edit-link-on-the-card` — the share card was handing back the view link,
+        so the markup this product exists for was reachable only by digging the
+        edit token out of the API response. The view link is still minted and
+        independently revocable, just no longer surfaced
+  - [x] `identity-on-first-speech` — the viewer opened by demanding a name
+        before anything could be read, and the runtime sat inert until one was
+        typed. Capabilities now follow the room's write permission and the name
+        is collected as part of posting the first comment
+  - [x] `comment-at-the-selection` — the runtime had been measuring and posting
+        the selection rectangle since `23` and nothing read it. A selection now
+        raises a Comment control against the text it belongs to instead of a
+        form at the far right edge
+  - [x] `one-bar-not-four` — the chrome had grown into four surfaces a
+        first-time reader had to find before leaving a note. One bar: copy link,
+        who you are, comments, sticky
+- [ ] `25b-reveal-offscreen` — the scroll-to message `25` left out, plus the
+      honest report behind it: a mark can resolve and still be invisible, either
+      scrolled away or on a slide the artifact is not currently showing. The
+      rail offers to reveal the first and says so about the second. Raises the
+      runtime ceiling to 40KB, since 35 bytes will not hold a new message
+      handler
 - [ ] `26-reupload-reanchor` — re-upload as its own screen, new revision, the
-      re-anchor report, and dragging orphans back into place.
+      re-anchor report, and putting orphans back into place.
       **There is no real revision yet.** The room stamps its overlay with the
       artifact id and the runtime stamps anchors with whatever
       `window.__coedit__.config.revision` says, which is `"unknown"` because
       nothing sets it. Nothing compares the two today, so nothing is broken —
       but re-anchoring is the feature that makes revisions mean something, and
-      both should become one content hash here
+      both should become one content hash here.
+      The revision has nowhere to ride in today: `/__coedit/runtime.js` is one
+      path shared by every artifact, which is why the config prefix can only
+      supply `appOrigin`. Putting the revision in that path also retires the
+      cache-busting workaround around it
 - [ ] `27-overlay-export` — **Copy feedback for your AI tool**, overlay to
-      markdown. Small, and it closes the regeneration loop
-- [ ] `28-notify-dashboard` — opt-in email on new comment, owner dashboard with
-      unresolved counts
+      markdown, reached from a share menu at the right of the bar. Small, and it
+      closes the regeneration loop
+- [ ] `28-owner-dashboard` — owner dashboard with unresolved counts. Needs to
+      decide what "owner" means before accounts exist, since KV is keyed by
+      artifact and token today with no per-owner index
 
 ---
 
@@ -559,10 +611,11 @@ dead product.
 
 ---
 
-## Deploy — put Phase 1 on the internet
+## Deploy — put the thing on the internet
 
 Not a phase, and deliberately last: it is the one thing standing between the
-code and a link somebody else can open.
+code and a link somebody else can open. Written for Phase 1 and now carrying
+Phase 2 as well, which is why Phase 2's exit criterion waits on it.
 
 **What is live as of 2026-08-04.** The plumbing, and nothing else. Both hosts
 answer and the DNS and routes are correct, but the Worker behind them is an
@@ -576,6 +629,22 @@ early placeholder from around `03-two-origins`:
 So no upload route, no viewer, no runtime. Phase 1's exit criterion — hand the
 link to someone on their phone — has never actually been available to test,
 because everything above was verified against `wrangler dev` on localhost.
+
+**Decided on 2026-08-12.** The app ships to `app.coedithtml.com`, which is what
+the `production` block already declares, so no host config changes. Cloudflare
+stays the host: `DocRoom` is a Durable Object, artifacts are R2 objects, and one
+Worker serving two origins by `Host` is the isolation. It is also free at this
+scale — SQLite-backed Durable Objects run on the Workers Free plan, R2 includes
+10GB and charges nothing for egress, and Workers allows 100,000 requests a day.
+
+**The sandbox does not move to `sandbox.coedithtml.com`, however tempting.** A
+subdomain is a separate origin but the *same site*, and this product's isolation
+is site-level: an artifact script could set a cookie on `Domain=coedithtml.com`
+and have it ride along to the app, and any cookie the app later sets at the
+registrable domain would be handed to artifacts. `workers.dev` is on the public
+suffix list, so today's host is genuinely cross-site. If its shared reputation
+becomes a problem, the answer is a second *registrable domain*, not a subdomain
+of this one.
 
 - [ ] `pnpm deploy` against the production environment. The script did not exist
       until the post-merge audit added it; a bare `wrangler deploy` picks up the
@@ -596,8 +665,11 @@ because everything above was verified against `wrangler dev` on localhost.
       returned link in a private window, and read it on a phone
 - [ ] Check the password gate, revocation, and the upload ceiling against the
       deployed Worker rather than a local one
-- [ ] Decide the sandbox host. It is a `workers.dev` subdomain, which is on the
-      public suffix list so cookie isolation holds, but it is a shared-reputation
-      domain that safe-browsing and corporate filters treat accordingly. Buying
-      a dedicated one is a purchase, so it is the owner's call
-- [ ] Deploy the marketing site to the apex, or leave it parked deliberately
+- [ ] Confirm the account's `workers.dev` subdomain really is
+      `coedithtml-worker`. The sandbox host is asserted in config and has never
+      been checked against the account; if it is wrong, every artifact request
+      classifies as an unknown origin and 404s
+- [ ] Deploy the marketing site to the apex, or leave it parked deliberately.
+      Vercel is fine for it — no app logic lives there — as long as
+      `coedithtml.com` stays on Cloudflare DNS, which the `app.` custom domain
+      needs, and the apex records are left unproxied

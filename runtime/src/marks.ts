@@ -1,7 +1,7 @@
 import {
   markActivatedMessage,
-  orphansMessage,
   patchMarkMessage,
+  placedMessage,
   placementMessage,
   removeMarkMessage,
   selectionMessage,
@@ -16,6 +16,7 @@ import { createBodyEditor } from "./overlay/edit-body";
 import { createOverlayLayer, type OverlayLayer } from "./overlay/layer";
 import { startPlaceTool } from "./overlay/place-tool";
 import { onMarkActivated, paintMarks } from "./overlay/paint";
+import { revealAnchor } from "./overlay/reveal";
 import { createRepaintScheduler } from "./overlay/scheduler";
 import { startStickyGestures } from "./overlay/sticky-gestures";
 import { startStickyTools } from "./overlay/sticky-tools";
@@ -35,9 +36,8 @@ export function startMarks(): () => void {
   let index: TextIndex = buildTextIndex(document.body);
   let override: StickyOverride | null = null;
   let selectionFrame = 0;
-  let reportedOrphans = "";
+  let reportedPlacement = "";
 
-  // A sticky the app just created is asked for before the next paint builds it.
   let awaitingEdit: string | null = null;
 
   function openAwaitedEdit(): void {
@@ -53,11 +53,11 @@ export function startMarks(): () => void {
 
   function paint(): void {
     try {
-      const result = paintMarks(layer, view, index, marks, override);
-      const orphans = result.orphaned.join(",");
-      if (orphans !== reportedOrphans) {
-        reportedOrphans = orphans;
-        sendToApp(orphansMessage(result.orphaned));
+      const placement = paintMarks(layer, view, index, marks, override);
+      const summary = JSON.stringify(placement);
+      if (summary !== reportedPlacement) {
+        reportedPlacement = summary;
+        sendToApp(placedMessage(placement));
       }
       openAwaitedEdit();
     } catch (error) {
@@ -77,6 +77,13 @@ export function startMarks(): () => void {
   function stickyById(markId: string): StickyEntry | null {
     const found = marks.find((mark) => mark.id === markId);
     return found !== undefined && found.kind === "sticky" ? found : null;
+  }
+
+  function revealMark(markId: string): void {
+    const mark = marks.find((entry) => entry.id === markId);
+    if (mark !== undefined) {
+      revealAnchor(index, mark.anchor);
+    }
   }
 
   const editor = createBodyEditor({
@@ -107,7 +114,6 @@ export function startMarks(): () => void {
     canWrite: () => canWrite,
     setOverride: (next) => {
       override = next;
-      // Held only while a gesture runs: reindexing walks the whole document.
       scheduler.holdIndex(next !== null);
       scheduler.repaint();
     },
@@ -142,7 +148,6 @@ export function startMarks(): () => void {
     );
   }
 
-  // Throttled: selectionchange fires on every mousemove of a drag.
   function scheduleSelection(): void {
     window.cancelAnimationFrame(selectionFrame);
     selectionFrame = window.requestAnimationFrame(reportSelection);
@@ -176,11 +181,14 @@ export function startMarks(): () => void {
       scheduler.repaint();
       return;
     }
+    if (message.type === "reveal-mark") {
+      revealMark(message.markId);
+      return;
+    }
     marks = message.marks;
     scheduler.repaint();
   });
 
-  // The app pins a control to the reported rect, which a scroll moves out from under it.
   function onScroll(): void {
     const selection = document.getSelection();
     if (selection !== null && !selection.isCollapsed) {

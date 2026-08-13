@@ -2,7 +2,6 @@ import type { EntryPatch, OverlayDocument, OverlayEntry } from "./overlay";
 
 export const ROOM_VERSION = 1;
 
-// Named here because the worker mints the grant and the app has to read it back.
 export const UNLOCK_QUERY_PARAM = "u";
 
 type Versioned = { version: typeof ROOM_VERSION };
@@ -76,7 +75,6 @@ export type RejectionReason = (typeof REJECTION_REASONS)[number];
 export type RoomRejectedMessage = Versioned & {
   type: "rejected";
   reason: RejectionReason;
-  // Names the entry when the room knows it, so a client can put the entry back.
   id: string | null;
 };
 

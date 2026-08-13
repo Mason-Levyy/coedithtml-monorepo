@@ -5,13 +5,14 @@ import {
   editMarkMessage,
   fitMessage,
   markActivatedMessage,
-  orphansMessage,
   patchMarkMessage,
   placeAtMessage,
+  placedMessage,
   placementMessage,
   readyMessage,
   removeMarkMessage,
   renderMarksMessage,
+  revealMarkMessage,
   selectionMessage,
   setCapabilitiesMessage,
   setToolMessage,
@@ -42,6 +43,13 @@ function versionedRecord(value: unknown): Record<string, unknown> | null {
 function parseTextAnchorField(value: unknown): TextAnchor | null {
   const anchor = parseAnchor(value);
   return anchor !== null && anchor.kind === "text" ? anchor : null;
+}
+
+function parseMarkIds(value: unknown): string[] | null {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+  return value.every((id) => typeof id === "string") ? value : null;
 }
 
 function parseViewportRect(value: unknown): ViewportRect | null {
@@ -86,7 +94,6 @@ export function parseRuntimeToAppMessage(
   }
 
   if (candidate.type === "selection") {
-    // A cleared selection is the message that dismisses the composer.
     if (candidate.anchor === null || candidate.anchor === undefined) {
       return selectionMessage(null, null);
     }
@@ -107,13 +114,13 @@ export function parseRuntimeToAppMessage(
     return anchor === null ? null : placementMessage(anchor);
   }
 
-  if (candidate.type === "orphans") {
-    if (!Array.isArray(candidate.markIds)) {
-      return null;
-    }
-    return candidate.markIds.every((id) => typeof id === "string")
-      ? orphansMessage(candidate.markIds)
-      : null;
+  if (candidate.type === "placed") {
+    const offscreen = parseMarkIds(candidate.offscreen);
+    const hidden = parseMarkIds(candidate.hidden);
+    const orphaned = parseMarkIds(candidate.orphaned);
+    return offscreen === null || hidden === null || orphaned === null
+      ? null
+      : placedMessage({ offscreen, hidden, orphaned });
   }
 
   if (candidate.type === "tool-cancelled") {
@@ -186,6 +193,10 @@ export function parseAppToRuntimeMessage(
   if (candidate.type === "edit-mark") {
     const markId = asFilledString(candidate.markId);
     return markId === null ? null : editMarkMessage(markId);
+  }
+  if (candidate.type === "reveal-mark") {
+    const markId = asFilledString(candidate.markId);
+    return markId === null ? null : revealMarkMessage(markId);
   }
   return null;
 }

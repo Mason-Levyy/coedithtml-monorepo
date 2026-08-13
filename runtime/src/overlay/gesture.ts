@@ -29,7 +29,6 @@ export function beginGesture(
   element: Element,
   handlers: GestureHandlers,
 ): Gesture | null {
-  // A second finger or a right button must not open a second gesture.
   if (!event.isPrimary || event.button !== 0) {
     return null;
   }
@@ -56,7 +55,6 @@ export function beginGesture(
     window.removeEventListener("keydown", onKeyDown, true);
   }
 
-  // Release before calling out: a throwing handler must not strand the capture.
   function finish(commit: GestureUpdate | null): void {
     if (finished) {
       return;
@@ -66,7 +64,7 @@ export function beginGesture(
     try {
       element.releasePointerCapture(pointerId);
     } catch {
-      // Already released by pointerup, or the element left the document.
+      void 0;
     }
     try {
       if (commit === null) {

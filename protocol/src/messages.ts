@@ -41,12 +41,13 @@ export type RuntimePlacementMessage = Versioned & {
   anchor: Anchor;
 };
 
-export type RuntimeOrphansMessage = Versioned & {
-  type: "orphans";
-  markIds: string[];
+export type RuntimePlacedMessage = Versioned & {
+  type: "placed";
+  offscreen: string[];
+  hidden: string[];
+  orphaned: string[];
 };
 
-// Escape is pressed over the frame, where the app's own listener never hears it.
 export type RuntimeToolCancelledMessage = Versioned & {
   type: "tool-cancelled";
 };
@@ -63,7 +64,7 @@ export type RuntimeToAppMessage =
   | RuntimeSelectionMessage
   | RuntimeMarkActivatedMessage
   | RuntimePlacementMessage
-  | RuntimeOrphansMessage
+  | RuntimePlacedMessage
   | RuntimeToolCancelledMessage
   | RuntimePatchMarkMessage
   | RuntimeRemoveMarkMessage;
@@ -87,7 +88,6 @@ export type AppSetCapabilitiesMessage = Versioned & {
   canWrite: boolean;
 };
 
-// Viewport coordinates inside the frame: where a drag off the pad was released.
 export type AppPlaceAtMessage = Versioned & {
   type: "place-at";
   x: number;
@@ -96,6 +96,11 @@ export type AppPlaceAtMessage = Versioned & {
 
 export type AppEditMarkMessage = Versioned & {
   type: "edit-mark";
+  markId: string;
+};
+
+export type AppRevealMarkMessage = Versioned & {
+  type: "reveal-mark";
   markId: string;
 };
 
@@ -109,7 +114,8 @@ export type AppToRuntimeMessage =
   | AppSetToolMessage
   | AppSetCapabilitiesMessage
   | AppPlaceAtMessage
-  | AppEditMarkMessage;
+  | AppEditMarkMessage
+  | AppRevealMarkMessage;
 
 export function readyMessage(title: string): RuntimeReadyMessage {
   return { version: BRIDGE_VERSION, type: "ready", title };
@@ -145,8 +151,16 @@ export function placementMessage(anchor: Anchor): RuntimePlacementMessage {
   return { version: BRIDGE_VERSION, type: "placement", anchor };
 }
 
-export function orphansMessage(markIds: string[]): RuntimeOrphansMessage {
-  return { version: BRIDGE_VERSION, type: "orphans", markIds };
+export function placedMessage(placement: {
+  offscreen: string[];
+  hidden: string[];
+  orphaned: string[];
+}): RuntimePlacedMessage {
+  return { version: BRIDGE_VERSION, type: "placed", ...placement };
+}
+
+export function revealMarkMessage(markId: string): AppRevealMarkMessage {
+  return { version: BRIDGE_VERSION, type: "reveal-mark", markId };
 }
 
 export function toolCancelledMessage(): RuntimeToolCancelledMessage {

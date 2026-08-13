@@ -32,7 +32,6 @@ export function createEntryStore(sql: SqlStorage): EntryStore {
       const entries: OverlayEntry[] = [];
       for (const row of rows) {
         const entry = decodeEntry(row.payload);
-        // Fail open: one unreadable row must not keep the room from opening.
         if (entry === null) {
           console.error("Skipped an overlay entry that no longer parses");
           continue;

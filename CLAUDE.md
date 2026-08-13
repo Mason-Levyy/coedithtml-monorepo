@@ -86,7 +86,10 @@ Local UI state stays in components.
 else's document.
 
 - **Zero dependencies.** No React, no Yjs, no npm packages. Vanilla DOM.
-- **Size budget: 32KB minified.** A PR that exceeds it needs justification.
+- **Size budget: 40KB minified.** A PR that exceeds it needs justification. The
+  budget was 20KB while the runtime only reported, 32KB when it gained
+  selection and highlights, and 40KB once stickies became directly
+  manipulable — it is re-set deliberately, never quietly.
 - **Never leak.** One namespaced global. All UI in a shadow root so our styles
   cannot touch the artifact and theirs cannot touch ours.
 - **Fail open.** If the websocket dies or the runtime throws, the artifact must

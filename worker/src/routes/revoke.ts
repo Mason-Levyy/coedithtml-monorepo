@@ -3,9 +3,6 @@ import type { WorkerEnv } from "@/lib/env";
 import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { jsonError, jsonResponse } from "@/lib/responses";
 
-// Revoking one token leaves the other working: the view and edit links for an
-// artifact are separate capabilities, and killing a leaked view link must not
-// cost the owner their own edit link.
 export async function handleRevokeToken(
   token: string,
   env: WorkerEnv,

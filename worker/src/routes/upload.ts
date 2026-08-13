@@ -65,7 +65,6 @@ async function parseFormBytes(
   }
 }
 
-// Charged before validation so malformed-body floods still hit the ceiling.
 async function chargeUploadAttempt(
   request: Request,
   env: WorkerEnv,

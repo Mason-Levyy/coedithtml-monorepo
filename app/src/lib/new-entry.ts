@@ -24,7 +24,6 @@ type Draft = {
   fill?: string | null;
 };
 
-// The room stamps its own createdAt; this one only orders an unsent entry.
 function shared(draft: Draft) {
   return {
     id: crypto.randomUUID(),

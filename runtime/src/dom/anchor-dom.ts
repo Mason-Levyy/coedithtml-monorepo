@@ -9,7 +9,7 @@ import { OVERLAY_HOST_ATTRIBUTE } from "./constants";
 import { elementForPath, pathToElement, sharedPathDepth } from "./element-path";
 import { offsetsForRange, rangeForOffsets, type TextIndex } from "./text-index";
 
-function elementOf(node: Node): Element | null {
+export function elementOf(node: Node): Element | null {
   return node.nodeType === Node.ELEMENT_NODE
     ? (node as Element)
     : node.parentElement;
@@ -85,7 +85,6 @@ function clampFraction(value: number): number {
   return Math.min(Math.max(value, 0), 1);
 }
 
-// `html` is excluded because a body-relative path walks past it and never resolves.
 function isAnchorable(candidate: Element): boolean {
   return (
     !candidate.hasAttribute(OVERLAY_HOST_ATTRIBUTE) &&
@@ -98,7 +97,6 @@ export function regionAnchorAtPoint(
   y: number,
   revision: string,
 ): RegionAnchor | null {
-  // The stack, not the top: a painted mark reports our host through the shadow.
   const element = document.elementsFromPoint(x, y).find(isAnchorable) ?? null;
   if (element === null) {
     return null;

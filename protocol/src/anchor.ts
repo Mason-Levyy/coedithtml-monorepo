@@ -9,7 +9,6 @@ export type TextAnchor = {
   revision: string;
 };
 
-// A chart carries no text to quote, and a fraction survives the box resizing.
 export type RegionAnchor = {
   kind: "region";
   path: string;
@@ -20,7 +19,6 @@ export type RegionAnchor = {
 
 export type Anchor = TextAnchor | RegionAnchor;
 
-// Rendering collapses whitespace that markup carries, line breaks included.
 export function normalizeAnchorText(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -118,7 +116,6 @@ function contextScore(text: string, at: number, anchor: TextAnchor): number {
   );
 }
 
-// Text first and never a guess: regeneration rewrites markup, keeping wording.
 export function resolveAnchorInText(
   text: string,
   anchor: TextAnchor,

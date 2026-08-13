@@ -81,7 +81,6 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
   };
 }
 
-// The whole point of the local apply: a drag must land before the socket answers.
 describe("changes made locally while the room catches up", () => {
   function loadedWith(entries: OverlayEntry[]) {
     return applyRoomMessage(EMPTY_ROOM, snapshot(entries));
@@ -138,7 +137,6 @@ describe("changes made locally while the room catches up", () => {
     expect(idsOf(state.entries).sort()).toEqual(["c1", "r1"]);
   });
 
-  // An older room names no entry, so there is nothing to roll back to.
   it("still reports a rejection that names no entry", () => {
     const moved = applyLocalPatch(loadedWith([sticky()]), "s1", {
       offsetX: 120,
@@ -192,7 +190,6 @@ describe("applyRoomMessage", () => {
     expect(idsOf(state.entries)).toEqual(["early", "late"]);
   });
 
-  // The same entry arrives twice when a client's own add is echoed back.
   it("replaces rather than duplicates an entry it already holds", () => {
     const loaded = applyRoomMessage(EMPTY_ROOM, snapshot([comment()]));
     const state = applyRoomMessage(loaded, {

@@ -77,8 +77,6 @@ describe("ArtifactPage", () => {
       expect(screen.queryByTitle("deck.html")).toBeNull();
     });
 
-    // The password is exchanged for a grant over POST; putting it in the URL
-    // would write it into browser history and every access log on the way.
     it("posts the password to the unlock route rather than a query string", async () => {
       const calls: [string, RequestInit | undefined][] = [];
       vi.stubGlobal(

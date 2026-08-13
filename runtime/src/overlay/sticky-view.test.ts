@@ -60,7 +60,6 @@ describe("the sticky view", () => {
     index = buildTextIndex(document.body);
   });
 
-  // A rebuilt element is one the pointer is no longer captured to.
   it("keeps the same element across repaints of the same sticky", () => {
     view.reconcile(index, [sticky()], null);
     const first = view.elementFor("s1");
@@ -79,11 +78,57 @@ describe("the sticky view", () => {
     expect(element?.isConnected).toBe(false);
   });
 
-  it("reports a sticky whose anchor no longer resolves", () => {
+  it("reports a sticky whose anchor no longer resolves as orphaned", () => {
     document.body.innerHTML = "<div>The paragraph was replaced</div>";
 
-    expect(view.reconcile(index, [sticky()], null)).toEqual(["s1"]);
+    expect(view.reconcile(index, [sticky()], null)).toEqual({
+      offscreen: [],
+      hidden: [],
+      orphaned: ["s1"],
+    });
     expect(view.elementFor("s1")).toBeNull();
+  });
+
+  it("separates a sticky the artifact is not showing from one that is gone", () => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 0,
+      height: 0,
+      right: 0,
+      bottom: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+
+    expect(view.reconcile(index, [sticky()], null)).toEqual({
+      offscreen: [],
+      hidden: ["s1"],
+      orphaned: [],
+    });
+    expect(view.elementFor("s1")).toBeNull();
+  });
+
+  it("reports a sticky scrolled past the viewport as offscreen, still painted", () => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({
+      left: 100,
+      top: window.innerHeight + 500,
+      width: 200,
+      height: 100,
+      right: 300,
+      bottom: window.innerHeight + 600,
+      x: 100,
+      y: window.innerHeight + 500,
+      toJSON: () => ({}),
+    });
+
+    expect(view.reconcile(index, [sticky()], null)).toEqual({
+      offscreen: ["s1"],
+      hidden: [],
+      orphaned: [],
+    });
+    expect(view.elementFor("s1")).not.toBeNull();
   });
 
   it("prefers the override so a drag survives the room's own state", () => {
@@ -119,7 +164,6 @@ describe("the sticky view", () => {
     );
   }
 
-  // One path means the pointer cannot drift away from the body it belongs to.
   it("draws the tail into the sticky's own outline and retracts it", () => {
     view.reconcile(index, [sticky({ tail: { x: 320, y: 50 } })], null);
     const tailed = pathOf("s1");

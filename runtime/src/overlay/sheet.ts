@@ -11,7 +11,6 @@ export const SHEET =
 .sticky { position: fixed; box-sizing: border-box; display: flex; max-width: 220px; border-radius: 8px; font: 13px/1.45 ${FONT}; color: #17171a; pointer-events: auto; cursor: pointer; }
 .sticky[style*="width"] { max-width: none; }
 ` +
-  // The pointer is part of this path, so it leaves the box the content clips to.
   `.shape { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 .shape path { stroke-width: 1; stroke-linejoin: round; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12)); }
 .content { position: relative; flex: 1 1 auto; min-width: 0; padding: 9px 11px; border-radius: inherit; white-space: pre-wrap; overflow-wrap: break-word; overflow: hidden; }
@@ -21,13 +20,11 @@ export const SHEET =
 .tools { display: none; }
 `;
 
-// Without these a touch pans and a drag text-selects, instead of moving anything.
 export const EDITABLE_SHEET =
   `
 .sticky { touch-action: none; user-select: none; cursor: move; }
 .sticky.dragging { cursor: grabbing; }
 ` +
-  // Invisible handles would otherwise steal the drag that should move it.
   `:is(.handle, .node) { position: absolute; box-sizing: border-box; background: #fff; border-radius: 50%; opacity: 0; transition: opacity 90ms ease-out; pointer-events: none; }
 .handle { width: ${HANDLE_SIZE}px; height: ${HANDLE_SIZE}px; border: 1.5px solid #4b5563; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); touch-action: none; }
 .node { width: ${NODE_SIZE}px; height: ${NODE_SIZE}px; margin: ${NODE_INSET}px 0 0 ${NODE_INSET}px; border: 1.5px solid #2f6fed; }
@@ -48,7 +45,6 @@ export const EDITABLE_SHEET =
 .sticky.editing .content { overflow: auto; }
 .sticky.editing :is(.handle, .node) { opacity: 0; pointer-events: none; }
 ` +
-  // Padding, not a gap: a bare 6px would drop :hover and take the tools away mid-reach.
   `.tools { position: absolute; right: 0; bottom: 100%; padding-bottom: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity 90ms ease-out; pointer-events: none; }
 .sticky.low-room .tools { top: 100%; bottom: auto; padding: 6px 0 0; }
 .sticky:is(:hover, .selected, .editing) .tools { opacity: 1; pointer-events: auto; }

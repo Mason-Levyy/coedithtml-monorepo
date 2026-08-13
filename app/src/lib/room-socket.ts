@@ -9,7 +9,6 @@ export type RoomStatus = "connecting" | "open" | "closed";
 const BASE_DELAY_MS = 500;
 const MAX_DELAY_MS = 15000;
 
-// Full jitter, because otherwise every reader in the room retries in lockstep.
 export function backoffDelay(attempt: number, random = Math.random): number {
   const ceiling = Math.min(BASE_DELAY_MS * 2 ** attempt, MAX_DELAY_MS);
   return Math.round(ceiling * (0.5 + random() * 0.5));

@@ -80,7 +80,6 @@ describe("ArtifactViewer", () => {
     expect(screen.getByText("Make artifacts work like documents")).toBeTruthy();
   });
 
-  // A frame that has not booted has no listener, and the post is lost for good.
   it("waits for the frame before telling it what the reader may do", () => {
     renderViewer();
     const posted = watchRuntimeMessages();
@@ -119,7 +118,6 @@ describe("ArtifactViewer", () => {
     expect(frameHeight()).toBe("100%");
   });
 
-  // Without a definite parent height a percentage resolves to the 150px default.
   it("gives the frame a definite height to fill when nothing is reported", () => {
     renderViewer();
 
@@ -143,7 +141,6 @@ describe("ArtifactViewer", () => {
     expect(frameHeight()).toBe("4200px");
   });
 
-  // Growing a self-scrolling artifact would strand its footer below the fold.
   it("leaves an artifact that scrolls itself filling the frame", () => {
     renderViewer();
 
@@ -160,7 +157,6 @@ describe("ArtifactViewer", () => {
     expect(frameHeight()).toBe("10000px");
   });
 
-  // A collapsed frame measures its own content as collapsed, so it never recovers.
   it("never collapses the frame on a degenerate height", () => {
     renderViewer();
 

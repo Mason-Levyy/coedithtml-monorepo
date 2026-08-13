@@ -32,7 +32,6 @@ export function useStickyPlacement(options: {
   const { placement, ready, canMarkUp, send } = options;
   const [armed, setArmed] = useState(false);
 
-  // Held in a ref so a second sticky is not dropped when the room next changes.
   const latest = useRef(options);
   latest.current = options;
 
@@ -48,7 +47,6 @@ export function useStickyPlacement(options: {
     }
   }, [canMarkUp]);
 
-  // Covers focus in the app; the frame reports its own Escape over the bridge.
   useEffect(() => {
     if (!armed) {
       return;

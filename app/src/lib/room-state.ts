@@ -13,7 +13,6 @@ export type RoomContents = {
   canWrite: boolean;
   rejection: RejectionReason | null;
   loaded: boolean;
-  // What each in-flight change replaced, so a rejection can put it back.
   undo: Record<string, OverlayEntry[]>;
 };
 
@@ -51,7 +50,6 @@ function threadOf(entries: OverlayEntry[], id: string): OverlayEntry[] {
   return entries.filter((entry) => entry.id === id || entry.parentId === id);
 }
 
-// Keeps the first snapshot: a second drag must not overwrite what to undo to.
 function remembering(
   state: RoomContents,
   id: string,

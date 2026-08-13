@@ -14,8 +14,6 @@ async function fetchAsset(env: WorkerEnv, url: URL): Promise<Response | null> {
   }
 }
 
-// A missing /assets/*.js must stay a 404: answering it with index.html turns a
-// bad build into a blank page that looks like an application bug instead.
 function isClientRoute(pathname: string): boolean {
   return !FILE_EXTENSION.test(pathname);
 }

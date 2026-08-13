@@ -91,7 +91,6 @@ describe("parseClientToRoomMessage", () => {
     ).toBeNull();
   });
 
-  // An absent field and a null one mean different things to a tail.
   it("keeps a patch's absent fields absent", () => {
     const parsed = parseClientToRoomMessage(
       roundTrip(patchEntryMessage("s1", { color: "pink" })),
@@ -123,7 +122,6 @@ describe("parseClientToRoomMessage", () => {
     ).toBeNull();
   });
 
-  // The patch parser is a second colour site; missing it rejects every recolour.
   it("reads the fields a drag and a colour wheel produce", () => {
     const parsed = parseClientToRoomMessage(
       roundTrip(
@@ -223,7 +221,6 @@ describe("patchEntry", () => {
     });
   });
 
-  // A comment is placed by its anchor, so an offset on one has nowhere to go.
   it("refuses to move something that does not float", () => {
     expect(patchEntry(COMMENT, { offsetY: 5 })).toBeNull();
     expect(patchEntry(COMMENT, { tail: { x: 1, y: 2 } })).toBeNull();

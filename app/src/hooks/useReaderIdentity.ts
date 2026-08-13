@@ -38,7 +38,7 @@ function writeStored(reader: StoredReader): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(reader));
   } catch {
-    // A reader with storage blocked still gets to comment, just not by name.
+    void 0;
   }
 }
 
@@ -46,7 +46,6 @@ export type ReaderIdentity = {
   reader: ReaderPresence;
   color: string;
   named: boolean;
-  // The new name is unreadable from state this tick, so it is handed back.
   rename: (displayName: string) => ReaderPresence;
   recolor: (color: string) => void;
 };
@@ -61,7 +60,6 @@ export function useReaderIdentity(): ReaderIdentity {
     () => readStored() ?? firstVisit(),
   );
 
-  // Written before naming too, or a reload makes a reader a second person.
   useEffect(() => {
     writeStored(stored);
   }, [stored]);
@@ -83,7 +81,6 @@ export function useReaderIdentity(): ReaderIdentity {
     }
   }, []);
 
-  // Split out so a colour change alone does not re-announce the reader.
   const reader = useMemo(
     () => ({ id: stored.id, displayName: stored.displayName }),
     [stored.id, stored.displayName],

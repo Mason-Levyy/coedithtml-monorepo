@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-// Strips the trailing root-label dot: `example.com.` reaches the same server
-// and carries the same cookies as `example.com`, so leaving it in lets one
-// host read as two distinct origins and defeats hostsAreDistinct.
 function normalizeHost(value: string): string {
   return value
     .trim()
@@ -43,8 +40,6 @@ export function hostsAreDistinct(config: OriginConfig): boolean {
   return config.APP_HOST !== config.SANDBOX_HOST;
 }
 
-// A redirect host is answered with a 301 before anything else looks at it, so
-// listing an origin here would bounce that origin's own traffic away.
 export function redirectHostsAreDisjoint(config: OriginConfig): boolean {
   return !config.REDIRECT_HOSTS.some(
     (host) => host === config.APP_HOST || host === config.SANDBOX_HOST,

@@ -51,7 +51,6 @@ export const READER_PALETTE: readonly string[] = [
   ...NEUTRAL_ROW,
 ];
 
-// Seeded rather than fixed, so two readers rarely open on the same colour.
 export function readerColorFor(seed: string): string {
   let hash = 0;
   for (const character of seed) {

@@ -7,7 +7,6 @@ import {
 
 export type MarkPaint = { color: MarkColor; fill: string | null };
 
-// The name is what a client too old to read `fill` will paint.
 export function paintFor(hex: string): MarkPaint {
   const fill = normalizeHex(hex);
   return fill === null

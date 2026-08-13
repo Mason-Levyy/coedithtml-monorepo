@@ -39,7 +39,6 @@ export function ReaderChip({ identity, open, onOpenChange }: ReaderChipProps) {
   );
 }
 
-// Mounted with the panel, so the draft starts from whatever named the reader last.
 function IdentityPanel({ identity }: { identity: ReaderIdentity }) {
   const [draft, setDraft] = useState(identity.reader.displayName);
   const changed = draft.trim() !== identity.reader.displayName;

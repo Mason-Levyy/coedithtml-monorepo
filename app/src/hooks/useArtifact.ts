@@ -13,8 +13,6 @@ export function useArtifact(token: string) {
   });
 }
 
-// Writes the unlocked artifact straight into the query cache: the grant only
-// comes back on this response, and re-fetching without it would lock again.
 export function useUnlockArtifact(token: string) {
   const queryClient = useQueryClient();
   return useMutation({

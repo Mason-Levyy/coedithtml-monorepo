@@ -37,7 +37,6 @@ function comment(overrides: Partial<CommentEntry> = {}): CommentEntry {
   };
 }
 
-// Seeded before the render: identity is read from storage when the viewer mounts.
 function renderViewer({ named = true }: { named?: boolean } = {}) {
   if (named) {
     window.localStorage.setItem(
@@ -315,7 +314,6 @@ describe("the comment rail", () => {
     });
   });
 
-  // A view link is a distinct capability, and the rail must not pretend otherwise.
   it("offers no way to write on a read-only link", () => {
     renderViewer();
     openRoomWith([comment()], false);
@@ -339,20 +337,71 @@ describe("the comment rail", () => {
     ).toBeTruthy();
   });
 
-  // Silently hiding an orphan loses the feedback somebody took time to write.
-  it("admits when a mark's target is gone", () => {
-    renderViewer();
-    openRoomWith([comment()]);
+  function reportPlaced(placement: {
+    offscreen?: string[];
+    hidden?: string[];
+    orphaned?: string[];
+  }): void {
     act(() => {
       window.dispatchEvent(
         new MessageEvent("message", {
           origin: SANDBOX_ORIGIN,
-          data: { version: 1, type: "orphans", markIds: ["c1"] },
+          data: {
+            version: 1,
+            type: "placed",
+            offscreen: [],
+            hidden: [],
+            orphaned: [],
+            ...placement,
+          },
         }),
       );
     });
+  }
+
+  it("admits when a mark's target is gone", () => {
+    renderViewer();
+    openRoomWith([comment()]);
+    reportPlaced({ orphaned: ["c1"] });
 
     expect(screen.getByText("The text this points at is gone")).toBeTruthy();
+  });
+
+  it("distinguishes a target the artifact is not showing from a lost one", () => {
+    renderViewer();
+    openRoomWith([comment()]);
+    reportPlaced({ hidden: ["c1"] });
+
+    expect(
+      screen.getByText("The artifact is not showing this right now"),
+    ).toBeTruthy();
+    expect(screen.queryByText("The text this points at is gone")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show me" })).toBeNull();
+  });
+
+  it("offers to scroll a target that is only out of view", () => {
+    renderViewer();
+    const posted = watchRuntimeMessages();
+    openRoomWith([comment()]);
+    reportPlaced({ offscreen: ["c1"] });
+
+    act(() => {
+      screen.getByRole("button", { name: "Show me" }).click();
+    });
+
+    expect(posted.at(-1)).toMatchObject({
+      type: "reveal-mark",
+      markId: "c1",
+    });
+  });
+
+  it("says nothing about a mark that is on screen", () => {
+    renderViewer();
+    openRoomWith([comment()]);
+    reportPlaced({});
+
+    expect(screen.queryByRole("button", { name: "Show me" })).toBeNull();
+    expect(screen.queryByText("The text this points at is gone")).toBeNull();
   });
 
   describe("dropping a sticky", () => {
@@ -368,7 +417,6 @@ describe("the comment rail", () => {
       });
     });
 
-    // An empty note opens with the caret in it; a placeholder body would be typed over.
     it("leaves the note empty and asks the artifact to open it for typing", () => {
       renderViewer();
       const posted = watchRuntimeMessages();
@@ -418,7 +466,6 @@ describe("the comment rail", () => {
       );
     });
 
-    // Escape over the frame is heard by the artifact, never by this document.
     it("stands the pad down when the artifact reports the tool cancelled", () => {
       renderViewer();
       openRoomWith([]);
@@ -528,7 +575,6 @@ describe("the comment rail", () => {
       });
     });
 
-    // The name is what a client too old to read `fill` will paint.
     it("names the nearest preset alongside the exact colour", () => {
       renderViewer();
       openRoomWith([]);
@@ -552,7 +598,6 @@ describe("the comment rail", () => {
     });
   });
 
-  // Answering a selection where the reader is looking, not 320px away at the edge.
   describe("commenting from the selection", () => {
     const RECT = { x: 10, y: 20, width: 100, height: 16 };
     const FRAME = { left: 40, top: 100, right: 840, bottom: 700 };
@@ -617,7 +662,6 @@ describe("the comment rail", () => {
       ).toBeNull();
     });
 
-    // With no rect there is nowhere to stand the action, so the rail must still answer.
     it("falls back to the rail when the artifact reports no rect", () => {
       renderViewer();
       openRoomWith([]);
@@ -641,7 +685,6 @@ describe("the comment rail", () => {
       expect(screen.getByText("Net or gross?")).toBeTruthy();
     });
 
-    // The composer lives in the rail, so a selection with it folded away is a dead end.
     it("comes back on its own when a selection needs the composer", () => {
       renderViewer();
       openRoomWith([]);
@@ -652,7 +695,6 @@ describe("the comment rail", () => {
       expect(screen.getByLabelText("Comment")).toBeTruthy();
     });
 
-    // An unnamed reader is named inside the composer, so a folded rail strands them too.
     it("comes back for a selection even before the reader is named", () => {
       renderViewer({ named: false });
       openRoomWith([]);
@@ -664,7 +706,6 @@ describe("the comment rail", () => {
     });
   });
 
-  // Naming is part of saying something, not a toll booth on arriving to read.
   describe("a reader who has not said who they are", () => {
     it("is asked for nothing until they arrive", () => {
       renderViewer({ named: false });
@@ -719,7 +760,6 @@ describe("the comment rail", () => {
       );
     });
 
-    // A sticky carries a name the moment it lands, with no composer to ask in.
     it("is asked for a name when they reach for a sticky", () => {
       renderViewer({ named: false });
       const posted = watchRuntimeMessages();
@@ -751,7 +791,6 @@ describe("the comment rail", () => {
     });
   });
 
-  // A view link cannot write at any name, so asking would be a dead end.
   it("does not ask a read-only reader for a name", () => {
     renderViewer({ named: false });
     openRoomWith([comment()], false);

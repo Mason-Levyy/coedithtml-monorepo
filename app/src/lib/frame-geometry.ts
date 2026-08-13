@@ -1,10 +1,8 @@
 export type ViewportPoint = { x: number; y: number };
 
-// An artifact sized in viewport units grows every time its frame does.
 const MAX_FRAME_HEIGHT = 10000;
 
 export function framePixelHeight(contentHeight: number): string {
-  // A collapsed frame measures its content as collapsed, and never recovers.
   const floor = Math.max(window.innerHeight, 1);
   const clamped = Math.min(
     Math.max(contentHeight, floor),
@@ -24,7 +22,6 @@ export function pointOnPage(
   return { x: point.x + box.left, y: point.y + box.top };
 }
 
-// The frame's own viewport is never scrolled, so its box is the whole offset.
 export function pointInFrame(
   frame: HTMLIFrameElement | null,
   point: ViewportPoint,

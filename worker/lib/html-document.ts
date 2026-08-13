@@ -7,17 +7,11 @@ export type HtmlDocumentCheck =
 const BUILD_STEP_MARKERS = [
   /^\s*import\s[\s\S]*?\sfrom\s+['"]/m,
   /^\s*export\s+default\s/m,
-  // PascalCase specifically: a JSX component is <Slide>, while <HTML> and
-  // <BODY> are legal, if dated, HTML that must still be accepted.
   /<\/?[A-Z][a-z][A-Za-z0-9]*[\s/>]/,
 ];
 
 const SCRIPT_BLOCK = /<script\b[^>]*>[\s\S]*?<\/script\s*>/gi;
 
-// `<script type="module">import * as THREE from "https://…"</script>` is a
-// complete document a browser runs as-is, so the build-step markers must not
-// see inside a script. They exist to catch a JSX/TSX source file uploaded by
-// mistake, and that file has no script tags to hide in.
 function withoutScriptContents(source: string): string {
   return source.replace(SCRIPT_BLOCK, "");
 }
@@ -26,8 +20,6 @@ const OPENING_HTML_TAG = /<html[\s>]/i;
 
 const CLOSING_HTML_TAG = /<\/html\s*>/i;
 
-// Report-only is excluded on purpose: it can't silently break the injected
-// runtime, which is the only failure mode this check exists to catch.
 const OWN_CSP_META_TAG =
   /<meta\s[^>]*http-equiv\s*=\s*["']?Content-Security-Policy["']?(?=[\s/>])[^>]*>/i;
 

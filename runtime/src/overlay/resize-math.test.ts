@@ -24,7 +24,6 @@ describe("resizeRect", () => {
     });
   });
 
-  // Dragging the top-left has to move the origin, or the box grows downwards.
   it("moves the origin when the north or west side is the one dragged", () => {
     expect(resizeRect(START, "w", { x: -40, y: 0 }, false)).toEqual({
       x: 60,

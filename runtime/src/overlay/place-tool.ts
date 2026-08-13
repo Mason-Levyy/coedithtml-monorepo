@@ -15,7 +15,6 @@ export function startPlaceTool(options: {
   let armed: MarkTool | null = null;
   let borrowedCursor: string | null = null;
 
-  // Restored to its old value, not cleared: the cursor is the artifact's to set.
   function showCursor(wanted: boolean): void {
     if (wanted) {
       borrowedCursor ??= document.body.style.cursor;
@@ -37,7 +36,6 @@ export function startPlaceTool(options: {
     showCursor(false);
   }
 
-  // Swallowed so the artifact's own handlers do not fire under the pointer.
   function onClick(event: MouseEvent): void {
     if (armed === null) {
       return;
@@ -52,7 +50,6 @@ export function startPlaceTool(options: {
     options.onPlace(anchor);
   }
 
-  // Swallowed so the artifact does not also act on the key that left our mode.
   function onKeyDown(event: KeyboardEvent): void {
     if (armed === null || event.key !== "Escape") {
       return;
