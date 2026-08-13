@@ -1,10 +1,10 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { defineWorkersConfig } from "@cloudflare/vitest-pool-workers/config";
 
 const packageRoot = path.dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig({
+export default defineWorkersConfig({
   resolve: {
     alias: [
       {
@@ -15,7 +15,14 @@ export default defineConfig({
     ],
   },
   test: {
-    name: "node",
-    exclude: ["**/node_modules/**", "**/dist/**", "**/*.pool.test.ts"],
+    name: "workers",
+    include: ["**/*.pool.test.ts"],
+    poolOptions: {
+      workers: {
+        wrangler: { configPath: "./wrangler.jsonc" },
+        singleWorker: true,
+        isolatedStorage: false,
+      },
+    },
   },
 });

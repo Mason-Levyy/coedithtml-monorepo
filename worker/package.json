@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.7.0",
     "@coedithtml/app": "workspace:*",
     "@coedithtml/runtime": "workspace:*",
     "wrangler": "^4.112.0"
