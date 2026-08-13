@@ -3,7 +3,7 @@ import { accessTokenKey } from "./storage-keys";
 
 export const tokenRecordSchema = z.object({
   artifactId: z.string(),
-  kind: z.enum(["view", "edit"]),
+  kind: z.enum(["view", "suggest", "edit"]),
 });
 
 export type TokenRecord = z.infer<typeof tokenRecordSchema>;

@@ -15,6 +15,7 @@ import { handleRoomConnect } from "./room";
 const ARTIFACT_ID = "a".repeat(32);
 const REVISION = "9f2c1a04b7e35d68";
 const VIEW_TOKEN = "c".repeat(32);
+const SUGGEST_TOKEN = "e".repeat(32);
 const EDIT_TOKEN = "d".repeat(32);
 const APP_ORIGIN = `https://${FAKE_APP_HOST}`;
 
@@ -25,6 +26,10 @@ async function seededKv(password?: string): Promise<KVNamespace> {
     {
       key: accessTokenKey(VIEW_TOKEN),
       value: { artifactId: ARTIFACT_ID, kind: "view" },
+    },
+    {
+      key: accessTokenKey(SUGGEST_TOKEN),
+      value: { artifactId: ARTIFACT_ID, kind: "suggest" },
     },
     {
       key: accessTokenKey(EDIT_TOKEN),
@@ -106,6 +111,14 @@ describe("handleRoomConnect", () => {
     const { room } = await connect(VIEW_TOKEN);
 
     expect(room.connects[0]?.request.headers.get(ROOM_WRITE_HEADER)).toBe("no");
+  });
+
+  it("grants writing to a suggest token", async () => {
+    const { room } = await connect(SUGGEST_TOKEN);
+
+    expect(room.connects[0]?.request.headers.get(ROOM_WRITE_HEADER)).toBe(
+      "yes",
+    );
   });
 
   it("stamps the overlay with the revision on show, not the artifact id", async () => {

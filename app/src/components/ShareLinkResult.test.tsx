@@ -10,7 +10,13 @@ describe("ShareLinkResult", () => {
   });
 
   it("shows the share URL", () => {
-    render(<ShareLinkResult shareUrl={SHARE_URL} onUploadAnother={() => {}} />);
+    render(
+      <ShareLinkResult
+        shareUrl={SHARE_URL}
+        permission="suggest"
+        onUploadAnother={() => {}}
+      />,
+    );
 
     expect(() => screen.getByText(SHARE_URL)).not.toThrow();
   });
@@ -19,7 +25,13 @@ describe("ShareLinkResult", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { clipboard: { writeText } });
 
-    render(<ShareLinkResult shareUrl={SHARE_URL} onUploadAnother={() => {}} />);
+    render(
+      <ShareLinkResult
+        shareUrl={SHARE_URL}
+        permission="suggest"
+        onUploadAnother={() => {}}
+      />,
+    );
 
     fireEvent.click(screen.getByText("Copy link"));
     await vi.waitFor(() => {
@@ -33,7 +45,13 @@ describe("ShareLinkResult", () => {
     const writeText = vi.fn().mockRejectedValue(new Error("denied"));
     vi.stubGlobal("navigator", { clipboard: { writeText } });
 
-    render(<ShareLinkResult shareUrl={SHARE_URL} onUploadAnother={() => {}} />);
+    render(
+      <ShareLinkResult
+        shareUrl={SHARE_URL}
+        permission="suggest"
+        onUploadAnother={() => {}}
+      />,
+    );
 
     fireEvent.click(screen.getByText("Copy link"));
     await vi.waitFor(() => {
@@ -46,6 +64,7 @@ describe("ShareLinkResult", () => {
     render(
       <ShareLinkResult
         shareUrl={SHARE_URL}
+        permission="suggest"
         onUploadAnother={onUploadAnother}
       />,
     );

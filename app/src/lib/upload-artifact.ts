@@ -6,8 +6,10 @@ export const MAX_ARTIFACT_BYTES = 5 * 1024 * 1024;
 const uploadResponseSchema = z.object({
   artifactId: z.string(),
   viewToken: z.string(),
+  suggestToken: z.string(),
   editToken: z.string(),
   viewUrl: z.string(),
+  suggestUrl: z.string(),
   editUrl: z.string(),
 });
 
