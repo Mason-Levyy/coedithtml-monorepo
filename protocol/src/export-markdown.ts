@@ -1,12 +1,16 @@
 import {
+  editsAmong,
   repliesTo,
   threadsIn,
+  type EditEntry,
   type OverlayEntry,
   type ReplyEntry,
 } from "./overlay";
 
 const UNPLACED_NOTE =
   "These were left on content that is no longer in the file.";
+
+const EDITS_NOTE = "Text already changed in the file. Keep these changes.";
 
 function speakerOf(entry: OverlayEntry | ReplyEntry): string {
   return entry.author.displayName.length > 0
@@ -41,10 +45,23 @@ function threadBlock(
   return [headingFor(thread, depth), ...spoken];
 }
 
-function tally(threads: OverlayEntry[]): string {
+function tally(threads: OverlayEntry[], edits: EditEntry[]): string {
   const open = threads.filter((thread) => thread.status === "open").length;
   const noun = threads.length === 1 ? "thread" : "threads";
-  return `${threads.length} ${noun}, ${open} still open.`;
+  const counted = `${threads.length} ${noun}, ${open} still open.`;
+  if (edits.length === 0) {
+    return counted;
+  }
+  const changes = edits.length === 1 ? "change" : "changes";
+  return `${counted} ${edits.length} text ${changes} already made.`;
+}
+
+function editBlock(edit: EditEntry, depth: string): string[] {
+  const from = collapse(edit.anchor.kind === "text" ? edit.anchor.quote : "");
+  return [
+    `${depth} "${from}" → "${collapse(edit.body)}"`,
+    `Changed by ${speakerOf(edit)}.`,
+  ];
 }
 
 export function overlayToMarkdown(overlay: {
@@ -53,7 +70,8 @@ export function overlayToMarkdown(overlay: {
   orphaned: string[];
 }): string {
   const threads = threadsIn(overlay.entries);
-  if (threads.length === 0) {
+  const edits = editsAmong(overlay.entries);
+  if (threads.length === 0 && edits.length === 0) {
     return "";
   }
 
@@ -63,7 +81,7 @@ export function overlayToMarkdown(overlay: {
 
   const blocks: string[] = [
     `# Feedback on ${overlay.fileName}`,
-    tally(threads),
+    tally(threads, edits),
     ...placed.flatMap((thread) => threadBlock(overlay.entries, thread, "##")),
   ];
 
@@ -71,6 +89,13 @@ export function overlayToMarkdown(overlay: {
     blocks.push("## Unplaced", UNPLACED_NOTE);
     for (const thread of unplaced) {
       blocks.push(...threadBlock(overlay.entries, thread, "###"));
+    }
+  }
+
+  if (edits.length > 0) {
+    blocks.push("## Text already changed", EDITS_NOTE);
+    for (const edit of edits) {
+      blocks.push(...editBlock(edit, "###"));
     }
   }
 

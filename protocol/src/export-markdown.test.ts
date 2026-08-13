@@ -3,6 +3,7 @@ import { overlayToMarkdown } from "./export-markdown";
 import type {
   Author,
   CommentEntry,
+  EditEntry,
   OverlayEntry,
   ReplyEntry,
   StickyEntry,
@@ -53,6 +54,17 @@ function reply(overrides: Partial<ReplyEntry> = {}): ReplyEntry {
     kind: "reply",
     parentId: "c1",
     id: "r1",
+    ...overrides,
+  };
+}
+
+function textEdit(overrides: Partial<EditEntry> = {}): EditEntry {
+  return {
+    ...comment(),
+    kind: "edit",
+    id: "e1",
+    body: "Revenue fell 4%",
+    rev: 0,
     ...overrides,
   };
 }
@@ -163,5 +175,38 @@ describe("overlayToMarkdown", () => {
 
   it("ends with exactly one newline", () => {
     expect(render([comment()]).endsWith("?\n")).toBe(true);
+  });
+
+  it("carries text changes, so the model keeps them instead of undoing them", () => {
+    const markdown = render([textEdit()]);
+
+    expect(markdown).toContain("## Text already changed");
+    expect(markdown).toContain('### "Revenue grew 18%" → "Revenue fell 4%"');
+    expect(markdown).toContain("Changed by Priya.");
+  });
+
+  it("counts changes beside threads", () => {
+    const markdown = render([comment(), textEdit()]);
+
+    expect(markdown).toContain(
+      "1 thread, 1 still open. 1 text change already made.",
+    );
+  });
+
+  it("says nothing about changes when there are none", () => {
+    expect(render([comment()])).not.toContain("text change");
+  });
+
+  it("exports an artifact that was edited but never commented on", () => {
+    const markdown = render([textEdit()]);
+
+    expect(markdown).toContain("# Feedback on q3-review.html");
+    expect(markdown).toContain("0 threads, 0 still open.");
+  });
+
+  it("keeps an edit out of the thread list it does not belong in", () => {
+    const markdown = render([textEdit()]);
+
+    expect(markdown).not.toContain('## On "Revenue grew 18%"');
   });
 });
