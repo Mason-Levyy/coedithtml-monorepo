@@ -16,7 +16,11 @@ import {
 } from "@/lib/overlay-log";
 import { capabilitiesInHeader } from "@/lib/room-capabilities";
 import { attachmentOf, readersAmong } from "@/lib/room-presence";
-import { ROOM_KIND_HEADER, ROOM_REVISION_HEADER } from "@/lib/room-headers";
+import {
+  ROOM_KIND_HEADER,
+  ROOM_OVERLAY_PATH,
+  ROOM_REVISION_HEADER,
+} from "@/lib/room-headers";
 
 const MAX_CONNECTIONS = 64;
 
@@ -39,6 +43,10 @@ export class DocRoom extends DurableObject<Env> {
   }
 
   override fetch(request: Request): Response {
+    if (new URL(request.url).pathname === ROOM_OVERLAY_PATH) {
+      const revision = request.headers.get(ROOM_REVISION_HEADER) ?? "unknown";
+      return Response.json(this.overlay(revision));
+    }
     if (request.headers.get("upgrade") !== "websocket") {
       return new Response("Expected a websocket upgrade.", { status: 426 });
     }

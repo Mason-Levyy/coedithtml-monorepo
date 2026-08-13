@@ -3,7 +3,12 @@ import {
   revisionInRuntimePath,
   RUNTIME_ASSET_PATH,
 } from "@/lib/artifact-render";
+import {
+  DOWNLOAD_QUERY_PARAM,
+  downloadChoiceIn,
+} from "@/lib/artifact-download";
 import { getArtifact } from "@/lib/artifact-store";
+import { handleArtifactDownload } from "@/routes/download";
 import type { WorkerEnv } from "@/lib/env";
 import { originFor } from "@/lib/origins";
 import { checkPasswordGate } from "@/lib/password-gate";
@@ -93,6 +98,17 @@ export async function handleSandboxRequest(
       return sandboxResponse(UNAVAILABLE, 500, headers);
     }
     return sandboxResponse("This link needs a password.", 401, headers);
+  }
+
+  const choice = downloadChoiceIn(url.searchParams.get(DOWNLOAD_QUERY_PARAM));
+  if (choice !== null) {
+    return handleArtifactDownload({
+      request,
+      env,
+      headers,
+      artifact: resolved.artifact,
+      choice,
+    });
   }
 
   const result = await getArtifact(

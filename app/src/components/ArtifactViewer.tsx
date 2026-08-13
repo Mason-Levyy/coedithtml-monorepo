@@ -264,7 +264,7 @@ export function ArtifactViewer({
           <ViewerBar
             title={bridge.title ?? fileName}
             fileName={fileName}
-            trailing={<ShareMenu feedback={feedback} />}
+            trailing={<ShareMenu feedback={feedback} artifactUrl={src} />}
           >
             {canMarkUp && (
               <ReaderChip

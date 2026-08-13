@@ -17,14 +17,16 @@ function stubClipboard(): { written: string[] } {
   return { written };
 }
 
+const ARTIFACT_URL = "https://sandbox.test/aaaa?r=9f2c";
+
 function openMenu(feedback = FEEDBACK): void {
-  render(<ShareMenu feedback={feedback} />);
+  render(<ShareMenu feedback={feedback} artifactUrl={ARTIFACT_URL} />);
   fireEvent.click(screen.getByRole("button", { name: "Share" }));
 }
 
 describe("ShareMenu", () => {
   it("keeps both actions behind one control until it is opened", () => {
-    render(<ShareMenu feedback={FEEDBACK} />);
+    render(<ShareMenu feedback={FEEDBACK} artifactUrl={ARTIFACT_URL} />);
 
     expect(screen.queryByText("Copy link")).toBeNull();
     expect(screen.queryByText("Copy feedback for AI tool")).toBeNull();
@@ -73,6 +75,30 @@ describe("ShareMenu", () => {
 
     expect(copy).toHaveProperty("disabled", true);
     expect(screen.getByText("No feedback to copy yet.")).toBeTruthy();
+  });
+
+  it("warns that the plain download leaves comments out", () => {
+    openMenu();
+
+    expect(
+      screen.getByText(
+        "Your file with the text changes applied. Comments and sticky notes are not included.",
+      ),
+    ).toBeTruthy();
+  });
+
+  it("changes what it promises when a different download is chosen", () => {
+    openMenu();
+
+    fireEvent.change(screen.getByLabelText("Download"), {
+      target: { value: "everything" },
+    });
+
+    expect(
+      screen.getByText(
+        "Your file with the text changes applied, and every comment listed at the end.",
+      ),
+    ).toBeTruthy();
   });
 
   it("says when the clipboard refused rather than claiming success", async () => {
