@@ -4,7 +4,7 @@
     "lib": ["ES2022"],
     // Generated from wrangler.jsonc by the typecheck script, so binding types
     // can never drift from the deployed config. Not committed — it is 500KB+.
-    "types": ["./worker-configuration.d.ts"],
+    "types": ["./worker-configuration.d.ts", "@cloudflare/vitest-pool-workers"],
     "baseUrl": ".",
     "paths": {
       "@/lib/*": ["lib/*"],
