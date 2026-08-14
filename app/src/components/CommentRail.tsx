@@ -10,15 +10,16 @@ import {
   editsAmong,
   repliesTo,
   threadsIn,
+  unresolvedCount,
   type RejectionReason,
   type TextAnchor,
 } from "@/lib/protocol";
 import type { RoomStatus } from "@/lib/room-socket";
 
 const STATUS_LABEL: Record<RoomStatus, string> = {
-  connecting: "Connecting…",
-  open: "Live",
-  closed: "Reconnecting…",
+  connecting: "Connecting\u2026",
+  open: "Comments",
+  closed: "Reconnecting\u2026",
 };
 
 const REJECTION_LABEL: Record<RejectionReason, string> = {
@@ -73,17 +74,16 @@ export function CommentRail({
   return (
     <aside
       aria-label="Comments"
-      className="flex h-full w-[min(20rem,100vw)] flex-none flex-col border-l-2 border-ink bg-paper"
+      className="flex h-full w-[min(20rem,100vw)] flex-none flex-col border-l border-line bg-paper"
     >
-      <header className="flex items-center gap-2 border-b-2 border-ink px-3 py-2">
-        <span className="font-mono text-[10px] text-muted-foreground uppercase">
-          {STATUS_LABEL[room.status]}
-        </span>
-        {others.length > 0 && (
+      <header className="flex h-10 items-center justify-between border-b border-line px-3 pt-0.5">
+        {others.length > 0 ? (
           <span className="truncate font-mono text-[10px] text-muted-foreground uppercase">
-            · {others.length} other {others.length === 1 ? "reader" : "readers"}{" "}
+            {others.length} other {others.length === 1 ? "reader" : "readers"}{" "}
             here
           </span>
+        ) : (
+          <span />
         )}
         <Button
           type="button"
@@ -91,7 +91,7 @@ export function CommentRail({
           variant="ghost"
           aria-label="Close comments"
           title="Close comments"
-          className="-mr-1 ml-auto px-2"
+          className="size-6 p-0 text-muted-foreground hover:text-foreground"
           onClick={onClose}
         >
           ✕
@@ -99,9 +99,23 @@ export function CommentRail({
       </header>
 
       {room.rejection !== null && (
-        <p className="border-b-2 border-ink bg-card px-3 py-2 text-xs text-destructive">
-          {REJECTION_LABEL[room.rejection] ?? "That change was not accepted."}
-        </p>
+        <div className="mx-3 mt-2.5 flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/15 px-3 py-2 text-xs font-semibold text-red-900 shadow-xs backdrop-blur-md dark:border-red-400/30 dark:bg-red-500/20 dark:text-red-200">
+          <span className="mt-0.5 flex size-3.5 flex-none items-center justify-center rounded-full bg-red-600/20 font-mono text-[9px] font-bold text-red-900 dark:text-red-200">
+            !
+          </span>
+          <span className="min-w-0 flex-1 leading-snug">
+            {REJECTION_LABEL[room.rejection] ?? "That change was not accepted."}
+          </span>
+          <button
+            type="button"
+            aria-label="Dismiss warning"
+            title="Dismiss warning"
+            onClick={room.dismissRejection}
+            className="-mr-1 -my-0.5 flex size-5 flex-none items-center justify-center rounded text-xs text-red-900/80 hover:bg-red-500/20 hover:text-red-950 dark:text-red-200/80 dark:hover:text-red-100 cursor-pointer transition-colors"
+          >
+            ✕
+          </button>
+        </div>
       )}
 
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">

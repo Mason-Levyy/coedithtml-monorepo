@@ -14,8 +14,6 @@ type StickyPadProps = {
 
 const DRAG_THRESHOLD = 5;
 
-const FOLDED_EAR = "polygon(100% 0, 100% 100%, 0 100%)";
-
 function travelled(from: PadPoint, to: PadPoint): number {
   return Math.max(Math.abs(to.x - from.x), Math.abs(to.y - from.y));
 }
@@ -59,26 +57,35 @@ export function StickyPad({ armed, color, onArm, onDrop }: StickyPadProps) {
         }}
         onPointerCancel={finish}
         className={cn(
-          "relative flex h-8 min-w-28 flex-none items-center justify-center",
-          "border-2 border-ink px-2 touch-none select-none",
-          "font-mono text-xs tracking-wide uppercase",
-          "focus-visible:outline-2 focus-visible:outline-ring",
-          armed && "outline-2 outline-offset-2 outline-ink",
+          "relative flex size-8 flex-none items-center justify-center rounded-md transition-all cursor-pointer outline-none focus:outline-none focus-visible:outline-none",
+          armed
+            ? "shadow-xs text-ink"
+            : "text-foreground hover:bg-paper/80 active:scale-95 bg-transparent",
         )}
-        style={{
-          background: effectiveFill(paint),
-          color: textOn(effectiveFill(paint)),
-        }}
+        style={
+          armed
+            ? {
+                backgroundColor: `${color}33`,
+              }
+            : undefined
+        }
       >
-        <span>{armed ? "Click page" : "Sticky"}</span>
-        <span
-          aria-hidden
-          className="absolute right-0 bottom-0 size-3"
-          style={{
-            background: effectiveEdge(paint),
-            clipPath: FOLDED_EAR,
-          }}
-        />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-ink"
+        >
+          <line x1="12" y1="17" x2="12" y2="22" />
+          <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" />
+        </svg>
+        <span className="sr-only">{armed ? "Click page" : "Sticky"}</span>
       </button>
 
       {ghost !== null && (

@@ -26,11 +26,11 @@ export function ShareLinkResult({
   }
 
   return (
-    <div className="flex flex-col gap-3 border-2 border-ink bg-card p-6">
+    <div className="flex flex-col gap-3.5 rounded-xl border border-line bg-card p-6 shadow-md">
       <span className="font-mono text-xs tracking-wide text-muted-foreground uppercase">
         Your link is ready
       </span>
-      <div className="flex items-center gap-2 border border-line bg-paper-2 px-3 py-2">
+      <div className="flex items-center gap-2 rounded-md border border-line bg-paper-2 px-3 py-2">
         <span className="min-w-0 flex-1 truncate font-mono text-sm text-foreground">
           {shareUrl}
         </span>

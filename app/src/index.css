@@ -34,7 +34,7 @@
   --destructive-foreground: #ffffff;
   --border: var(--color-line);
   --input: var(--color-line);
-  --ring: var(--color-tape);
+  --ring: var(--color-line);
   --radius: 3px;
 }
 

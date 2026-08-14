@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getNatureIcon } from "@/components/nature-icons";
 import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import type { ReaderIdentity } from "@/hooks/useReaderIdentity";
@@ -14,23 +15,35 @@ type ReaderChipProps = {
 };
 
 export function ReaderChip({ identity, open, onOpenChange }: ReaderChipProps) {
+  const NatureIcon = getNatureIcon(
+    identity.reader.id || identity.reader.displayName,
+  );
+
   return (
     <Popover
       open={open}
       onOpenChange={onOpenChange}
+      align="end"
       className="w-64"
       trigger={(props) => (
         <button
           type="button"
           aria-label="Your name and colour"
-          className="flex h-8 max-w-40 items-center gap-2 border-2 border-ink bg-card px-2 font-mono text-xs tracking-wide uppercase hover:bg-paper focus-visible:outline-2 focus-visible:outline-ring"
+          title={
+            identity.named ? identity.reader.displayName : "Your name and colour"
+          }
+          className="flex size-8 items-center justify-center rounded-full transition-transform hover:scale-105 active:scale-95 cursor-pointer"
           {...props}
         >
           <span
-            className="size-3 flex-none border border-ink"
-            style={{ background: identity.color }}
-          />
-          <span className="truncate">
+            className="flex size-8 flex-none items-center justify-center rounded-full text-ink transition-colors"
+            style={{
+              backgroundColor: `${identity.color}33`,
+            }}
+          >
+            <NatureIcon className="size-4 text-ink" />
+          </span>
+          <span className="sr-only">
             {identity.named ? identity.reader.displayName : "Add your name"}
           </span>
         </button>
@@ -67,7 +80,7 @@ function IdentityPanel({ identity }: { identity: ReaderIdentity }) {
           onBlur={() => changed && identity.rename(draft)}
           placeholder="Your name"
           aria-label="Your name"
-          className="min-w-0 flex-1 border-2 border-line bg-paper px-2 py-1 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+          className="min-w-0 flex-1 rounded-md border border-line bg-paper px-2.5 py-1 text-sm focus-visible:outline-2 focus-visible:outline-ring"
         />
         {changed && (
           <Button type="submit" size="sm" variant="outline">
@@ -92,7 +105,7 @@ function IdentityPanel({ identity }: { identity: ReaderIdentity }) {
             aria-pressed={swatch === identity.color}
             onClick={() => identity.recolor(swatch)}
             className={cn(
-              "size-5 border transition-transform hover:scale-110",
+              "size-5 rounded-xs border transition-transform hover:scale-110 cursor-pointer",
               swatch === identity.color
                 ? "border-ink ring-1 ring-ink"
                 : "border-line",

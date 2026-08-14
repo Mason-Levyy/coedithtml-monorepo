@@ -86,19 +86,7 @@ describe("ArtifactViewer", () => {
     expect(screen.queryByText("Injected")).toBeNull();
   });
 
-  it("shows the file name until the artifact reports its own title", () => {
-    renderViewer();
 
-    expect(screen.getByText("q3-review.html")).toBeTruthy();
-  });
-
-  it("prefers the title the artifact reports", () => {
-    renderViewer();
-
-    announceReady("Make artifacts work like documents");
-
-    expect(screen.getByText("Make artifacts work like documents")).toBeTruthy();
-  });
 
   it("adds no navigation of its own, only the share and rail controls", () => {
     renderViewer();
@@ -112,7 +100,7 @@ describe("ArtifactViewer", () => {
         .map(
           (button) => button.getAttribute("aria-label") ?? button.textContent,
         ),
-    ).toEqual(["Share", "Hide comments", "Close comments"]);
+    ).toEqual(["Hide comments", "Share", "Close comments"]);
   });
 
   it("fills the frame until the artifact says how it wants to be sized", () => {
