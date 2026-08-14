@@ -1,13 +1,24 @@
-const PASTED_THREAD = `## q3-launch-plan.html
+// The shape overlayToMarkdown() in protocol/src/export-markdown.ts actually
+// produces, trimmed to fit the panel.
+const PASTED_THREAD = `# Feedback on q3-launch-plan.html
 
-> Pricing lands the same week
-Priya — Can pricing wait a week? Legal has
-not signed the tiers off.
+2 threads, 1 still open. 1 text change
+already made.
 
-Rowan — Where is churn on this? (sticky, on
-the chart)
+## On "Pricing lands the same week"
 
-Changed by Rowan: "four" -> "six"`;
+**Priya:** Can pricing wait a week? Legal
+has not signed the tiers off.
+
+## Sticky note
+
+**Rowan:** Where is churn on this?
+
+## Text already changed
+
+### "four" → "six"
+
+Changed by Rowan.`;
 
 export function Promises() {
   return (
@@ -18,8 +29,8 @@ export function Promises() {
           <h3>Your file is not touched</h3>
           <p>
             Comments and edits are stored next to your file, never inside it.
-            The bytes you upload are the bytes served back — the same markup,
-            the same scripts, the same styling, down to the whitespace.
+            The bytes you upload are the bytes served back. Same markup, same
+            scripts, same styling, down to the whitespace.
           </p>
           <p>
             Download it whenever you want, with or without the changes people

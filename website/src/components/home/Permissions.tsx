@@ -7,7 +7,7 @@ const LEVELS = [
   {
     tone: "comment",
     title: "Comment",
-    body: "They highlight a sentence and say what is wrong with it, or drop a sticky note anywhere on the page — including on a chart with no text to select.",
+    body: "They highlight a sentence and say what is wrong with it, or drop a sticky note anywhere on the page, including on a chart with no text to select.",
   },
   {
     tone: "edit",

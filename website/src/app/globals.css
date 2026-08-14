@@ -13,7 +13,7 @@
   --dry: #b7bcc2;
   --tape: #e8c547;
 
-  /* MARK_FILL and MARK_EDGE from protocol/src/colors.ts — what a reader's
+  /* MARK_FILL and MARK_EDGE from protocol/src/colors.ts. What a reader's
      marks actually look like, so the mock is not inventing a palette. */
   --mark-blue: #c3ddff;
   --mark-blue-edge: #5b9ae0;
@@ -378,44 +378,6 @@ strong {
 .prose p,
 .prose li {
   max-width: var(--measure);
-}
-
-.steps {
-  margin: 1.75rem 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-}
-
-.steps li {
-  position: relative;
-  margin-bottom: 1.4rem;
-  padding-left: 3rem;
-  color: var(--ink-soft);
-  counter-increment: step;
-}
-
-.steps li::before {
-  content: counter(step);
-  position: absolute;
-  left: 0;
-  top: 0.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
-  background: var(--paper-2);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.steps strong {
-  display: block;
 }
 
 @media (prefers-reduced-motion: reduce) {

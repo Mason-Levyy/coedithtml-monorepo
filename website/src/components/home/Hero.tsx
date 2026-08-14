@@ -9,7 +9,7 @@ export function Hero() {
           <p className="eyebrow">One file · one link · no account</p>
           <h1>Send the file, not a screenshot.</h1>
           <p className="lede">
-            You have an HTML file — a deck, a dashboard, a one-pager — and three
+            You have an HTML file. A deck, a dashboard, a one-pager. And three
             people who need to react to it. Upload it here and you get a link.
             It opens in their browser and works the way you built it.
           </p>

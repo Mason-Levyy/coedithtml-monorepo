@@ -23,8 +23,8 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://coedithtml.com"),
   title: {
-    default: "coeditHTML — share an HTML file people can comment on",
-    template: "%s — coeditHTML",
+    default: "coeditHTML: share an HTML file people can comment on",
+    template: "%s · coeditHTML",
   },
   description:
     "Upload a single HTML file and get a link. The people you send it to can read it, comment on it, or edit the text, without installing anything.",

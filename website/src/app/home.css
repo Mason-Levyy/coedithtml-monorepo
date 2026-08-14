@@ -28,7 +28,7 @@
   }
 }
 
-/* The artifact mock — the page's signature ---------------------------- */
+/* The artifact mock, which is the page's signature -------------------- */
 
 .mock {
   border: 2px solid var(--ink);
