@@ -86,10 +86,19 @@ Local UI state stays in components.
 else's document.
 
 - **Zero dependencies.** No React, no Yjs, no npm packages. Vanilla DOM.
-- **Size budget: 40KB minified.** A PR that exceeds it needs justification. The
-  budget was 20KB while the runtime only reported, 32KB when it gained
-  selection and highlights, and 40KB once stickies became directly
-  manipulable — it is re-set deliberately, never quietly.
+- **Size budgets, per bundle: 30KB for `runtime.js`, 22KB for `author.js`,
+  12KB for `download.js`.** Set in `runtime/check-bundle-size.mjs`, which is
+  the only place the numbers live. A PR that exceeds one needs justification,
+  and a bundle with no budget fails the check by design. `author.js` went from
+  18KB to 22KB when text became editable in place — budgets are re-set
+  deliberately, never quietly.
+- **The reader's bundle is the one that matters.** `runtime.js` goes to
+  everyone who opens a link; `author.js` loads only once the room reports
+  `canWrite`. Anything only a writer can reach — gestures, the place tool,
+  the body editor, the edit surface, selection reporting — belongs in the
+  authoring chunk. Anything needed to *read* a marked-up, edited document —
+  painting, the sticky view, `edits/apply` — stays in the core, because a
+  view-only reader still has to see an edit somebody else made.
 - **Never leak.** One namespaced global. All UI in a shadow root so our styles
   cannot touch the artifact and theirs cannot touch ours.
 - **Fail open.** If the websocket dies or the runtime throws, the artifact must

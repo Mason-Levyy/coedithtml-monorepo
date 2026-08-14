@@ -11,9 +11,7 @@ function shareUrlFor(
   if (permission === "view") {
     return data.viewUrl;
   }
-  // TODO: direct artifact editing isn't built yet. Once it is, route
-  // "edit" to data.editUrl instead of falling back to the suggest link.
-  return data.suggestUrl;
+  return permission === "edit" ? data.editUrl : data.suggestUrl;
 }
 
 export function LandingPage() {

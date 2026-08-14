@@ -58,36 +58,18 @@ function threadHtml(entries: OverlayEntry[], thread: OverlayEntry): string {
   return `<li><h3>${headingFor(thread)}</h3>${spoken}</li>`;
 }
 
-function editsHtml(entries: OverlayEntry[]): string {
-  const edits = editsAmong(entries);
-  if (edits.length === 0) {
-    return "";
-  }
-  const rows = edits
-    .map((edit) => {
-      const from = edit.anchor.kind === "text" ? edit.anchor.quote : "";
-      return `<li><del>${escapeHtml(from)}</del> <ins>${escapeHtml(edit.body)}</ins> &mdash; ${escapeHtml(speakerOf(edit))}</li>`;
-    })
-    .join("");
-  return `<h2>Text changed</h2><ul>${rows}</ul>`;
-}
-
+// Text changes are not listed here. They are already in the document above,
+// applied — printing them again as a before and after says the same thing
+// twice and reads like a diff nobody asked for.
 export function feedbackSection(entries: OverlayEntry[]): string {
   const threads = threadsIn(entries);
-  if (threads.length === 0 && editsAmong(entries).length === 0) {
+  if (threads.length === 0) {
     return "";
   }
-  const comments =
-    threads.length === 0
-      ? ""
-      : `<h2>Comments</h2><ul>${threads
-          .map((thread) => threadHtml(entries, thread))
-          .join("")}</ul>`;
   return [
     '\n<section style="margin:3rem 1rem;padding-top:1rem;border-top:2px solid #111;font:14px/1.5 system-ui,sans-serif;color:#111">',
-    "<h1>Feedback</h1>",
-    editsHtml(entries),
-    comments,
+    "<h1>Comments</h1>",
+    `<ul>${threads.map((thread) => threadHtml(entries, thread)).join("")}</ul>`,
     "</section>\n",
   ].join("");
 }
