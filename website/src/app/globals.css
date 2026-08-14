@@ -1,0 +1,392 @@
+/* The palette, the type, and the 2px ink rule all come from app/src/index.css.
+   The site and the app are meant to read as one thing. */
+:root {
+  color-scheme: light;
+
+  --paper: #e9eae4;
+  --paper-2: #f4f5f0;
+  --ink: #14161a;
+  --ink-soft: #5c6169;
+  --line: #cbcec5;
+  --wet: #1b44e0;
+  --wet-deep: #0f2fa8;
+  --dry: #b7bcc2;
+  --tape: #e8c547;
+
+  /* MARK_FILL and MARK_EDGE from protocol/src/colors.ts. What a reader's
+     marks actually look like, so the mock is not inventing a palette. */
+  --mark-blue: #c3ddff;
+  --mark-blue-edge: #5b9ae0;
+  --mark-yellow: #fff3a3;
+  --mark-yellow-edge: #e0c419;
+
+  --radius: 3px;
+  --measure: 36rem;
+
+  --font-sans:
+    var(--font-archivo), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--wet-deep);
+  text-underline-offset: 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--tape);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+}
+
+.shell {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 68rem;
+  padding: 0 1.5rem;
+}
+
+/* Type ---------------------------------------------------------------- */
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2rem, 5.2vw, 3.25rem);
+}
+
+h2 {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+h3 {
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+
+p {
+  margin: 0 0 1rem;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.eyebrow {
+  margin: 0 0 0.8rem;
+  color: var(--wet);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.lede {
+  max-width: var(--measure);
+  font-size: 1.15rem;
+  color: var(--ink);
+}
+
+.note {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.contact {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+/* Buttons ------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.7rem 1.3rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--wet);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition:
+    transform 0.1s linear,
+    box-shadow 0.1s linear,
+    background 0.1s linear;
+}
+
+.btn:hover {
+  background: var(--wet-deep);
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+.btn--quiet {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.btn--quiet:hover {
+  background: var(--paper);
+}
+
+.btn--small {
+  padding: 0.42rem 0.85rem;
+  font-size: 0.7rem;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.btn--small:hover {
+  transform: translate(2px, 2px);
+}
+
+/* Bands and cards ----------------------------------------------------- */
+
+.band {
+  padding: clamp(3rem, 7vw, 5.5rem) 0;
+}
+
+.band--wash {
+  background: var(--paper-2);
+  border-block: 2px solid var(--ink);
+}
+
+.band-head {
+  max-width: 42rem;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+}
+
+.card {
+  padding: 1.4rem 1.5rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--line);
+}
+
+.panel {
+  margin: 1.75rem 0;
+  padding: 1.25rem 1.4rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+}
+
+.panel :last-child {
+  margin-bottom: 0;
+}
+
+/* Header -------------------------------------------------------------- */
+
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--paper-2);
+  border-bottom: 2px solid var(--ink);
+}
+
+.masthead__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1.5rem;
+}
+
+.wordmark {
+  color: var(--ink);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wordmark b {
+  color: var(--wet);
+  font-weight: 800;
+}
+
+.masthead nav {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.masthead nav a:not(.btn) {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.masthead nav a:not(.btn):hover {
+  color: var(--wet);
+}
+
+@media (max-width: 46rem) {
+  .masthead nav a:not(.btn) {
+    display: none;
+  }
+}
+
+/* Footer -------------------------------------------------------------- */
+
+.site-footer {
+  padding: clamp(2.5rem, 6vw, 4rem) 0 3rem;
+  border-top: 2px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.site-footer__cols {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 2.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.site-footer h2 {
+  margin-bottom: 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+.site-footer ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.95rem;
+}
+
+.site-footer a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--wet);
+}
+
+.site-footer__blurb {
+  max-width: 20rem;
+  margin: 0.8rem 0 0;
+  font-size: 0.93rem;
+}
+
+.site-footer__base {
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 52rem) {
+  .site-footer__cols {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Prose pages --------------------------------------------------------- */
+
+.page-head {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: clamp(2.5rem, 6vw, 4rem) 1.5rem 0;
+}
+
+.page-head h1 {
+  font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+}
+
+.page-head .lede {
+  margin-top: 0.9rem;
+}
+
+.prose {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem clamp(3rem, 7vw, 5rem);
+}
+
+.prose h2 {
+  margin: 2.5rem 0 0.75rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+}
+
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose p,
+.prose li {
+  max-width: var(--measure);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
