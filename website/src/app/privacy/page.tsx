@@ -290,7 +290,6 @@ export default function PrivacyPage() {
         <p>
           We do not use your uploaded artifacts, comments, or edits to train
           machine learning models, and we do not sell them.
->>>>>>> 06556e4 (added privacy policy and TOS)
         </p>
 
         <hr />
