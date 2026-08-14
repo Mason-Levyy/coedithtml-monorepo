@@ -9,6 +9,7 @@ export default tseslint.config(
       "**/build/**",
       "worker/public/**",
       "**/.next/**",
+      "website/out/**",
       "**/.wrangler/**",
       "**/node_modules/**",
       "website/next-env.d.ts",
