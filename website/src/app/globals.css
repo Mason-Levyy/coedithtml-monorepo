@@ -13,6 +13,13 @@
   --dry: #b7bcc2;
   --tape: #e8c547;
 
+  /* MARK_FILL and MARK_EDGE from protocol/src/colors.ts — what a reader's
+     marks actually look like, so the mock is not inventing a palette. */
+  --mark-blue: #c3ddff;
+  --mark-blue-edge: #5b9ae0;
+  --mark-yellow: #fff3a3;
+  --mark-yellow-edge: #e0c419;
+
   --radius: 3px;
   --measure: 36rem;
 
