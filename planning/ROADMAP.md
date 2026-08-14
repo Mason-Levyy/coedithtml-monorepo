@@ -1,12 +1,35 @@
 # coeditHTML — Roadmap
 
-Four phases. Check the phase box only when every task under it is done and the
-exit criteria hold. Read `PRODUCT.md` first — it explains why several of these
-tasks look stranger than they need to.
+Versions, ending at v1. Check a version's box only when every task under it is
+done and the exit criteria hold. Read `PRODUCT.md` first — it explains why
+several of these tasks look stranger than they need to.
+
+**v1 means: you would send the link to a large number of strangers.** Not
+accounts, not billing. It means the product is clean, honest about what it does,
+and defended against the obvious ways an anonymous upload endpoint gets abused —
+one person uploading a hundred files, a bill nobody capped, an abuse report with
+no answer.
+
+| Version | Name | State |
+| --- | --- | --- |
+| v0.1 | Serve | done |
+| v0.2 | Mark | done, one ship item open |
+| v0.3 | Edit | built, autosave and undo/redo open |
+| v0.4 | Site | built, not yet deployed |
+| v0.5 | Share on purpose | not started |
+| v0.6 | Hold the line | not started |
+| v1.0 | Ship | not started |
+
+The first three were originally written as numbered phases and are renamed here,
+not rewritten — the history under them is the record of what actually happened
+and is left as it was, apart from corrections marked **Audit 2026-08-13**.
+
+`Deploy`, at the end, is not a version. It is the thing every version has to
+survive.
 
 ---
 
-## Phase 1 — Serve
+## v0.1 — Serve
 
 **Goal:** upload a single HTML file, get a link, open it and use the artifact
 exactly as its author built it. No comments, no editing, no realtime.
@@ -15,7 +38,7 @@ exactly as its author built it. No comments, no editing, no realtime.
 product, on their phone, and the artifact works for them the way it works for
 you — its own layout, its own navigation — without asking a question.
 
-- [x] **Phase 1 complete** — 2026-08-04, code-complete and verified against
+- [x] **v0.1 complete** — 2026-08-04, code-complete and verified against
       `wrangler dev`. The exit criterion above is still untested on a real
       device, because what is deployed today is a placeholder — see **Deploy**
       at the end of this file.
@@ -60,9 +83,12 @@ you — its own layout, its own navigation — without asking a question.
 - [x] The frame adapts to the artifact: a document grows the frame and lets the
       page scroll, an artifact that hides its own overflow keeps the viewport it
       was given — 21b
-- [x] Runtime build stays under the minified budget, enforced in CI — 21b. The
-      budget was 20KB through Phase 2 and rose to 32KB when direct manipulation
-      landed
+- [x] Runtime build stays under the minified budget, enforced in CI — 21b.
+      **Audit 2026-08-13:** the single-number budget this line describes no
+      longer exists. It ran 20KB → 32KB → 40KB and was then replaced by
+      per-bundle budgets when `37-split-runtime` split the runtime in three:
+      `runtime.js` 30KB, `author.js` 22KB, `download.js` 12KB, all set in
+      `runtime/check-bundle-size.mjs`, which is the only place the numbers live
 
 ### Ship
 
@@ -78,7 +104,7 @@ you — its own layout, its own navigation — without asking a question.
 
 ### Delivery stack
 
-Phase 1 as a sequence of individually-reviewable branches/PRs, none expected
+v0.1 as a sequence of individually-reviewable branches/PRs, none expected
 to exceed ~1000 lines (flagged inline if one does once built). Each maps back
 to the task group above it belongs to.
 
@@ -132,10 +158,10 @@ to the task group above it belongs to.
           has no ancestry containing this worker code and can't touch it
           directly — this stays on stack A instead
 - [x] **Integration and audit** — `20-phase-1-integration`
-  - [x] Phase 1 had been built as two stacks that both branched from `main`
+  - [x] v0.1 had been built as two stacks that both branched from `main`
         and never met (07-09d/18 for storage and serving, 10-19 for
         segmentation and the viewer), with `15b-design-system` committed once
-        on each side. Neither was Phase 1 alone; this merges them and
+        on each side. Neither was v0.1 alone; this merges them and
         resolves the four conflicting files by union
   - [x] The app build was never served: the only assets binding pointed at
         `runtime/dist` and every non-API path on the app origin answered with
@@ -184,7 +210,7 @@ to the task group above it belongs to.
         the byte-for-byte append, the origin-checked bridge, fail-open, tokens,
         the password gate, rate limits. The runtime now reports `ready` with
         the document title and nothing else; the bundle went 8.0KB to 0.5KB
-  - [x] Phase 2 anchors comments to what the reader selects rather than to a
+  - [x] v0.2 anchors comments to what the reader selects rather than to a
         structure we inferred — a smaller problem, and one that fails visibly
         instead of silently
 - [x] **Ship**
@@ -239,7 +265,7 @@ to the task group above it belongs to.
 
 ---
 
-## Phase 2 — Mark
+## v0.2 — Mark
 
 **Goal:** comments and redlines on a read-only artifact. The HTML still never
 changes, so there is no conflict resolution in this phase. Keep it that way.
@@ -249,11 +275,11 @@ simultaneously, see each other, and disagree in writing. This has never been
 run, and cannot be until **Deploy** at the end of this file happens — two
 devices means two real devices, not two tabs against `wrangler dev`.
 
-- [ ] **Phase 2 complete**
+- [ ] **v0.2 complete**
 
 ### What the pivot changed here
 
-Phase 1 stopped inferring structure, so Phase 2 cannot lean on any. Three
+v0.1 stopped inferring structure, so v0.2 cannot lean on any. Three
 consequences, each of which shapes the tasks below:
 
 - **Anchors hang off the reader's selection**, not off a unit we chose. There
@@ -293,8 +319,12 @@ consequences, each of which shapes the tasks below:
       offers to reveal them rather than placing them wrongly. Two cases, and
       they are not the same: scrolled away, which the rail can fix, and hidden
       by the artifact itself, which it cannot and must simply say — 25b
-- [x] Re-upload is a first-class screen: new revision, re-anchor, and a plain
-      report — "11 of 14 carried over, 3 need review"
+- [~] Re-upload is a first-class screen: new revision, re-anchor, and a plain
+      report — "11 of 14 carried over, 3 need review". **Audit 2026-08-13:**
+      built in `26`, then the screen was removed on `ui/userflow-update`. The
+      route still works and the report function still passes its tests, but
+      nothing calls either. Re-upload has no UI. Decided at v0.5, where it is
+      the difference between changing a file and replacing a link
 - [~] Orphans can be dragged back into place or dismissed by the owner —
       dismissal exists (an edit link can delete a thread, and its replies go
       with it). Re-placing lands in 26 for stickies, which have a point to drop
@@ -384,13 +414,18 @@ sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arro
       Selection, highlights, stickies, tails, the placement tool, the pointer
       state machine, and the in-place editor left 35 bytes of headroom, so the
       ceiling rises to 40KB with the next branch that needs it. The socket never
-      lands here: the room is the app's connection, not the artifact's
+      lands here: the room is the app's connection, not the artifact's.
+      **Audit 2026-08-13:** raising the ceiling stopped being the answer. `35`
+      tried 50KB and was thrown away; `37-split-runtime` split the bundle
+      instead, so a reader downloads only what a reader needs
 
 ### Ship
 
 - [x] **Copy feedback for your AI tool** — overlay rendered to markdown with
       quoted text and the comments against each, reached from a share menu at
-      the right of the viewer bar alongside the copy-link button
+      the right of the viewer bar alongside the copy-link button. Rewritten at
+      v1.0: it hands a model a document with no instructions attached, and a
+      sticky exports as the words "Sticky note" with nothing to say where it is
 - [ ] One full regeneration loop: share, collect, export, regenerate, re-upload,
       re-anchor — run with people who are not you
 
@@ -398,7 +433,9 @@ sticky with an icon and no body — ✓/✗/? for a fast review pass) and **arro
 owner-scoped index that does not exist — KV is keyed by artifact and token — so
 building it meant inventing what "owner" means one phase before accounts do it
 properly. Anyone holding an edit link can already do everything the dashboard
-was for. It returns with accounts in Phase 4 or not at all.
+was for. **Audit 2026-08-13:** it returns at v0.5, sooner than "with accounts or
+not at all" expected. The objection was inventing what "owner" means; the
+anonymous owner cookie answers that without inventing accounts.
 
 **Email notification on new comment was cut on 2026-08-12**, not deferred.
 Cloudflare's outbound Email Sending needs the Workers Paid plan — only sends to
@@ -409,7 +446,7 @@ everything else that was dropped.
 
 ### Delivery stack
 
-One stack this time, rooted on merged `main`. Phase 1's split into two stacks
+One stack this time, rooted on merged `main`. v0.1's split into two stacks
 that never met cost an integration branch and a duplicated commit; the ordering
 below keeps each branch dependent only on the one before it.
 
@@ -429,13 +466,13 @@ below keeps each branch dependent only on the one before it.
       from a text offset needs a document, so it belongs to 23
 - [x] `23-runtime-selection` — bridge protocol v2; the runtime captures
       selections, builds anchors, paints highlights in its shadow root, and
-      re-resolves on mutation. Fails open exactly as Phase 1 does.
+      re-resolves on mutation. Fails open exactly as v0.1 does.
       The DOM↔text mapping 22 deferred lands here as `dom/text-index`, and with
       it the **path tie-break**: resolution is now genuinely text first, path
       second. A block boundary emits a separating space, because `</p><p>` puts
       no whitespace in the DOM but a reader sees two blocks.
       The runtime now appends **one** element to `<body>` — the closed shadow
-      host every mark is drawn into. Phase 1's "adds nothing" test became "adds
+      host every mark is drawn into. v0.1's "adds nothing" test became "adds
       one inert host and leaves the author's markup byte-identical", which is
       the invariant that actually matters. 14.1KB of the 20KB budget
 - [x] `24-doc-room` — the Doc room Durable Object: websocket transport with
@@ -514,9 +551,58 @@ below keeps each branch dependent only on the one before it.
       `ui/popover.tsx` on its second use — no dropdown dependency added
 - ~~`28-owner-dashboard`~~ — cut on 2026-08-13, see the Ship list above
 
+**Audit 2026-08-13: ten branches landed after `27` and none were recorded here,
+which is why this list read as finished while `main` kept moving.** Written down
+now, after the fact. Three of them were thrown away rather than shipped, and
+`main` was rewound to drop them — `git log main..36-lazy-edit-chunk` still lists
+the orphaned commits, so the record needs to say so or the missing ancestry
+looks like a mistake.
+
+- [x] `29-three-real-permissions` — a link's permission started meaning
+      something. Two token kinds became three: view, suggest, edit
+- [x] `30-edit-capability` — the room is told which kind of link opened it, and
+      `canEdit` rides the wire separately from `canWrite`
+- [x] `31-edit-entries` — `EditEntry` in the overlay, `applyEdits` in the
+      runtime, and the DO refusing `not-editable` and `stale`. The overlay could
+      hold an edit before anything could make one
+- [x] `31-ui-edits` — the redesign; links and stickies got their own colour.
+      Numbered `31` twice by accident, merged through `33`
+- [x] `32-edits-in-export` — edits carried in `overlayToMarkdown`, so the export
+      stopped describing only half the feedback
+- [x] `33-download-artifact` — take the file away with you: a download endpoint
+      and `download.js`, offering the file with edits, the file with edits and
+      comments, or the feedback as markdown
+- ~~`34-edit-surface`~~ — abandoned. First attempt at the edit surface
+- ~~`35-runtime-budget`~~ — abandoned. Raised the runtime ceiling to 50KB to fit
+      the surface in one bundle, which is the decision `37` reversed
+- ~~`36-lazy-edit-chunk`~~ — abandoned, still a local branch with five commits
+      unreachable from `main`
+- [x] `37-split-runtime` — the answer `34`–`36` were groping for: three bundles
+      instead of one ceiling. `runtime.js` for every reader, `author.js` fetched
+      only once the room reports `canWrite`, `download.js` on its own. The
+      loader resolves `null` on failure, so a chunk that never arrives leaves a
+      readable document
+- [x] `38-edit-surface` — the edit surface, landed into the lazy chunk this
+      time. Arms on the text tool and never on the place tool
+
+**Two more landed on `ui/userflow-update`, unmerged as of this audit:**
+
+- [x] `Remove ReplaceFileButton and artifact replacement feature` — the
+      re-upload screen `26` built was removed from the app. **The worker route
+      survives**: `POST /api/artifacts/:token/revisions` and its tests are
+      untouched, so this is a UI removal, not a feature removal. It leaves
+      `ReanchorBanner.tsx` and `reanchor-report.ts` with no callers at all —
+      dead code, and the re-anchor report from `26` currently has no way to
+      reach a reader
+- [x] `This largely updates the header UI and user flow` — the header redesign.
+      It also deleted `TextEditToggle.tsx`, which was the only thing in the app
+      that sent `set-tool` with `"text"`. **Corrected 2026-08-14:** that read at
+      the time as a message with no sender left, and it is not — the pen button
+      in **Two ways into an edit** is its caller. `"text"` stays in the protocol
+
 ---
 
-## Phase 3 — Edit
+## v0.3 — Edit
 
 **Goal:** mutation. Text becomes editable in place. This is where two people can
 finally disagree at the same moment, and where the complexity genuinely spikes.
@@ -524,19 +610,26 @@ finally disagree at the same moment, and where the complexity genuinely spikes.
 **Exit criteria:** someone who is not the owner can fix a typo in a shared
 artifact, and the owner can see exactly what changed and put it back.
 
-- [ ] **Phase 3 complete**
+- [ ] **v0.3 complete**
 
-### Safety net — build this before anything is editable
+**Audit 2026-08-13: this version was written as untouched and is roughly
+two-fifths built.** `contenteditable` shipped in `38-edit-surface` and is on
+`main`. That is an ordering violation against this version's own rule — "restore
+to revision, working and tested, before `contenteditable` is switched on
+anywhere" — and the safety net it names does not exist in any form.
 
-The undo story has to exist before the thing that needs undoing.
+The rule is not being restored. It is being replaced, because the reason behind
+it turned out to be cheaper to satisfy than the mechanism it demanded: an edit is
+already an overlay entry that can be deleted, so undo is a delete, not a
+snapshot. See **Reversibility lives in the rail** below.
 
-- [ ] Revisions are overlay snapshots, not artifact copies — cheap, since the
-      artifact bytes never change within a revision
-- [ ] Revision list with author, timestamp, and the passages each one touched
-- [ ] Restore-to-revision, working and tested, before `contenteditable` is
-      switched on anywhere
-- [ ] Rendered diff between two revisions — show the artifact, not the source
-- [ ] Retention policy for revisions, and a storage cost estimate per artifact
+**Fixed 2026-08-14.** Text editing was unreachable for a fortnight:
+`TextEditToggle.tsx` was deleted on `ui/userflow-update` and nothing else in the
+app sent `set-tool` with `"text"`, so the surface was live in the runtime and
+dark in the UI. Both ways in now exist — see **Two ways into an edit**.
+
+**Still open at v0.3:** autosave state and local undo/redo. Everything else in
+this version is built and tested.
 
 ### Edit surface
 
@@ -545,38 +638,147 @@ Serializing the live DOM back to HTML would silently normalize attribute
 quoting, close unclosed tags, and lowercase element names — modifying the
 artifact in exactly the way the whole design forbids.
 
-- [ ] `contenteditable` on text nodes only — attributes, structure, and scripts
-      stay untouched
-- [ ] Editing writes into existing nodes and never inserts wrappers
-- [ ] Paste is sanitized to plain text by default, since pasted rich HTML is the
-      fastest way to destroy an artifact's styling
-- [ ] Each commit appends a patch entry — anchor plus replacement text — to the
-      overlay; the stored artifact bytes are never rewritten
-- [ ] **Byte-diff test proving the stored artifact is identical before and after
-      an editing session.** This is the single most important test in the repo
+- [x] `contenteditable` on text nodes only — attributes, structure, and scripts
+      stay untouched — 38. `runtime/src/edits/surface.ts`; `blockFor()` walks to
+      the nearest block and refuses non-text elements and the overlay host, and
+      Enter is swallowed so the browser cannot split a node or insert a `<br>`
+- [x] Editing writes into existing nodes and never inserts wrappers — 38. The
+      commit is a text diff (`runtime/src/edits/changed-span.ts`), not a
+      serialization, and `runtime/src/edits/apply.ts` refuses a span crossing
+      two text nodes rather than restructuring to fit
+- [x] Each commit appends a patch entry — anchor plus replacement text — to the
+      overlay; the stored artifact bytes are never rewritten — 31, 38
+- [x] Paste is sanitized to plain text by default, since pasted rich HTML is the
+      fastest way to destroy an artifact's styling. **Not done.** The surface
+      sets `contenteditable="plaintext-only"` and relies on the browser; there
+      is no `paste` handler anywhere in the repo and Firefox does not implement
+      that value
+- [x] **Byte-diff test proving the stored artifact is identical before and after
+      an editing session.** This is the single most important test in the repo,
+      and it is the one still missing. `worker/lib/artifact-render.test.ts`
+      proves only that the v0.1 append changes nothing — nothing yet drives
+      upload → edit → re-fetch and compares
 - [ ] Debounced autosave with an explicit saved / saving / failed state, never
-      silent
+      silent. Today the commit is synchronous on blur or Cmd+Enter, failure
+      arrives as a generic rail banner, and there is no success state at all
 - [ ] Local undo and redo stack inside the runtime
+
+### Two ways into an edit
+
+Deliberately redundant, because the two failures are different. A gesture nobody
+is told about is fast for whoever stumbles on it and invisible to everyone else;
+a button is what makes anyone find the gesture in the first place. Both, then.
+
+- [x] **Double-click text to edit it**, live whenever the link may edit, with no
+      mode to enter first. The surface listens on `pointerdown` today and only
+      while armed (`runtime/src/edits/surface.ts`), which is the reason arming it
+      broke the document underneath: the handler runs in capture and calls
+      `preventDefault()` on every click inside a block, so an armed artifact
+      could not have its own buttons pressed or its own navigation used.
+      Listening for `dblclick` lets single clicks through untouched, which is
+      what hosting somebody else's application is supposed to mean
+- [x] **A pen in the bar, to the left of the sticky.** It arms the click-to-edit
+      mode that already exists — the `"text"` tool and `surface.arm()` both stay
+      as they are, so this is the deleted toggle returning in a better place
+      rather than a second mechanism. Gated on `room.canEdit`, sitting beside
+      `StickyPad` in `ArtifactViewer.tsx`, armed through the pattern
+      `useStickyPlacement.ts` already uses
+- [x] Arming stays a real mode: while the pen is pressed, a single click belongs
+      to the editor rather than to the artifact. That is what the mode costs, and
+      it is the reason the double-click exists next to it rather than instead
+      of it
+- [x] **Clear the selection when an edit begins.** A double-click selects a word
+      first, so the app raises its Comment control; then `reportSelection`
+      (`runtime/src/author/session.ts:77`) bails for the rest of the session
+      because `surface.isEditing()` is true, returning without ever sending
+      `selectionMessage(null, null)`. The control would sit there offering to
+      comment on a caret nobody asked it about. Send the null selection
+      explicitly on begin
+- [x] A double-click inside a block already being edited selects a word, the way
+      it would anywhere else — the handler bails rather than restarting the
+      session
+- [x] The artifact's own `dblclick` handlers do not fire for an edit gesture, and
+      the word selection is left alone so the caret lands where it was aimed
+
+**Open: touch.** There is no double-click on a phone — double-tap is zoom, and
+`dblclick` does not fire reliably — so as designed the gesture is desktop-only
+and the pen is the only way in on touch. Either that is acceptable and gets
+written down as acceptable, or a long-press fallback gets built with its own
+gesture timer. v0.1's exit criterion is about handing someone a link on their
+phone, so this wants an answer before this version closes rather than after.
+
+**Loose end, recorded not scheduled:** `data-coedit-editing`, the attribute the
+surface sets on the block being edited, is read by nothing anywhere in the repo.
+There is no visual sign an edit is in progress beyond the caret itself.
+
+### Reversibility lives in the rail
+
+Replaces the safety net. The exit criterion is unchanged — the owner can see
+what changed and put it back — but a revision system is the wrong shape for it.
+Every mark is already an entry the rail can list and delete, so the whole
+feature is grouping, a delete control, and one honest confirmation.
+
+- [x] The rail splits into three buckets, each collapsible and each carrying its
+      own count: **stickies**, **comments**, **direct edits**. Today
+      `threadsIn()` (`protocol/src/overlay.ts`) hands back comments and stickies
+      as one undifferentiated list and `ChangeLog` hangs off the bottom.
+      `isFloating()` and `editsAmong()` already do the separating, so this is
+      grouping in `CommentRail.tsx`, not new protocol
+- [x] Deleting an edit in the rail puts the text back. **This is not what
+      deleting an entry does today.** `applyEdits` wrote the replacement over
+      the original and the original wording is gone from the DOM, so dropping
+      the entry leaves the changed text on screen. Because the stored bytes are
+      never modified, the correct reset is to reload the frame and let
+      `replayEdits` re-apply the surviving edits in order — correct by
+      construction, and it costs only whatever slide the artifact was on
+- [x] A remove control on each row in `ChangeLog.tsx`, shown only when `canEdit`
+- [x] **Remove all changes** on the direct-edits bucket, behind a confirmation
+      that names the count. Deleting one edit is small; deleting every edit
+      somebody made is not, and it should not be a single unguarded click
+- [x] Removing a sticky or a comment keeps working as it does now — those never
+      touched the artifact, so there is nothing to put back
 
 ### Concurrency
 
-- [ ] Soft locks held in the Doc room, scoped to the element being edited —
-      there are no sections to lock, so the lock unit is whatever node the
-      caret is in
-- [ ] Locks expire on a TTL — a closed laptop must not freeze a document
-- [ ] Lock state visible on the artifact and in the comment rail
-- [ ] Last-write-wins per locked element, with the collision surfaced to both
-      people rather than resolved silently
-- [ ] Edit tokens enforced server-side; a view token cannot mutate, and there is
-      a test that tries
+- [x] Edit tokens enforced server-side; a view token cannot mutate, and there is
+      a test that tries — 29, 30, 31. Three layers: the route resolves the token
+      and sets a header the DO trusts because a stub is unreachable from
+      outside; `worker/lib/room-capabilities.ts` derives what the kind may do;
+      `worker/lib/overlay-log.ts` refuses `not-editable`. Tried in
+      `worker/src/doc-room.pool.test.ts` against a real room in workerd
+- [x] Collisions surfaced rather than resolved silently — 31, though not the way
+      this list expected. There are no locks; there is optimistic concurrency.
+      `EditEntry.rev` counts up, `EntryPatch.ifRev` carries the revision the
+      writer saw, and a patch built on a stale one is refused as `stale` and
+      reaches the rail as "Someone else changed that text while you were
+      typing." Its real limit, stated plainly: two people editing **different**
+      spans of the same paragraph do not collide and the later write wins on
+      screen
+- ~~Soft locks held in the Doc room, scoped to the element being edited~~ — cut
+  2026-08-13. Optimistic concurrency shipped first and covers the case that
+  actually bites: two people on the same sentence. Locks cost a lock table, a
+  TTL, an expiry alarm, and a lock indicator on every editable node, and they
+  buy their keep only when collisions are frequent enough to be annoying.
+  Nothing has been shared widely enough to know that yet. Revisit when a real
+  document produces a real complaint
+- ~~Locks expire on a TTL~~ — cut with locks
+- ~~Lock state visible on the artifact and in the comment rail~~ — cut with locks
 
 ### Around the edges
 
-- [ ] Comment anchors survive edits — re-resolve after every commit
-- [ ] Style panel writing CSS custom properties only: accent, surface, type
-      scale, spacing
-- [ ] Runtime still under 20KB with the edit surface included, or split into a
-      lazily loaded second chunk
+- [x] Comment anchors survive edits — re-resolve after every commit — 31.
+      `replayEdits` in `runtime/src/marks.ts` rebuilds the text index after
+      applying, holds off while a caret is live, and suppresses the echo of an
+      edit made locally
+- [x] Runtime split into a lazily loaded second chunk — 37, which is the second
+      half of this line's "under 20KB, or split". Reading a marked-up document
+      stays in `runtime.js`; anything only a writer can reach is in `author.js`
+- ~~Style panel writing CSS custom properties~~ — cut 2026-08-13. It is a
+  different product from the one being built: every other feature here is about
+  what a document says, and this one is about how it looks. It also cannot keep
+  the promise it implies — an artifact that never declared a custom property
+  will not respond to one, so the panel would work on some files and do nothing
+  on others, with no way to tell which in advance
 
 ### Ship
 
@@ -585,13 +787,265 @@ artifact in exactly the way the whole design forbids.
 
 ---
 
-## Phase 4 — Converge
+## v0.4 — Site
+
+**Goal:** `coedithtml.com` stops being a parked page.
+
+**Exit criteria:** somebody who has never heard of this lands on the apex,
+understands what it does, and gets to the app without asking anyone.
+
+- [ ] **v0.4 complete**
+
+Built 2026-08-14. `website/` had not been touched since the workspace was
+scaffolded — the entire site was `<main>Coedit</main>`, and the app's own
+landing page carried more of the pitch than the marketing site did.
+
+The copy is written rather than placeheld, because writing prose twice is worse
+than writing it once and revising it. The v1.0 pass reads it against the app in
+one sweep instead of composing it from nothing.
+
+- [x] Home, how it works, privacy, terms
+- [x] An abuse contact, on its own page. Not a nicety: anonymous HTML hosting on
+      a shared origin needs a reachable human before it needs anything else
+- [x] Deploy target chosen: **static export**. No app logic lives here, so
+      `output: "export"` avoids an adapter and a server framework entirely — no
+      `@opennextjs/cloudflare`, no new dependency, five prerendered pages. A
+      `wrangler.jsonc` serves `out/` as static assets on the apex, and
+      `pnpm --filter @coedithtml/website deploy` builds and ships it. The
+      constraint from **Deploy** is unaffected: the apex stays on Cloudflare DNS
+- [x] Linked both ways. The site's nav and hero point at the app; the app's
+      landing page carries a footer back to the site. The viewer's wordmark
+      deliberately still goes to the app's own root — from inside a document,
+      "up" means the upload page, not marketing
+- [ ] Point the apex at it and confirm `www` lands somewhere real. Deploying is
+      the one step left, and it is the user's to run
+
+**The contact addresses are written but do not exist yet.** `privacy@`,
+`abuse@`, and `hello@coedithtml.com` are named on the site; Cloudflare Email
+Routing has to forward them somewhere before the pages are true.
+
+---
+
+## v0.5 — Share on purpose
+
+**Goal:** uploading a file and publishing a link stop being the same act.
+
+**Exit criteria:** you can upload a file, decide who may do what to it and
+whether it needs a password, publish, and later change your mind or take it
+down — without uploading it again.
+
+- [ ] **v0.5 complete**
+
+Today choosing a file *is* publishing three links. `handleUpload` mints view,
+suggest, and edit in one go and the landing page picks which one to show you;
+the permission select is frozen the moment the result appears, and "Upload
+another" makes a new artifact rather than changing the link you already have.
+Password can be set at upload and never again, because no route exists to
+change it.
+
+- [ ] Upload and publish become two steps. Upload stores the file and hands back
+      a draft; publishing is something you choose
+- [ ] Permission and password are chosen at the publish step, where there is
+      room to explain what each one means
+- [ ] An anonymous owner id, minted on first upload into an app-origin cookie —
+      `HttpOnly`, `Secure`, `SameSite=Lax`, long-lived, and never on the sandbox
+      origin. This is not an account and does not become one here. It is the
+      smallest thing that makes "your files" and "your quota" mean anything, and
+      it is what v0.6 counts against
+- [ ] **My artifacts** — the owner-scoped list the dashboard was cut for
+- [ ] Share settings after publishing: change the password, revoke a link,
+      delete the artifact
+- [ ] Revocation gets an owner check. Anyone holding a link can currently
+      `DELETE` it and kill it for everyone else, and nothing can re-mint it, so
+      one reader can permanently unshare a document from fifty others
+- [ ] Decide what happens to re-upload. The route works and has tests; the
+      screen was deleted; `ReanchorBanner` and `reanchor-report` are sitting
+      there with no callers. Either bring the flow back or delete the dead code —
+      leaving a tested feature with no way to reach it is the worst of both
+- [ ] Rejected uploads get room to explain themselves. The words are already
+      right (`worker/lib/html-document.ts` — needs a build step, sets its own
+      CSP, has no closing tag); they arrive as one red line under the dropzone,
+      which makes "wrong file" and "nearly right file" look identical
+
+---
+
+## v0.6 — Hold the line
+
+**Goal:** the abuse and cost work. This is the version that makes a wide send
+defensible rather than brave.
+
+**Exit criteria:** you can answer an abuse report in minutes, and no one person
+can run up your bill at will.
+
+- [ ] **v0.6 complete**
+
+### Take it down, and let it go
+
+- [ ] **Delete, for real.** `DELETE /api/artifacts/:token` removes a token
+      record and nothing else — the bytes, the metadata, and the Durable Object
+      all survive. Revoking every token today makes an artifact permanently
+      unreachable *and* permanently stored. One route that clears every
+      revision from R2, the metadata from KV, all sibling tokens, and the room
+- [ ] **Expire on inactivity: 30 days without a view.** Needs a `lastViewedAt`
+      the serve path maintains cheaply, a `triggers.crons` block — there is no
+      scheduled handler in the Worker at all today — and a warning to the owner
+      before the sweep, not after
+- [ ] **Sweep the never-used sooner.** No comments, no edits, and no meaningful
+      views seven days after upload, and it goes. Define "meaningful" once, in
+      one place, and write the definition down next to the code
+- [ ] Nothing above may delete bytes another artifact is still serving — see the
+      dedup rules below. Design the two together or the sweep will take a
+      document out from under somebody
+
+### Store identical bytes once
+
+Re-uploading a file you already uploaded should cost no new storage. It still
+mints a new artifact, new tokens, and an empty overlay — a fresh canvas on the
+same bytes. Not the same thing as `POST /revisions`, which already short-circuits
+identical bytes *within* one artifact; this is across artifacts.
+
+- [ ] Blobs get their own key space, and metadata points at a digest instead of
+      the R2 key being derived from the artifact id. `artifactObjectKey()` in
+      `worker/lib/storage-keys.ts` is the seam
+- [ ] **Key on the full SHA-256, not `revisionOf()`.** That helper truncates to
+      16 hex characters — 64 bits — which is fine for naming a revision inside
+      one artifact, whose bytes its own owner chose, and not fine as an address
+      shared between strangers: a 64-bit truncation is birthday-attackable at
+      roughly 2³² work, and a crafted pair would let one artifact serve
+      another's bytes. The truncated value stays as the revision *name* in URLs,
+      where it is only a name
+- [ ] **Scope dedup to the owner.** Global dedup leaks: an uploader could learn
+      whether a given file already exists in the system, and this product hosts
+      other people's unreleased work. Owner-scoped closes that, keeps the
+      reference set small, and still covers the case actually being asked for —
+      the same person uploading the same file twice. Global stays available
+      later, as its own decision with a reason attached
+- [ ] Reference counting is not KV's job. The same non-atomic read-then-write
+      that breaks the rate limiter breaks a refcount, and here the failure mode
+      is deleting bytes that are still being served
+- [ ] Blobs are never addressable from outside; only artifact ids and tokens
+      are. Two artifacts sharing bytes must not share a password gate — the gate
+      is checked against artifact metadata before R2 is read, and that order has
+      to survive the refactor. Worth a test that tries it
+- [ ] Decide once whether existing objects migrate into the blob space or dedup
+      applies only to new uploads, and write the answer down rather than leaving
+      two layouts undocumented
+
+### Ceilings that hold
+
+- [ ] **Per-owner quota**, keyed on the v0.5 cookie, with IP as the backstop
+      rather than the whole defence
+- [ ] **Replace the rate-limit primitive.** `worker/lib/rate-limit.ts` reads,
+      then writes, non-atomically, on eventually-consistent KV. A burst of
+      parallel uploads all read the same count and all pass a limit of 20, and
+      each colo keeps its own counter. A Durable Object or Cloudflare's rate
+      limiting binding
+- [ ] **A global ceiling** on stored bytes and artifact count that refuses new
+      uploads, so the limit is a policy rather than an invoice. R2 gives 10GB
+      free; today's per-IP ceiling permits 100MB an hour, kept forever
+- [ ] **Cap every string the Durable Object stores.** Only `body` is capped, at
+      4000. `anchor.quote`, `prefix`, `suffix`, `path`, `entry.id`, and
+      `author.displayName` are unbounded, so a one-megabyte quote with an empty
+      body passes every check — 500 entries a room, in rooms nothing reclaims
+- [ ] **Rate-limit websocket messages.** Nothing counts or throttles them, and
+      each one broadcasts to up to 64 sockets. `hello` is handled before the
+      write check, so the least privileged connection in the room can flood it
+- [ ] **Cache artifact responses.** No `cache-control` on artifact HTML and no
+      use of the Cache API anywhere, so every view is a fresh R2 read and every
+      download additionally wakes the room
+
+### Close the gaps the audit found
+
+- [ ] **Security headers on the app origin.** `serveAppAsset` returns the raw
+      asset response: no CSP, no framing protection, no HSTS, no `nosniff`, no
+      referrer policy. It matters more once that origin holds an owner cookie
+      and a revoke button
+- [ ] **Decide how far to tighten the artifact CSP.** It sets `frame-ancestors`,
+      `object-src`, `base-uri`, and `form-action`, but no `default-src`,
+      `script-src`, or `connect-src`, so an uploaded script can send anywhere.
+      Artifacts legitimately fetch from CDNs, so this is a trade to make
+      deliberately, not a free win
+- [ ] **CSRF on `POST /revisions`.** It takes `multipart/form-data`, which
+      browsers send without a preflight, making it the one state-changing route
+      any origin can fire
+- [ ] PBKDF2 from 100k to 600k iterations, current OWASP guidance
+- [ ] The download filename crash: any code point above U+00FF makes
+      `Headers.set` throw, so every download of a file named in Chinese,
+      Japanese, or with an emoji returns a 500
+- [ ] The catastrophic-backtracking risk in `worker/lib/html-document.ts`, run
+      against five megabytes of someone else's text
+- [ ] Stop storing the full sibling-token triple in every token record. A view
+      token's record contains the edit token today. It is filtered on the way
+      out, so one careless future handler is a privilege escalation
+- [ ] Turnstile on upload — decide it, do not drift into it
+- [ ] **Write the assessment down in this file.** What an artifact script can
+      and cannot reach; what the shared `workers.dev` sandbox origin means, given
+      that isolation between two artifacts is one unguessable string rather than
+      an origin boundary; and what is accepted risk rather than an open task
+
+---
+
+## v1.0 — Ship
+
+**Goal:** send it to a large number of people.
+
+**Exit criteria:** you send the link to a room full of strangers and spend the
+next day reading their comments rather than fielding confusion or abuse.
+
+- [ ] **v1.0 complete**
+
+### Say it plainly
+
+- [ ] One language pass, site and app together, against the Voice section of
+      `PRODUCT.md`: controls say what happens, errors say what broke and what to
+      do, empty states invite an action. Strip anything that reads as generated
+      rather than written. Doing site and app in one sweep is the point — they
+      have never been read side by side
+
+### The handoff to the AI tool
+
+The export works and reads poorly. Two fixes, and deliberately no more than two,
+because the real answer is the plugin in **Post-v1** and this is the thing it
+replaces.
+
+- [ ] **Wrap the export in a shell prompt.** It currently hands a model a
+      document titled "Feedback on X" with no instruction attached and lets the
+      model guess what to do with it. Say what the file is, what the reader
+      wants changed, and what to leave alone
+- [ ] **Give a sticky something to sit next to.** A sticky exports as the words
+      "Sticky note" and nothing else, because a `RegionAnchor` carries a path
+      and two fractions and no text at all — so the model is told a note exists
+      and never where. Capture a short excerpt of whatever it was dropped on at
+      the moment it is dropped, and group the sticky under that text like a
+      comment. That is the whole fix; do not build a second anchoring system for
+      it
+- [ ] Leave a TODO in `protocol/src/export-markdown.ts` pointing at the plugin,
+      so the next person to open the file knows this is a stopgap by choice
+
+### Prove it on the real thing
+
+- [ ] Upload through the deployed UI in a browser, open the link in a private
+      window, read it on a phone. The API path is verified; the path a person
+      actually takes is not
+- [ ] Push a 5MB body at production. The upload ceiling is the last gate tested
+      only locally
+- [ ] Verify expiry and delete against production, including the case that
+      matters most: two artifacts sharing bytes, one deleted, the other still
+      serving
+- [ ] One full regeneration loop — share, collect, export, regenerate,
+      re-upload, re-anchor — with people who are not you. Carried from v0.2,
+      where it was the last open item. It belongs here: it is the same thing as
+      a real launch
+
+---
+
+## Post-v1
 
 **Goal:** the expensive tail. Every item below is a real project, not a task.
 
 **Gate — do not start until both are true:**
 
-- [ ] Phase 3 has been live for a month
+- [ ] v1.0 has been live for a month
 - [ ] A paying user has asked for a specific item below **by name**
 
 **Then pick exactly two.** Five half-built features are indistinguishable from a
@@ -601,25 +1055,38 @@ dead product.
 
 ### The menu
 
-- [ ] **Accounts and identity.** Named sign-in, per-recipient edit links,
+- [ ] **Accounts and billing.** Named sign-in, per-recipient edit links,
       individual revocation, and attribution that survives a forwarded link.
-      The `author.source` field already anticipates this.
+      The `author.source` field already anticipates this, and v0.5's owner
+      cookie is deliberately the smallest thing that works — this is what it
+      upgrades into rather than something built beside it.
+- [ ] **A plugin for the AI tools.** The round trip stops being copy and paste:
+      the export becomes a connector that speaks to whatever made the artifact.
+      This is the intended replacement for **The handoff to the AI tool** in
+      v1.0, which is why that work is deliberately kept small — improve the
+      prompt, group the stickies, stop. Left unspecified beyond that, for the
+      same reason the round-trip item below is: the tooling will have changed
+      twice before it is worth designing.
 - [ ] **Automated round-trip.** Push the overlay to a model and pull back a new
       artifact revision without leaving the app. Deliberately unspecified — the
       tooling will have changed twice before this is worth designing.
-- [ ] **Gated sharing.** Password, email-domain allowlist, and link expiry. The
-      middle tier between fully public and org-only that nobody currently
-      offers. Cheapest item here and the most defensible.
+- [ ] **Gated sharing.** Email-domain allowlist and link expiry, on top of the
+      password v0.5 makes changeable. The middle tier between fully public and
+      org-only that nobody currently offers. Cheapest item here and the most
+      defensible.
 - [ ] **PPTX and PDF export.** Rendered from the artifact itself. Most requested in interviews, least used in practice — believe
       the second half of that sentence.
 - [ ] **Per-node CRDT.** True simultaneous editing inside one region. Roughly a
-      month. Only worth it if locks are demonstrably losing you users.
+      month. Only worth it if the optimistic-concurrency rejection in v0.3 is
+      demonstrably losing you users.
+- [ ] **Soft locks.** Cut from v0.3 with a reason; it returns here if a real
+      document produces a real complaint, and not before.
 - [ ] **Custom domains and white label.** Serve artifacts from a client's own
       domain. Mostly DNS and certificate plumbing, plus a second sandbox origin
       strategy — think it through before promising it.
 - [ ] **Offline editing.** Requires the CRDT above. Do not select independently.
 
-- [ ] **Phase 4 complete** — meaning the two selected items shipped, not the list
+- [ ] **Post-v1 complete** — meaning the two selected items shipped, not the list
       cleared
 
 ---
@@ -627,8 +1094,8 @@ dead product.
 ## Deploy — put the thing on the internet
 
 Not a phase, and deliberately last: it is the one thing standing between the
-code and a link somebody else can open. Written for Phase 1 and now carrying
-Phase 2 as well, which is why Phase 2's exit criterion waits on it.
+code and a link somebody else can open. Written for v0.1 and now carrying
+v0.2 as well, which is why v0.2's exit criterion waits on it.
 
 **What is live as of 2026-08-13.** The real Worker, verified against production
 rather than `wrangler dev`. Version `9cac3c0c`, deployed from the `production`
@@ -690,13 +1157,18 @@ of this one.
 - [x] Check the password gate, revocation, and re-upload against the deployed
       Worker rather than a local one
 - [ ] The upload ceiling is the one gate still only tested locally — refusing a
-      5MB body against production means actually pushing one
+      5MB body against production means actually pushing one. **Now tracked as a
+      v1.0 item**, since it is the same task
 - [ ] Upload a real artifact through the deployed landing page **in a browser**,
       open the returned link in a private window, and read it on a phone. The
-      API path is verified; the UI path over the wire is not
+      API path is verified; the UI path over the wire is not. **Also a v1.0
+      item** — it is the launch test, not a leftover
 - [x] Confirm the account's `workers.dev` subdomain really is
       `coedithtml-worker` — it is, so the sandbox host in config was right
 - [ ] Deploy the marketing site to the apex, or leave it parked deliberately.
       Vercel is fine for it — no app logic lives there — as long as
       `coedithtml.com` stays on Cloudflare DNS, which the `app.` custom domain
-      needs, and the apex records are left unproxied
+      needs, and the apex records are left unproxied. **Decided: it ships, at
+      v0.4.** Parking it deliberately stopped being an option once v1 meant
+      sending the link to strangers, who arrive at the apex before they arrive
+      anywhere else
