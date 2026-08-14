@@ -1,0 +1,546 @@
+/* Hero ---------------------------------------------------------------- */
+
+.hero {
+  padding: clamp(2.5rem, 6vw, 4.5rem) 0 clamp(2.5rem, 6vw, 4rem);
+}
+
+.hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: center;
+  gap: clamp(2.5rem, 5vw, 4rem);
+}
+
+.hero h1 {
+  margin-bottom: 1.1rem;
+}
+
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.8rem 0 1rem;
+}
+
+@media (max-width: 60rem) {
+  .hero__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The artifact mock — the page's signature ---------------------------- */
+
+.mock {
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  box-shadow: 8px 8px 0 var(--line);
+  overflow: hidden;
+  animation: rise 0.5s ease-out both;
+}
+
+.mock__chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper);
+}
+
+.mock__dots {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.mock__dots i {
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 1px solid var(--ink);
+  background: var(--dry);
+}
+
+.mock__url {
+  padding: 0.1rem 0.6rem;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+}
+
+.mock__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-bottom: 2px solid var(--ink);
+  background: var(--paper-2);
+  font-size: 0.8rem;
+}
+
+.mock__bar span:first-child {
+  margin-right: auto;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.mock__tool {
+  display: grid;
+  place-items: center;
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.mock__tool--on {
+  background: var(--wet);
+  color: #fff;
+}
+
+.mock__who {
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--wet);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+}
+
+.mock__who + .mock__who {
+  margin-left: -0.5rem;
+  background: var(--tape);
+  color: var(--ink);
+}
+
+.mock__page {
+  position: relative;
+  padding: 1.5rem 1.4rem 2.5rem;
+  background: var(--paper-2);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.mock__page h4 {
+  margin: 0 0 0.25rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.mock__page p {
+  margin: 0 0 0.7rem;
+  max-width: 52%;
+  color: var(--ink-soft);
+}
+
+.mock__kicker {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.mock__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.4rem;
+  height: 3.4rem;
+  margin-top: 1rem;
+}
+
+.mock__bars i {
+  flex: 1;
+  border: 1px solid var(--ink);
+  border-bottom: 0;
+  background: var(--dry);
+}
+
+.mock__bars i:nth-child(2) {
+  background: var(--wet);
+}
+
+.mock__bars i:nth-child(4) {
+  background: var(--ink);
+}
+
+/* Markup drawn over the artifact */
+
+.mark {
+  background: var(--tape);
+  box-shadow: 0 0 0 2px var(--tape);
+  animation: wipe 0.4s ease-out 0.45s both;
+}
+
+.edit-out {
+  color: var(--dry);
+  text-decoration: line-through;
+  text-decoration-color: var(--wet);
+  text-decoration-thickness: 2px;
+}
+
+.edit-in {
+  color: var(--wet);
+  font-weight: 600;
+}
+
+.tether {
+  position: absolute;
+  right: 44%;
+  top: 6.4rem;
+  width: 14%;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.tether path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-dasharray: 120;
+  animation: draw 0.5s linear 0.8s both;
+}
+
+.note-card {
+  position: absolute;
+  right: 3%;
+  top: 5rem;
+  width: 40%;
+  padding: 0.6rem 0.7rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--line);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  animation: pop 0.25s linear 1.2s both;
+}
+
+.note-card b {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.sticky {
+  position: absolute;
+  right: 8%;
+  bottom: 1rem;
+  width: 34%;
+  padding: 0.6rem 0.7rem;
+  border: 2px solid var(--ink);
+  background: var(--tape);
+  box-shadow: 4px 4px 0 var(--line);
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--ink);
+  animation: pop 0.25s linear 1.45s both;
+}
+
+.sticky small {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 120;
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 34rem) {
+  .mock__page {
+    padding: 1.1rem 1rem 2rem;
+    font-size: 0.74rem;
+  }
+
+  .mock__page h4 {
+    font-size: 1rem;
+  }
+
+  .mock__url {
+    display: none;
+  }
+
+  .note-card {
+    top: 4.2rem;
+    font-size: 0.62rem;
+  }
+
+  .sticky {
+    font-size: 0.7rem;
+  }
+}
+
+/* Kinds strip --------------------------------------------------------- */
+
+.kinds {
+  padding: 1.6rem 0;
+  border-block: 2px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.kinds__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.6rem;
+}
+
+.kinds__label {
+  margin: 0 0.7rem 0 0;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.chip {
+  padding: 0.24rem 0.7rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+/* Walkthrough --------------------------------------------------------- */
+
+.walk__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 4rem);
+  padding: clamp(2rem, 4vw, 2.75rem) 0;
+}
+
+.walk__row:first-child {
+  padding-top: 0;
+}
+
+.walk__row + .walk__row {
+  border-top: 1px solid var(--line);
+}
+
+.walk__row:nth-child(even) .walk__media {
+  order: -1;
+}
+
+.walk__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  margin-bottom: 0.9rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--wet);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.walk__row h3 {
+  margin-bottom: 0.6rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.015em;
+}
+
+.walk__row p:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 58rem) {
+  .walk__row {
+    grid-template-columns: 1fr;
+  }
+
+  .walk__row:nth-child(even) .walk__media {
+    order: 0;
+  }
+}
+
+/* Media slot ---------------------------------------------------------- */
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  aspect-ratio: 16 / 9;
+  margin: 0;
+  padding: 1rem;
+  border: 2px dashed var(--ink);
+  border-radius: var(--radius);
+  background:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(20, 22, 26, 0.04) 0 8px,
+      transparent 8px 16px
+    ),
+    var(--paper-2);
+  text-align: center;
+}
+
+.slot__name {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.slot__hint {
+  max-width: 22rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+/* Permissions --------------------------------------------------------- */
+
+.perms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1.25rem;
+}
+
+.perm {
+  border-top-width: 10px;
+  border-top-color: var(--tone);
+}
+
+.perm h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+}
+
+.perm p:last-child {
+  margin-bottom: 0;
+}
+
+.perm--read {
+  --tone: var(--dry);
+}
+
+.perm--comment {
+  --tone: var(--tape);
+}
+
+.perm--edit {
+  --tone: var(--wet);
+}
+
+/* Promises ------------------------------------------------------------ */
+
+.promise {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: clamp(2rem, 5vw, 3.5rem);
+}
+
+.promise h3 {
+  margin-bottom: 0.7rem;
+  font-size: 1.35rem;
+  letter-spacing: -0.015em;
+}
+
+.paste {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+@media (max-width: 52rem) {
+  .promise {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Closing ------------------------------------------------------------- */
+
+.closing {
+  padding: clamp(3rem, 7vw, 5rem) 0;
+  background: var(--ink);
+  border-top: 2px solid var(--ink);
+  text-align: center;
+}
+
+.closing .eyebrow {
+  color: var(--tape);
+}
+
+.closing h2 {
+  max-width: 26rem;
+  margin: 0 auto 0.9rem;
+  color: var(--paper);
+}
+
+.closing p {
+  max-width: 32rem;
+  margin: 0 auto 1.6rem;
+  color: var(--dry);
+}
+
+.closing .btn {
+  border-color: var(--paper);
+  box-shadow: 3px 3px 0 var(--paper);
+}
+
+.closing .btn:hover {
+  box-shadow: 0 0 0 var(--paper);
+}
