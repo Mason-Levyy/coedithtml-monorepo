@@ -1,7 +1,24 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { Archivo, IBM_Plex_Mono } from "next/font/google";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
+import "./home.css";
+
+const archivo = Archivo({
+  subsets: ["latin"],
+  weight: ["400", "600", "800"],
+  variable: "--font-archivo",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-plex-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://coedithtml.com"),
@@ -15,33 +32,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${archivo.variable} ${plexMono.variable}`}>
       <body>
-        <header className="shell">
-          <div className="masthead">
-            <Link href="/" className="wordmark">
-              coedit<span>HTML</span>
-            </Link>
-            <nav>
-              <Link href="/how-it-works/">How it works</Link>
-              <Link href="/privacy/">Privacy</Link>
-              <Link href="/report/">Report a file</Link>
-              <a href="https://app.coedithtml.com">Open the app</a>
-            </nav>
-          </div>
-        </header>
-
-        <main className="shell">{children}</main>
-
-        <footer className="shell">
-          <nav>
-            <Link href="/how-it-works/">How it works</Link>
-            <Link href="/privacy/">Privacy</Link>
-            <Link href="/terms/">Terms</Link>
-            <Link href="/report/">Report a file</Link>
-          </nav>
-          <p>coeditHTML hosts files other tools made. It does not make them.</p>
-        </footer>
+        <SiteHeader />
+        <main>{children}</main>
+        <SiteFooter />
       </body>
     </html>
   );
