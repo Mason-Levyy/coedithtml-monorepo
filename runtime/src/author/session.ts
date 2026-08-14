@@ -4,9 +4,11 @@ import {
   placementMessage,
   removeMarkMessage,
   selectionMessage,
+  textEditedMessage,
   toolCancelledMessage,
 } from "@coedithtml/protocol";
 import { anchorFromRange } from "../dom/anchor-dom";
+import { startEditSurface } from "../edits/surface";
 import { createBodyEditor } from "../overlay/edit-body";
 import { startPlaceTool } from "../overlay/place-tool";
 import { startStickyGestures } from "../overlay/sticky-controller";
@@ -15,6 +17,7 @@ import type { AuthoringHost, AuthoringSession } from "./contract";
 export function startAuthoring(host: AuthoringHost): AuthoringSession {
   let awaitingEdit: string | null = null;
   let selectionFrame = 0;
+  let canEdit = false;
 
   const editor = createBodyEditor({
     onCommit: (markId, body) => host.send(patchMarkMessage(markId, { body })),
@@ -40,6 +43,22 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
     onRemove: (markId) => host.send(removeMarkMessage(markId)),
   });
 
+  const surface = startEditSurface({
+    revision: host.revision,
+    canEdit: () => canEdit,
+    onCommit: (anchor, replacement) => {
+      host.editMadeHere(anchor, replacement);
+      host.send(textEditedMessage(anchor, replacement));
+    },
+    onStateChange: (editing) => {
+      host.holdIndex(editing);
+      if (!editing) {
+        host.replayEdits();
+        host.repaint();
+      }
+    },
+  });
+
   function openAwaitedEdit(): void {
     const markId = awaitingEdit;
     if (markId === null) {
@@ -55,7 +74,7 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
   }
 
   function reportSelection(): void {
-    if (editor.isEditing()) {
+    if (editor.isEditing() || surface.isEditing()) {
       return;
     }
     const selection = document.getSelection();
@@ -98,7 +117,12 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
   window.addEventListener("scroll", onScroll, true);
 
   return {
-    arm: (tool, color) => placing.arm(tool, color),
+    arm: (tool, color) => {
+      // The text tool arms the edit surface, never the place tool. Arming
+      // both would drop a sticky where the caret was meant to land.
+      surface.arm(tool === "text");
+      placing.arm(tool === "text" ? null : tool, color);
+    },
     placeAt: (x, y) => {
       const anchor = placing.resolve(x, y);
       if (anchor !== null) {
@@ -109,15 +133,21 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
       awaitingEdit = markId;
       host.repaint();
     },
-    setCanWrite: (canWrite) => {
+    setCapabilities: (canWrite, allowedToEdit) => {
+      canEdit = allowedToEdit;
       if (!canWrite) {
         editor.cancel();
       }
+      if (!allowedToEdit) {
+        surface.arm(false);
+      }
     },
+    isEditingText: () => surface.isEditing(),
     afterPaint: openAwaitedEdit,
     stop: () => {
       gestures.stop();
       editor.stop();
+      surface.stop();
       placing.stop();
       document.removeEventListener("selectionchange", scheduleSelection);
       window.removeEventListener("scroll", onScroll, true);

@@ -2,6 +2,7 @@ import type {
   Anchor,
   Author,
   CommentEntry,
+  EditEntry,
   MarkColor,
   ReaderPresence,
   ReplyEntry,
@@ -43,6 +44,10 @@ export function newComment(draft: Draft): CommentEntry {
 
 export function newReply(draft: Draft & { parentId: string }): ReplyEntry {
   return { ...shared(draft), kind: "reply", parentId: draft.parentId };
+}
+
+export function newEdit(draft: Draft): EditEntry {
+  return { ...shared(draft), kind: "edit", parentId: null, rev: 0 };
 }
 
 export function newSticky(

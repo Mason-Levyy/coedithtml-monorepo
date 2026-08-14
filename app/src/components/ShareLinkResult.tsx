@@ -11,7 +11,7 @@ type ShareLinkResultProps = {
 const PERMISSION_DESCRIPTION: Record<LinkPermission, string> = {
   view: "Anyone with this link can read the file, but not comment or edit it.",
   suggest: "Anyone with this link can comment and mark it up.",
-  edit: "Anyone with this link can comment and mark it up.",
+  edit: "Anyone with this link can change the text as well as mark it up.",
 };
 
 export function ShareLinkResult({

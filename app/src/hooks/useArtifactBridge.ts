@@ -89,6 +89,7 @@ function applyMessage(
       };
     case "patch-mark":
     case "remove-mark":
+    case "text-edited":
     case "tool-cancelled":
       return previous;
   }
@@ -98,12 +99,15 @@ export type PatchMark = (markId: string, patch: EntryPatch) => void;
 
 export type RemoveMark = (markId: string) => void;
 
+export type TextEdited = (anchor: TextAnchor, replacement: string) => void;
+
 export function useArtifactBridge(options: {
   sandboxOrigin: string;
   src: string;
   onPatchMark: PatchMark;
   onRemoveMark: RemoveMark;
   onToolCancelled: () => void;
+  onTextEdited: TextEdited;
 }): ArtifactBridgeState {
   const { sandboxOrigin, src } = options;
   const [state, setState] = useState<ArtifactBridgeState>(NOTHING_REPORTED);
@@ -131,6 +135,10 @@ export function useArtifactBridge(options: {
       }
       if (message.type === "tool-cancelled") {
         acted.current.onToolCancelled();
+        return;
+      }
+      if (message.type === "text-edited") {
+        acted.current.onTextEdited(message.anchor, message.replacement);
         return;
       }
       setState((previous) => applyMessage(previous, message));

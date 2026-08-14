@@ -2,6 +2,7 @@ import {
   editsAmong,
   markActivatedMessage,
   placedMessage,
+  type Anchor,
   type OverlayEntry,
   type StickyEntry,
 } from "@coedithtml/protocol";
@@ -34,14 +35,23 @@ export function startMarks(): () => void {
   let override: StickyOverride | null = null;
   let reportedPlacement = "";
   let canWrite = false;
+  let canEdit = false;
   let authoring: AuthoringSession | null = null;
   let asking = false;
   let stopped = false;
   const replayed = new Set<string>();
+  const madeHere = new Set<string>();
+
+  function madeHereKey(anchor: Anchor, body: string): string {
+    return `${anchor.kind === "text" ? anchor.quote : ""}\0${body}`;
+  }
 
   function paint(): void {
     try {
-      const placement = paintMarks(layer, view, index, marks, override);
+      // An edit is not a mark. The changed words are its own evidence, and
+      // painting a highlight over them says a comment is waiting there.
+      const painted = marks.filter((mark) => mark.kind !== "edit");
+      const placement = paintMarks(layer, view, index, painted, override);
       const summary = JSON.stringify(placement);
       if (summary !== reportedPlacement) {
         reportedPlacement = summary;
@@ -66,14 +76,29 @@ export function startMarks(): () => void {
   }
 
   function replayEdits(): void {
-    const arriving = editsAmong(marks).filter((edit) => !replayed.has(edit.id));
-    if (arriving.length === 0) {
+    if (authoring?.isEditingText() === true) {
       return;
     }
-    const outcome = applyEdits(index, arriving);
-    for (const id of outcome.applied) {
+    const arriving = editsAmong(marks).filter((edit) => !replayed.has(edit.id));
+    // An edit this reader just typed is already in the document. Replaying it
+    // when the room echoes it back would apply the same change twice.
+    const wanted = arriving.filter((edit) => {
+      const key = madeHereKey(edit.anchor, edit.body);
+      if (!madeHere.has(key)) {
+        return true;
+      }
+      madeHere.delete(key);
+      replayed.add(edit.id);
+      return false;
+    });
+    if (wanted.length === 0) {
+      return;
+    }
+    for (const id of applyEdits(document.body, wanted).applied) {
       replayed.add(id);
     }
+    // An edit moves the text every comment anchor is measured against, so
+    // the index is rebuilt before anything is resolved against it.
     index = buildTextIndex(document.body);
   }
 
@@ -98,6 +123,9 @@ export function startMarks(): () => void {
     },
     repaint: () => scheduler.repaint(),
     send: sendToApp,
+    holdIndex: (held) => scheduler.holdIndex(held),
+    replayEdits,
+    editMadeHere: (anchor, body) => madeHere.add(madeHereKey(anchor, body)),
   };
 
   function askForAuthoring(): void {
@@ -111,7 +139,7 @@ export function startMarks(): () => void {
         return;
       }
       authoring = startAuthoring(host);
-      authoring.setCanWrite(canWrite);
+      authoring.setCapabilities(canWrite, canEdit);
       scheduler.repaint();
     });
   }
@@ -122,11 +150,12 @@ export function startMarks(): () => void {
   const stopReceiving = receiveFromApp((message) => {
     if (message.type === "set-capabilities") {
       canWrite = message.canWrite;
+      canEdit = message.canEdit;
       layer.setEditable(canWrite);
       if (canWrite) {
         askForAuthoring();
       }
-      authoring?.setCanWrite(canWrite);
+      authoring?.setCapabilities(canWrite, canEdit);
       return;
     }
     if (message.type === "set-tool") {
