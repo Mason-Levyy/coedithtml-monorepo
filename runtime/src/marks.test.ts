@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   placeAtMessage,
+  setCapabilitiesMessage,
   setToolMessage,
   type RuntimeToAppMessage,
 } from "@coedithtml/protocol";
+import { startAuthoring } from "./author/session";
 import { startMarks } from "./marks";
 
 const APP_ORIGIN = "https://app.test";
@@ -15,6 +17,11 @@ function postFromApp(message: unknown): void {
   window.dispatchEvent(
     new MessageEvent("message", { origin: APP_ORIGIN, data: message }),
   );
+}
+
+async function letSomeoneWrite(): Promise<void> {
+  postFromApp(setCapabilitiesMessage({ canWrite: true, canEdit: true }));
+  await new Promise((settle) => setTimeout(settle, 0));
 }
 
 function clickAt(x: number, y: number): MouseEvent {
@@ -33,6 +40,7 @@ beforeEach(() => {
   window.__coedit__ = {
     version: "test",
     config: { appOrigin: APP_ORIGIN, revision: "r1" },
+    author: startAuthoring,
   };
   posted = [];
 
@@ -73,7 +81,8 @@ describe("the sticky tool", () => {
     expect(posted.some((message) => message.type === "placement")).toBe(false);
   });
 
-  it("reports where the reader clicked once a tool is armed", () => {
+  it("reports where the reader clicked once a tool is armed", async () => {
+    await letSomeoneWrite();
     postFromApp(setToolMessage("sticky"));
     clickAt(50, 25);
 
@@ -83,14 +92,16 @@ describe("the sticky tool", () => {
     });
   });
 
-  it("keeps the placing click away from the artifact", () => {
+  it("keeps the placing click away from the artifact", async () => {
+    await letSomeoneWrite();
     postFromApp(setToolMessage("sticky"));
     const event = clickAt(50, 25);
 
     expect(event.defaultPrevented).toBe(true);
   });
 
-  it("places once per arming", () => {
+  it("places once per arming", async () => {
+    await letSomeoneWrite();
     postFromApp(setToolMessage("sticky"));
     clickAt(50, 25);
     clickAt(60, 30);
@@ -99,7 +110,8 @@ describe("the sticky tool", () => {
     expect(placements).toHaveLength(1);
   });
 
-  it("gives the artifact's own cursor back when disarmed", () => {
+  it("gives the artifact's own cursor back when disarmed", async () => {
+    await letSomeoneWrite();
     document.body.style.cursor = "grab";
 
     postFromApp(setToolMessage("sticky"));
@@ -109,7 +121,8 @@ describe("the sticky tool", () => {
     expect(document.body.style.cursor).toBe("grab");
   });
 
-  it("resolves a point the app hands it without any arming", () => {
+  it("resolves a point the app hands it without any arming", async () => {
+    await letSomeoneWrite();
     postFromApp(placeAtMessage(50, 25));
 
     expect(posted.at(-1)).toMatchObject({
@@ -118,7 +131,8 @@ describe("the sticky tool", () => {
     });
   });
 
-  it("says nothing when the drop lands on no element at all", () => {
+  it("says nothing when the drop lands on no element at all", async () => {
+    await letSomeoneWrite();
     Object.defineProperty(document, "elementsFromPoint", {
       configurable: true,
       value: () => [],
@@ -129,7 +143,8 @@ describe("the sticky tool", () => {
     expect(posted.some((message) => message.type === "placement")).toBe(false);
   });
 
-  it("ignores a tool armed by anyone but the app", () => {
+  it("ignores a tool armed by anyone but the app", async () => {
+    await letSomeoneWrite();
     window.dispatchEvent(
       new MessageEvent("message", {
         origin: "https://evil.example",

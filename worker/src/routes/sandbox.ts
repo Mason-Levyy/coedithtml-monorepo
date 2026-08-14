@@ -1,7 +1,8 @@
 import {
   appendRuntimeScript,
-  revisionInRuntimePath,
+  sandboxScriptIn,
   RUNTIME_ASSET_PATH,
+  type SandboxScript,
 } from "@/lib/artifact-render";
 import {
   DOWNLOAD_QUERY_PARAM,
@@ -31,22 +32,25 @@ function sandboxResponse(
   return new Response(body, { status, headers: merged });
 }
 
-async function serveRuntimeScript(
+async function serveSandboxScript(
   request: Request,
   env: WorkerEnv,
   headers: Headers,
-  revision: string,
+  script: SandboxScript,
 ): Promise<Response> {
   const assetResponse = await env.ASSETS.fetch(
-    new Request(new URL(RUNTIME_ASSET_PATH, request.url)),
+    new Request(new URL(script.assetPath, request.url)),
   );
   if (!assetResponse.ok) {
     return sandboxResponse("Not found", 404, headers);
   }
 
-  const appOrigin = originFor(request, env.APP_HOST);
   const body = await assetResponse.text();
-  const configured = `"use strict";\nwindow.__coedit__=${JSON.stringify({ config: { appOrigin, revision } })};\n${body}`;
+  const appOrigin = originFor(request, env.APP_HOST);
+  const configured =
+    script.assetPath === RUNTIME_ASSET_PATH
+      ? `"use strict";\nwindow.__coedit__=${JSON.stringify({ config: { appOrigin, revision: script.revision } })};\n${body}`
+      : body;
 
   const merged = new Headers(assetResponse.headers);
   for (const [name, value] of headers) {
@@ -69,9 +73,9 @@ export async function handleSandboxRequest(
   }
 
   const url = new URL(request.url);
-  const runtimeRevision = revisionInRuntimePath(url.pathname);
-  if (runtimeRevision !== null) {
-    return serveRuntimeScript(request, env, headers, runtimeRevision);
+  const script = sandboxScriptIn(url.pathname);
+  if (script !== null) {
+    return serveSandboxScript(request, env, headers, script);
   }
 
   const resolved = await resolveArtifactByToken(

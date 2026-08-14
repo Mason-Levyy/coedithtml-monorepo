@@ -11,7 +11,7 @@ for (const entry of await readdir(publicDir)) {
 }
 
 await cp(path.join(workerDir, "../app/dist"), publicDir, { recursive: true });
-for (const bundle of ["runtime.js", "download.js"]) {
+for (const bundle of ["runtime.js", "author.js", "download.js"]) {
   await cp(
     path.join(workerDir, "../runtime/dist", bundle),
     path.join(publicDir, bundle),

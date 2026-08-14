@@ -1,8 +1,11 @@
+import type { StartAuthoring } from "../author/contract";
+
 declare global {
   interface Window {
     __coedit__?: {
       version: string;
       config?: { appOrigin?: unknown; revision?: unknown };
+      author?: StartAuthoring;
     };
   }
 }
