@@ -52,10 +52,15 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
     },
     onStateChange: (editing) => {
       host.holdIndex(editing);
-      if (!editing) {
-        host.replayEdits();
-        host.repaint();
+      if (editing) {
+        // A double-click selects a word before it opens the caret, so the app
+        // is already offering to comment on it. Nothing else will retract that
+        // offer: reportSelection goes quiet for as long as this edit lasts.
+        host.send(selectionMessage(null, null));
+        return;
       }
+      host.replayEdits();
+      host.repaint();
     },
   });
 
