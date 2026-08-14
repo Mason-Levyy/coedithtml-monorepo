@@ -55,8 +55,8 @@ export function ShareMenu({
         <Button
           type="button"
           size="icon"
-          variant="outline"
-          className="size-8 border-2 border-ink bg-card text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+          variant="ghost"
+          className="size-8 rounded-sm text-foreground hover:bg-paper/80 hover:text-foreground transition-colors"
           aria-label="Share"
           title="Share"
           {...props}

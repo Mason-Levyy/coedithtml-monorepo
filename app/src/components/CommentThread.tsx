@@ -70,8 +70,8 @@ export function CommentThread({
     <article
       onClick={onActivate}
       className={cn(
-        "border-2 bg-card p-3 text-sm",
-        active ? "border-ink" : "border-line",
+        "rounded-lg border bg-card p-3 text-sm transition-all",
+        active ? "border-primary ring-1 ring-primary/30" : "border-line",
         resolved && "opacity-60",
       )}
     >
@@ -143,7 +143,7 @@ export function CommentThread({
                 onChange={(event) => setReply(event.target.value)}
                 placeholder="Reply"
                 aria-label={`Reply to ${displayNameOf(entry)}`}
-                className="min-w-0 flex-1 border-2 border-line bg-paper-2 px-2 py-1 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+                className="min-w-0 flex-1 rounded-md border border-line bg-paper-2 px-2.5 py-1 text-sm focus-visible:outline-2 focus-visible:outline-ring"
               />
               <Button
                 type="submit"

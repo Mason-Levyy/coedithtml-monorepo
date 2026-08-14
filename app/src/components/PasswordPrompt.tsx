@@ -26,7 +26,7 @@ export function PasswordPrompt({
     <div className="flex min-h-dvh items-center justify-center p-6">
       <form
         onSubmit={handleSubmit}
-        className="flex w-full max-w-sm flex-col gap-3 border-2 border-ink bg-card p-6"
+        className="flex w-full max-w-sm flex-col gap-3.5 rounded-xl border border-line bg-card p-6 shadow-md"
       >
         <label
           htmlFor="artifact-password"
@@ -40,7 +40,7 @@ export function PasswordPrompt({
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="border border-line bg-paper-2 px-3 py-2 font-mono text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="rounded-md border border-line bg-paper-2 px-3 py-2 font-mono text-sm text-foreground focus-visible:outline-2 focus-visible:outline-ring"
         />
         {errorMessage !== null && (
           <p className="font-mono text-xs text-destructive">{errorMessage}</p>

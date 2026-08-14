@@ -47,6 +47,15 @@ function renderViewer({ named = true }: { named?: boolean } = {}) {
         color: "#e8c547",
       }),
     );
+  } else {
+    window.localStorage.setItem(
+      "coedit:reader",
+      JSON.stringify({
+        id: "reader-1",
+        displayName: "",
+        color: "#e8c547",
+      }),
+    );
   }
   renderWithQueryClient(
     <ArtifactViewer
@@ -660,7 +669,7 @@ describe("the comment rail", () => {
     it("offers the action without disturbing the rail", () => {
       renderViewer();
       openRoomWith([]);
-      fireEvent.click(screen.getByRole("button", { name: "Hide comments" }));
+      fireEvent.click(screen.getByRole("button", { name: "Close comments" }));
       frameAt(FRAME);
 
       selectTextAt(RECT);
@@ -720,7 +729,7 @@ describe("the comment rail", () => {
     it("falls back to the rail when the artifact reports no rect", () => {
       renderViewer();
       openRoomWith([]);
-      fireEvent.click(screen.getByRole("button", { name: "Hide comments" }));
+      fireEvent.click(screen.getByRole("button", { name: "Close comments" }));
 
       selectText();
 
@@ -733,7 +742,7 @@ describe("the comment rail", () => {
       renderViewer();
       openRoomWith([comment()]);
 
-      fireEvent.click(screen.getByRole("button", { name: "Hide comments" }));
+      fireEvent.click(screen.getByRole("button", { name: "Close comments" }));
       expect(screen.queryByText("Net or gross?")).toBeNull();
 
       fireEvent.click(screen.getByRole("button", { name: "Show comments" }));
@@ -743,7 +752,7 @@ describe("the comment rail", () => {
     it("comes back on its own when a selection needs the composer", () => {
       renderViewer();
       openRoomWith([]);
-      fireEvent.click(screen.getByRole("button", { name: "Hide comments" }));
+      fireEvent.click(screen.getByRole("button", { name: "Close comments" }));
 
       selectText();
 
@@ -753,7 +762,7 @@ describe("the comment rail", () => {
     it("comes back for a selection even before the reader is named", () => {
       renderViewer({ named: false });
       openRoomWith([]);
-      fireEvent.click(screen.getByRole("button", { name: "Hide comments" }));
+      fireEvent.click(screen.getByRole("button", { name: "Close comments" }));
 
       selectText();
 

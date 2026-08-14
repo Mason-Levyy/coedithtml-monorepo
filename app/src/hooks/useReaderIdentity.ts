@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { readerColorFor } from "@/lib/palette";
 import { normalizeHex, type ReaderPresence } from "@/lib/protocol";
+import { randomTreeName } from "@/lib/tree-names";
 
 const STORAGE_KEY = "coedit:reader";
 
@@ -52,7 +53,7 @@ export type ReaderIdentity = {
 
 function firstVisit(): StoredReader {
   const id = newReaderId();
-  return { id, displayName: "", color: readerColorFor(id) };
+  return { id, displayName: randomTreeName(id), color: readerColorFor(id) };
 }
 
 export function useReaderIdentity(): ReaderIdentity {

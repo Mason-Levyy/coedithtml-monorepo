@@ -23,6 +23,7 @@ export type DocRoom = RoomContents & {
   addEntry: (entry: OverlayEntry) => void;
   patchEntry: (id: string, patch: EntryPatch) => void;
   removeEntry: (id: string) => void;
+  dismissRejection: () => void;
 };
 
 export function useDocRoom(
@@ -34,6 +35,19 @@ export function useDocRoom(
   const socketRef = useRef<RoomSocket | null>(null);
   const readerRef = useRef(reader);
   readerRef.current = reader;
+
+  const dismissRejection = useCallback(() => {
+    setContents((previous) =>
+      previous.rejection !== null ? { ...previous, rejection: null } : previous,
+    );
+  }, []);
+
+  useEffect(() => {
+    if (contents.rejection !== null) {
+      const timer = setTimeout(dismissRejection, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [contents.rejection, dismissRejection]);
 
   useEffect(() => {
     if (url === null) {
@@ -71,23 +85,28 @@ export function useDocRoom(
   }, [reader, send, status]);
 
   const addEntry = useCallback(
-    (entry: OverlayEntry) => send(addEntryMessage(entry)),
-    [send],
+    (entry: OverlayEntry) => {
+      dismissRejection();
+      send(addEntryMessage(entry));
+    },
+    [dismissRejection, send],
   );
   const patchEntry = useCallback(
     (id: string, patch: EntryPatch) => {
+      dismissRejection();
       setContents((previous) => applyLocalPatch(previous, id, patch));
       send(patchEntryMessage(id, patch));
     },
-    [send],
+    [dismissRejection, send],
   );
   const removeEntry = useCallback(
     (id: string) => {
+      dismissRejection();
       setContents((previous) => applyLocalRemove(previous, id));
       send(removeEntryMessage(id));
     },
-    [send],
+    [dismissRejection, send],
   );
 
-  return { ...contents, status, addEntry, patchEntry, removeEntry };
+  return { ...contents, status, addEntry, patchEntry, removeEntry, dismissRejection };
 }

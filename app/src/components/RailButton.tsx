@@ -11,18 +11,15 @@ export function RailButton({ open, unresolved, onToggle }: RailButtonProps) {
     <Button
       type="button"
       size="icon"
-      variant={open ? "default" : "outline"}
-      className={
-        open
-          ? "size-8 bg-primary text-primary-foreground hover:bg-primary/90"
-          : "size-8 border-2 border-ink bg-card text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
-      }
+      variant="ghost"
+      className="relative size-8 rounded-sm text-foreground hover:bg-paper/80 hover:text-foreground transition-colors"
       aria-label={open ? "Hide comments" : "Show comments"}
-      title={open ? "Hide comments" : "Look at comments"}
+      title={open ? "Hide comments" : "Show comments"}
       aria-expanded={open}
       onClick={onToggle}
     >
       <div className="relative flex items-center justify-center">
+        {/* Sidebar panel trigger icon */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"
@@ -34,7 +31,9 @@ export function RailButton({ open, unresolved, onToggle }: RailButtonProps) {
           strokeLinecap="round"
           strokeLinejoin="round"
         >
-          <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
+          <rect width="18" height="18" x="3" y="3" rx="2" />
+          <path d="M15 3v18" />
+          <path d="m10 9-3 3 3 3" />
         </svg>
         {unresolved > 0 && (
           <span className="absolute -top-1.5 -right-1.5 flex size-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
