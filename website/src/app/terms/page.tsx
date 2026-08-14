@@ -789,7 +789,6 @@ export default function TermsPage() {
           Abuse: abuse@coedithtml.com{"\n"}
           Copyright: dmca@coedithtml.com
         </address>
->>>>>>> 06556e4 (added privacy policy and TOS)
       </article>
     </>
   );
