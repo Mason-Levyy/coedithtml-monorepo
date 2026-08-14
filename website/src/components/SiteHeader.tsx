@@ -9,7 +9,7 @@ export function SiteHeader() {
         <nav>
           <Link href="/how-it-works/">How it works</Link>
           <Link href="/privacy/">Privacy</Link>
-          <Link href="/report/">Report a file</Link>
+          <Link href="/report/">Report a File</Link>
           <a className="btn btn--small" href="https://app.coedithtml.com">
             Open the app
           </a>
