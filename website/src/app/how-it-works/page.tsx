@@ -10,39 +10,10 @@ export default function HowItWorksPage() {
   return (
     <>
       <header className="page-head">
-        <p className="eyebrow">the whole of it</p>
         <h1>How it works</h1>
-        <p className="lede">
-          Four steps, and the file comes out the other end unchanged.
-        </p>
       </header>
 
       <article className="prose">
-        <ol className="steps">
-          <li>
-            <strong>Upload one HTML file.</strong> A single file with its
-            styling and scripts inside it — the kind an AI tool hands you. Up to
-            5MB. Files that need a build step first are turned away, with a note
-            saying so.
-          </li>
-          <li>
-            <strong>Choose what the link allows.</strong> Read, comment, or
-            edit. Add a password if the file should not be opened by whoever
-            finds the link.
-          </li>
-          <li>
-            <strong>Send it.</strong> Whoever opens it sees your file running,
-            in their browser, with a thin bar along the top. They can give a
-            name, but they do not need an account.
-          </li>
-          <li>
-            <strong>Collect what came back.</strong> Comments, sticky notes, and
-            text changes all land in one panel. Copy the lot as text and hand it
-            to whatever made the file, or download the file with the changes
-            already applied.
-          </li>
-        </ol>
-
         <h2>Commenting</h2>
         <p>
           Select a sentence and leave a note against it. The highlight is drawn
@@ -52,7 +23,7 @@ export default function HowItWorksPage() {
         </p>
         <p>
           Comments follow the words they were left on. Replace the file with a
-          new version and the notes find their sentences again — you get a plain
+          new version and the notes find their sentences again. You get a plain
           count of how many carried over and how many need another look.
         </p>
 

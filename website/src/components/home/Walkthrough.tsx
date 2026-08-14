@@ -3,7 +3,7 @@ import { MediaSlot } from "@/components/MediaSlot";
 const STEPS = [
   {
     title: "Drop the file in",
-    body: "One HTML file with its styling and scripts inside it — the kind an AI tool hands you, up to 5MB. Anything that needs a build step first is turned away, with a note saying so.",
+    body: "One HTML file with its styling and scripts inside it. The kind an AI tool hands you, up to 5MB. Anything that needs a build step first is turned away, with a note saying so.",
     slot: "upload.gif",
     hint: "File dragged onto the upload panel, link appears.",
   },

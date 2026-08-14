@@ -40,7 +40,7 @@ export default function TermsPage() {
         <h2>What is not promised</h2>
         <p>
           No uptime guarantee, no promise the service continues, and no warranty
-          of any kind. Keep your own copy of anything that matters — this is a
+          of any kind. Keep your own copy of anything that matters. This is a
           way to pass a file around, not a place to store the only copy.
         </p>
 
@@ -52,7 +52,7 @@ export default function TermsPage() {
         </p>
 
         <h2>Getting in touch</h2>
-        <p className="contact">hello@coedithtml.com</p>
+        <p className="contact">team@coedithtml.com</p>
       </article>
     </>
   );

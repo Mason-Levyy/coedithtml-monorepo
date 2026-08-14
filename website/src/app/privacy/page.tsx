@@ -66,7 +66,7 @@ export default function PrivacyPage() {
           No analytics, no advertising, no third-party trackers, and no record
           of who read what. Uploaded files may load resources from elsewhere on
           the internet, because they are somebody else&rsquo;s file and they run
-          as their author wrote them — those requests are between the
+          as their author wrote them. Those requests are between the
           reader&rsquo;s browser and whoever the file reaches out to.
         </p>
 
