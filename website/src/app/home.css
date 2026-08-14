@@ -108,16 +108,15 @@
   height: 1.55rem;
   border: 2px solid var(--ink);
   border-radius: 50%;
-  background: var(--wet);
-  color: #fff;
+  background: var(--mark-blue);
+  color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.68rem;
 }
 
 .mock__who + .mock__who {
   margin-left: -0.5rem;
-  background: var(--tape);
-  color: var(--ink);
+  background: var(--mark-yellow);
 }
 
 .mock__page {
@@ -175,9 +174,11 @@
 
 /* Markup drawn over the artifact */
 
+/* One mark, two halves: the highlight and the comment answering it are the
+   same blue a reader gets assigned in the app. */
 .mark {
-  background: var(--tape);
-  box-shadow: 0 0 0 2px var(--tape);
+  background: var(--mark-blue);
+  box-shadow: 0 0 0 2px var(--mark-blue);
   animation: wipe 0.4s ease-out 0.45s both;
 }
 
@@ -193,63 +194,64 @@
   font-weight: 600;
 }
 
-.tether {
-  position: absolute;
-  right: 44%;
-  top: 6.4rem;
-  width: 14%;
-  color: var(--ink);
-  pointer-events: none;
-}
-
-.tether path {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-dasharray: 120;
-  animation: draw 0.5s linear 0.8s both;
-}
-
+/* Pinned in pixels, not rem: the tail is a fixed path and the box it grows out
+   of has to stay the size that path was drawn for. */
 .note-card {
   position: absolute;
-  right: 3%;
-  top: 5rem;
-  width: 40%;
-  padding: 0.6rem 0.7rem;
-  border: 2px solid var(--ink);
-  border-radius: var(--radius);
-  background: var(--paper);
-  box-shadow: 4px 4px 0 var(--line);
-  font-size: 0.76rem;
-  line-height: 1.45;
-  color: var(--ink-soft);
-  animation: pop 0.25s linear 1.2s both;
+  right: 16px;
+  top: 3.9rem;
+  width: 184px;
+  height: 88px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #17171a;
+  animation: pop 0.25s linear 0.95s both;
+}
+
+.note-card__shape {
+  position: absolute;
+  left: -44px;
+  top: -3px;
+  width: 232px;
+  height: 94px;
+}
+
+.note-card__shape path {
+  fill: var(--mark-blue);
+  stroke: var(--mark-blue-edge);
+  stroke-width: 2;
+}
+
+.note-card__content {
+  position: relative;
+  padding: 9px 11px;
 }
 
 .note-card b {
   display: block;
-  margin-bottom: 0.15rem;
-  color: var(--ink);
+  margin-bottom: 2px;
   font-family: var(--font-mono);
-  font-size: 0.64rem;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
+/* The same bubble with no tail, which is what a sticky is until somebody drags
+   its tip somewhere: a rounded rect at the shared 8px corner. */
 .sticky {
   position: absolute;
   right: 8%;
   bottom: 1rem;
   width: 34%;
   padding: 0.6rem 0.7rem;
-  border: 2px solid var(--ink);
-  background: var(--tape);
-  box-shadow: 4px 4px 0 var(--line);
+  border: 2px solid var(--mark-yellow-edge);
+  border-radius: 8px;
+  background: var(--mark-yellow);
   font-size: 0.8rem;
   line-height: 1.35;
-  color: var(--ink);
-  animation: pop 0.25s linear 1.45s both;
+  color: #17171a;
+  animation: pop 0.25s linear 1.2s both;
 }
 
 .sticky small {
@@ -275,12 +277,6 @@
   }
 }
 
-@keyframes draw {
-  from {
-    stroke-dashoffset: 120;
-  }
-}
-
 @keyframes pop {
   from {
     opacity: 0;
@@ -301,9 +297,12 @@
     display: none;
   }
 
+  /* The bubble is one fixed drawing, so it shrinks whole rather than reflowing
+     its text out of the shape. */
   .note-card {
-    top: 4.2rem;
-    font-size: 0.62rem;
+    top: 3rem;
+    transform: scale(0.72);
+    transform-origin: 100% 0;
   }
 
   .sticky {
