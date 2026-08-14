@@ -74,6 +74,7 @@ export function startEditSurface(options: {
     block.removeAttribute(EDITING_ATTRIBUTE);
     block.removeEventListener("keydown", onKeyDown);
     block.removeEventListener("blur", onBlur);
+    block.removeEventListener("paste", onPaste);
     options.onStateChange(false);
 
     const after = buildTextIndex(block).text;
@@ -123,6 +124,33 @@ export function startEditSurface(options: {
     close(true);
   }
 
+  // "plaintext-only" is a browser courtesy, not a guarantee — Firefox has no
+  // such value and falls back to accepting markup. Pasted HTML is the fastest
+  // way to wreck an artifact's styling, so the text is taken by hand.
+  function onPaste(event: Event): void {
+    if (!(event instanceof ClipboardEvent)) {
+      return;
+    }
+    event.preventDefault();
+    const plain = event.clipboardData?.getData("text/plain") ?? "";
+    const collapsed = plain.replace(/\s+/g, " ");
+    if (collapsed.length === 0) {
+      return;
+    }
+    const selection = document.getSelection();
+    if (selection === null || selection.rangeCount === 0) {
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+    const node = document.createTextNode(collapsed);
+    range.insertNode(node);
+    range.setStartAfter(node);
+    range.collapse(true);
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
+
   function begin(block: HTMLElement): void {
     const around = documentAround(block);
     if (around === null) {
@@ -139,6 +167,7 @@ export function startEditSurface(options: {
     block.setAttribute(EDITING_ATTRIBUTE, "");
     block.addEventListener("keydown", onKeyDown);
     block.addEventListener("blur", onBlur);
+    block.addEventListener("paste", onPaste);
     block.focus();
     options.onStateChange(true);
   }
@@ -156,7 +185,23 @@ export function startEditSurface(options: {
     begin(block);
   }
 
+  // Double-click needs no mode, so it stays live whenever the link may edit.
+  // The default is left alone: the word the browser selects is what puts the
+  // caret where it was aimed.
+  function onDoubleClick(event: Event): void {
+    if (!options.canEdit() || editing !== null) {
+      return;
+    }
+    const block = blockFor(event.target);
+    if (block === null) {
+      return;
+    }
+    event.stopPropagation();
+    begin(block);
+  }
+
   document.addEventListener("pointerdown", onPointerDown, true);
+  document.addEventListener("dblclick", onDoubleClick, true);
 
   return {
     arm(on) {
@@ -169,6 +214,7 @@ export function startEditSurface(options: {
     stop() {
       close(false);
       document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("dblclick", onDoubleClick, true);
     },
   };
 }
