@@ -118,8 +118,10 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
 
   return {
     arm: (tool, color) => {
-      placing.arm(tool, color);
+      // The text tool arms the edit surface, never the place tool. Arming
+      // both would drop a sticky where the caret was meant to land.
       surface.arm(tool === "text");
+      placing.arm(tool === "text" ? null : tool, color);
     },
     placeAt: (x, y) => {
       const anchor = placing.resolve(x, y);

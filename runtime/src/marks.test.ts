@@ -143,6 +143,16 @@ describe("the sticky tool", () => {
     expect(posted.some((message) => message.type === "placement")).toBe(false);
   });
 
+  it("leaves the place tool alone when the text tool is armed", async () => {
+    await letSomeoneWrite();
+    postFromApp(setToolMessage("text"));
+    const event = clickAt(50, 25);
+
+    expect(document.body.style.cursor).not.toBe("crosshair");
+    expect(posted.some((message) => message.type === "placement")).toBe(false);
+    expect(event.defaultPrevented).toBe(false);
+  });
+
   it("ignores a tool armed by anyone but the app", async () => {
     await letSomeoneWrite();
     window.dispatchEvent(
