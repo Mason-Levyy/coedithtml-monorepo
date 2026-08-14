@@ -147,6 +147,31 @@ export function liveKv(
   } as unknown as KVNamespace;
 }
 
+export function liveArtifactStore(): R2Bucket {
+  const objects = new Map<string, ArrayBuffer>();
+  return {
+    get: (key: string) => {
+      const bytes = objects.get(key);
+      if (bytes === undefined) {
+        return Promise.resolve(null);
+      }
+      return Promise.resolve({
+        arrayBuffer: () => Promise.resolve(bytes),
+      } as unknown as R2ObjectBody);
+    },
+    put: (key: string, bytes: ArrayBuffer) => {
+      objects.set(key, bytes);
+      return Promise.resolve(undefined);
+    },
+    head: (key: string) =>
+      Promise.resolve(objects.has(key) ? ({} as R2Object) : null),
+    delete: (key: string) => {
+      objects.delete(key);
+      return Promise.resolve(undefined);
+    },
+  } as unknown as R2Bucket;
+}
+
 export function mergeKv(...stores: KVNamespace[]): KVNamespace {
   const writable = stores.at(-1);
   return {
