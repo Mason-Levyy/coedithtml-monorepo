@@ -13,7 +13,7 @@ export function AuthorNameField({ value, onChange }: AuthorNameFieldProps) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Shown against what you leave"
-        className="border-2 border-line bg-paper-2 px-2 py-1 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+        className="rounded-md border border-line bg-paper-2 px-2.5 py-1 text-sm focus-visible:outline-2 focus-visible:outline-ring"
       />
     </label>
   );

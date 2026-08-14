@@ -33,7 +33,7 @@ export function Popover({
       {open && (
         <div
           className={cn(
-            "absolute top-full z-30 mt-1 flex flex-col gap-2 border-2 border-ink bg-paper-2 p-2 shadow-lg",
+            "absolute top-full z-30 mt-1.5 flex flex-col gap-2 rounded-lg border border-line bg-paper-2 p-2.5 shadow-lg",
             align === "end" ? "right-0" : "left-0",
             className,
           )}
