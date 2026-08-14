@@ -1,3 +1,4 @@
+import { ChangeLog } from "@/components/ChangeLog";
 import { CommentComposer } from "@/components/CommentComposer";
 import { CommentThread } from "@/components/CommentThread";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import type { DocRoom } from "@/hooks/useDocRoom";
 import type { ReaderIdentity } from "@/hooks/useReaderIdentity";
 import { placementOf } from "@/lib/mark-placement";
 import {
+  editsAmong,
   repliesTo,
   threadsIn,
   type RejectionReason,
@@ -61,6 +63,7 @@ export function CommentRail({
   onClose,
 }: CommentRailProps) {
   const threads = threadsIn(room.entries);
+  const changes = editsAmong(room.entries);
   const others = room.readers.filter(
     (reader) => reader.id !== identity.reader.id,
   );
@@ -111,7 +114,7 @@ export function CommentRail({
           />
         )}
 
-        {threads.length === 0 && composing === null && (
+        {threads.length === 0 && changes.length === 0 && composing === null && (
           <p className="text-sm text-muted-foreground">
             {canMarkUp
               ? "Select text in the artifact to comment on it, or drag a sticky onto the page."
@@ -143,6 +146,8 @@ export function CommentRail({
             onRemove={() => room.removeEntry(entry.id)}
           />
         ))}
+
+        <ChangeLog edits={changes} onReveal={onReveal} />
       </div>
     </aside>
   );
