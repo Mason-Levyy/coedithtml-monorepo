@@ -4,6 +4,7 @@ const watch = process.argv.includes("--watch");
 
 const bundles = [
   { entryPoints: ["src/main.ts"], outfile: "dist/runtime.js" },
+  { entryPoints: ["src/author/main.ts"], outfile: "dist/author.js" },
   { entryPoints: ["src/download/main.ts"], outfile: "dist/download.js" },
 ];
 

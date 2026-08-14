@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendRuntimeScript,
-  revisionInRuntimePath,
+  sandboxScriptIn,
   runtimeScriptPath,
 } from "./artifact-render";
 
@@ -57,26 +57,38 @@ describe("appendRuntimeScript", () => {
   });
 });
 
-describe("revisionInRuntimePath", () => {
-  it("round-trips the revision it was built with", () => {
-    expect(revisionInRuntimePath(runtimeScriptPath(REVISION))).toBe(REVISION);
+describe("sandboxScriptIn", () => {
+  it("round-trips the revision the runtime path was built with", () => {
+    expect(sandboxScriptIn(runtimeScriptPath(REVISION))).toEqual({
+      revision: REVISION,
+      assetPath: "/runtime.js",
+    });
   });
 
-  it("rejects paths that are not a runtime request", () => {
+  it("serves the authoring chunk that sits beside the runtime", () => {
+    expect(sandboxScriptIn(`/__coedit/${REVISION}/author.js`)).toEqual({
+      revision: REVISION,
+      assetPath: "/author.js",
+    });
+  });
+
+  it("rejects paths that ask for no script we ship", () => {
     const paths = [
       "/__coedit/runtime.js",
       "/__coedit//runtime.js",
       `/__coedit/${REVISION}/runtime.js.map`,
+      `/__coedit/${REVISION}/index.html`,
       `/${REVISION}/runtime.js`,
       "/runtime.js",
     ];
 
     for (const path of paths) {
-      expect(revisionInRuntimePath(path)).toBeNull();
+      expect(sandboxScriptIn(path)).toBeNull();
     }
   });
 
   it("refuses a revision that tries to reach further down the path", () => {
-    expect(revisionInRuntimePath("/__coedit/a/b/runtime.js")).toBeNull();
+    expect(sandboxScriptIn("/__coedit/a/b/runtime.js")).toBeNull();
+    expect(sandboxScriptIn("/__coedit/../../author.js")).toBeNull();
   });
 });

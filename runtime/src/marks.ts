@@ -1,28 +1,21 @@
 import {
   editsAmong,
   markActivatedMessage,
-  patchMarkMessage,
   placedMessage,
-  placementMessage,
-  removeMarkMessage,
-  selectionMessage,
-  toolCancelledMessage,
   type OverlayEntry,
   type StickyEntry,
 } from "@coedithtml/protocol";
+import type { AuthoringHost, AuthoringSession } from "./author/contract";
+import { loadAuthoring } from "./author/load";
 import { resolveRevision } from "./config";
-import { anchorFromRange } from "./dom/anchor-dom";
 import { buildTextIndex, type TextIndex } from "./dom/text-index";
 import { applyEdits } from "./edits/apply";
-import { createBodyEditor } from "./overlay/edit-body";
 import { createOverlayLayer, type OverlayLayer } from "./overlay/layer";
-import { startPlaceTool } from "./overlay/place-tool";
 import { onMarkActivated, paintMarks } from "./overlay/paint";
 import { revealAnchor } from "./overlay/reveal";
 import { createRepaintScheduler } from "./overlay/scheduler";
 import {
   createStickyView,
-  startStickyGestures,
   type StickyOverride,
 } from "./overlay/sticky-controller";
 import { receiveFromApp, sendToApp } from "./transport/bridge";
@@ -39,22 +32,12 @@ export function startMarks(): () => void {
   let marks: OverlayEntry[] = [];
   let index: TextIndex = buildTextIndex(document.body);
   let override: StickyOverride | null = null;
-  let selectionFrame = 0;
   let reportedPlacement = "";
-
-  let awaitingEdit: string | null = null;
+  let canWrite = false;
+  let authoring: AuthoringSession | null = null;
+  let asking = false;
+  let stopped = false;
   const replayed = new Set<string>();
-
-  function openAwaitedEdit(): void {
-    const markId = awaitingEdit;
-    const element = markId === null ? null : view.elementFor(markId);
-    const mark = markId === null ? null : stickyById(markId);
-    if (markId === null || element === null || mark === null) {
-      return;
-    }
-    awaitingEdit = null;
-    editor.begin(element, markId, mark.body);
-  }
 
   function paint(): void {
     try {
@@ -64,7 +47,7 @@ export function startMarks(): () => void {
         reportedPlacement = summary;
         sendToApp(placedMessage(placement));
       }
-      openAwaitedEdit();
+      authoring?.afterPaint();
     } catch (error) {
       console.error("[coedit] failed to paint marks", error);
     }
@@ -76,8 +59,6 @@ export function startMarks(): () => void {
       index = buildTextIndex(document.body);
     },
   });
-
-  let canWrite = false;
 
   function stickyById(markId: string): StickyEntry | null {
     const found = marks.find((mark) => mark.id === markId);
@@ -103,91 +84,61 @@ export function startMarks(): () => void {
     }
   }
 
-  const editor = createBodyEditor({
-    onCommit: (markId, body) => sendToApp(patchMarkMessage(markId, { body })),
-    onAbandon: (markId) => sendToApp(removeMarkMessage(markId)),
-    onChanged: scheduler.repaint,
-  });
-
-  const placing = startPlaceTool({
-    revision,
-    onPlace: (anchor, size) => sendToApp(placementMessage(anchor, size)),
-    onCancel: () => sendToApp(toolCancelledMessage()),
-  });
-
-  const gestures = startStickyGestures({
+  const host: AuthoringHost = {
     layer,
     view,
-    markById: stickyById,
+    revision,
+    index: () => index,
+    stickyById,
     canWrite: () => canWrite,
     setOverride: (next) => {
       override = next;
       scheduler.holdIndex(next !== null);
       scheduler.repaint();
     },
-    onPatch: (markId, patch) => sendToApp(patchMarkMessage(markId, patch)),
-    onSelect: (markId) => sendToApp(markActivatedMessage(markId)),
-    onEdit: (element, markId, body) => editor.begin(element, markId, body),
-    onRemove: (markId) => sendToApp(removeMarkMessage(markId)),
-  });
+    repaint: () => scheduler.repaint(),
+    send: sendToApp,
+  };
 
-  function reportSelection(): void {
-    if (editor.isEditing()) {
+  function askForAuthoring(): void {
+    if (authoring !== null || asking) {
       return;
     }
-    const selection = document.getSelection();
-    const range =
-      selection === null || selection.isCollapsed || selection.rangeCount === 0
-        ? null
-        : selection.getRangeAt(0);
-    const anchor =
-      range === null ? null : anchorFromRange(index, range, revision);
-    if (range === null || anchor === null) {
-      sendToApp(selectionMessage(null, null));
-      return;
-    }
-    const box = range.getBoundingClientRect();
-    sendToApp(
-      selectionMessage(anchor, {
-        x: box.left,
-        y: box.top,
-        width: box.width,
-        height: box.height,
-      }),
-    );
-  }
-
-  function scheduleSelection(): void {
-    window.cancelAnimationFrame(selectionFrame);
-    selectionFrame = window.requestAnimationFrame(reportSelection);
+    asking = true;
+    void loadAuthoring().then((startAuthoring) => {
+      asking = false;
+      if (startAuthoring === null || stopped) {
+        return;
+      }
+      authoring = startAuthoring(host);
+      authoring.setCanWrite(canWrite);
+      scheduler.repaint();
+    });
   }
 
   const stopActivation = onMarkActivated(layer, (markId) =>
     sendToApp(markActivatedMessage(markId)),
   );
   const stopReceiving = receiveFromApp((message) => {
-    if (message.type === "set-tool") {
-      placing.arm(message.tool, message.color);
-      return;
-    }
     if (message.type === "set-capabilities") {
       canWrite = message.canWrite;
       layer.setEditable(canWrite);
-      if (!canWrite) {
-        editor.cancel();
+      if (canWrite) {
+        askForAuthoring();
       }
+      authoring?.setCanWrite(canWrite);
+      return;
+    }
+    if (message.type === "set-tool") {
+      authoring?.arm(message.tool, message.color);
       return;
     }
     if (message.type === "place-at") {
-      const anchor = placing.resolve(message.x, message.y);
-      if (anchor !== null) {
-        sendToApp(placementMessage(anchor));
-      }
+      authoring?.placeAt(message.x, message.y);
       return;
     }
     if (message.type === "edit-mark") {
-      awaitingEdit = message.markId;
-      scheduler.repaint();
+      authoring?.editMark(message.markId);
       return;
     }
     if (message.type === "reveal-mark") {
@@ -199,26 +150,12 @@ export function startMarks(): () => void {
     scheduler.repaint();
   });
 
-  function onScroll(): void {
-    const selection = document.getSelection();
-    if (selection !== null && !selection.isCollapsed) {
-      scheduleSelection();
-    }
-  }
-
-  document.addEventListener("selectionchange", scheduleSelection);
-  window.addEventListener("scroll", onScroll, true);
-
   return () => {
-    gestures.stop();
-    editor.stop();
+    stopped = true;
+    authoring?.stop();
     scheduler.stop();
     stopActivation();
     stopReceiving();
-    placing.stop();
-    document.removeEventListener("selectionchange", scheduleSelection);
-    window.removeEventListener("scroll", onScroll, true);
-    window.cancelAnimationFrame(selectionFrame);
     view.clear();
     layer.destroy();
   };

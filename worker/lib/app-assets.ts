@@ -1,7 +1,9 @@
 import type { WorkerEnv } from "@/lib/env";
-import { RUNTIME_ASSET_PATH } from "@/lib/artifact-render";
+import { AUTHOR_ASSET_PATH, RUNTIME_ASSET_PATH } from "@/lib/artifact-render";
 
 const SPA_DOCUMENT_PATH = "/index.html";
+
+const SANDBOX_ONLY_ASSETS = [RUNTIME_ASSET_PATH, AUTHOR_ASSET_PATH];
 const FILE_EXTENSION = /\.[a-z0-9]+$/i;
 
 async function fetchAsset(env: WorkerEnv, url: URL): Promise<Response | null> {
@@ -23,7 +25,7 @@ export async function serveAppAsset(
   env: WorkerEnv,
 ): Promise<Response> {
   const url = new URL(request.url);
-  if (url.pathname === RUNTIME_ASSET_PATH) {
+  if (SANDBOX_ONLY_ASSETS.includes(url.pathname)) {
     return new Response("Not found", { status: 404 });
   }
 
