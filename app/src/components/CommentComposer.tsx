@@ -36,7 +36,7 @@ export function CommentComposer({
 
   return (
     <form
-      className="flex flex-col gap-2 border-2 border-ink bg-card p-3"
+      className="flex flex-col gap-2 rounded-lg border border-line bg-card p-3 shadow-xs"
       onSubmit={(event) => {
         event.preventDefault();
         send();
@@ -61,7 +61,7 @@ export function CommentComposer({
         rows={3}
         placeholder="What should change here?"
         aria-label="Comment"
-        className="resize-none border-2 border-line bg-paper-2 p-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+        className="resize-none rounded-md border border-line bg-paper-2 p-2.5 text-sm focus-visible:outline-2 focus-visible:outline-ring"
       />
       {needsName && <AuthorNameField value={name} onChange={setName} />}
       <div className="flex items-center gap-2">

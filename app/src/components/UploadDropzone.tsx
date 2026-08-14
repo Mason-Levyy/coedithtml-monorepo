@@ -49,8 +49,8 @@ export function UploadDropzone({
     <div>
       <label
         className={cn(
-          "flex cursor-pointer flex-col items-center gap-2 border-2 border-dashed border-ink bg-card px-6 py-10 text-center transition-colors",
-          isDraggedOver && "border-solid bg-paper",
+          "flex cursor-pointer flex-col items-center gap-2 rounded-xl border border-dashed border-line hover:border-ink/40 bg-card px-6 py-10 text-center transition-colors shadow-xs",
+          isDraggedOver && "border-solid border-primary bg-paper",
           disabled && "cursor-not-allowed opacity-50",
         )}
         onDragOver={(event) => {

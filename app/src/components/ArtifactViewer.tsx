@@ -6,7 +6,7 @@ import { ReaderChip } from "@/components/ReaderChip";
 import { SelectionAction } from "@/components/SelectionAction";
 import { ShareMenu } from "@/components/ShareMenu";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
-import { TextEditToggle } from "@/components/TextEditToggle";
+
 import { ViewerBar } from "@/components/ViewerBar";
 import { useArtifactBridge } from "@/hooks/useArtifactBridge";
 import { useDocRoom } from "@/hooks/useDocRoom";
@@ -23,7 +23,6 @@ import {
   renderMarksMessage,
   revealMarkMessage,
   setCapabilitiesMessage,
-  setToolMessage,
   unresolvedCount,
   type EntryPatch,
   type ReaderPresence,
@@ -161,16 +160,7 @@ export function ArtifactViewer({
     textEdited: textEditing.record,
   };
 
-  const [editingText, setEditingText] = useState(false);
 
-  function toggleTextEditing(): void {
-    const next = !editingText;
-    setEditingText(next);
-    if (next) {
-      sticky.disarm();
-    }
-    sendToRuntime(setToolMessage(next ? "text" : null));
-  }
 
   const fit = bridge.fit;
   const frameHeight =
@@ -250,10 +240,11 @@ export function ArtifactViewer({
   }
 
   return (
-    <div className={`flex ${columnHeight} bg-card`}>
-      <div className="relative flex min-w-0 flex-1 flex-col">
-        <div className="sticky top-0 z-20">
-          <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
+    <div className={`flex flex-col ${columnHeight} bg-card relative`}>
+      {/* Full-width header spanning the entire top */}
+      <header className="sticky top-0 z-30 w-full flex-none">
+        <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {canMarkUp && (
               <StickyPad
                 armed={sticky.armed}
@@ -262,31 +253,31 @@ export function ArtifactViewer({
                 onDrop={dropSticky}
               />
             )}
-            {room.canEdit && (
-              <TextEditToggle
-                armed={editingText}
-                onToggle={toggleTextEditing}
-              />
-            )}
-            {canMarkUp && (
-              <ReaderChip
-                identity={identity}
-                open={identityOpen}
-                onOpenChange={setIdentityOpen}
-              />
-            )}
-            <ShareMenu
-              feedback={feedback}
-              artifactUrl={src}
-              shareLinks={shareLinks}
-            />
             <RailButton
               open={railOpen}
               unresolved={unresolvedCount(room.entries)}
               onToggle={() => setRailOpen((shown) => !shown)}
             />
-          </ViewerBar>
-        </div>
+            <ShareMenu
+              feedback={feedback}
+              artifactUrl={src}
+              shareLinks={shareLinks}
+            />
+          </div>
+          {canMarkUp && (
+            <div className="ml-4 flex items-center pl-4 border-l border-line/60 sm:ml-5 sm:pl-5">
+              <ReaderChip
+                identity={identity}
+                open={identityOpen}
+                onOpenChange={setIdentityOpen}
+              />
+            </div>
+          )}
+        </ViewerBar>
+      </header>
+
+      {/* Main content area under the header */}
+      <div className="relative flex min-h-0 flex-1 flex-col">
         <div className={frameHeight ? undefined : "min-h-0 flex-1"}>
           <ArtifactFrame
             ref={frame}
@@ -304,27 +295,28 @@ export function ArtifactViewer({
               onComment={() => openComposer(selection.anchor)}
             />
           )}
-      </div>
 
-      {railOpen && (
-        <div className="fixed inset-y-0 right-0 z-30 h-dvh shadow-2xl lg:sticky lg:top-0 lg:z-auto lg:shadow-none">
-          <CommentRail
-            room={room}
-            identity={identity}
-            composing={composing}
-            activeMarkId={activeMarkId}
-            marks={bridge.marks}
-            replacingMarkId={sticky.replacingMarkId}
-            onActivate={setActiveMarkId}
-            onReveal={(markId) => sendToRuntime(revealMarkMessage(markId))}
-            onReplace={sticky.armForMark}
-            onComment={writeComment}
-            onReply={writeReply}
-            onClose={() => setRailOpen(false)}
-            onDismissSelection={closeComposer}
-          />
-        </div>
-      )}
+        {/* Sidebar drawer — sits strictly below the top header on the right */}
+        {railOpen && (
+          <div className="fixed top-[45px] right-0 bottom-0 z-20 shadow-2xl">
+            <CommentRail
+              room={room}
+              identity={identity}
+              composing={composing}
+              activeMarkId={activeMarkId}
+              marks={bridge.marks}
+              replacingMarkId={sticky.replacingMarkId}
+              onActivate={setActiveMarkId}
+              onReveal={(markId) => sendToRuntime(revealMarkMessage(markId))}
+              onReplace={sticky.armForMark}
+              onComment={writeComment}
+              onReply={writeReply}
+              onClose={() => setRailOpen(false)}
+              onDismissSelection={closeComposer}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
