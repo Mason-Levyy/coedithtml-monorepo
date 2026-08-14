@@ -93,12 +93,22 @@ describe("editScript", () => {
 });
 
 describe("feedbackSection", () => {
-  it("lists comments and the changes that were made", () => {
-    const section = feedbackSection([comment(), textEdit()]);
+  it("lists the comments", () => {
+    const section = feedbackSection([comment()]);
 
     expect(section).toContain("Net or gross?");
     expect(section).toContain("Priya");
-    expect(section).toContain("Revenue fell 4%");
+  });
+
+  it("says nothing about text changes, which are already in the document", () => {
+    const section = feedbackSection([comment(), textEdit()]);
+
+    expect(section).not.toContain("Revenue fell 4%");
+    expect(section).not.toContain("<del>");
+  });
+
+  it("writes nothing for a file that was only edited", () => {
+    expect(feedbackSection([textEdit()])).toBe("");
   });
 
   it("escapes a comment that contains markup", () => {

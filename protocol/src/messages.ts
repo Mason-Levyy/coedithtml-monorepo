@@ -60,7 +60,14 @@ export type RuntimePatchMarkMessage = Versioned & {
   patch: EntryPatch;
 };
 
+export type RuntimeTextEditedMessage = Versioned & {
+  type: "text-edited";
+  anchor: TextAnchor;
+  replacement: string;
+};
+
 export type RuntimeToAppMessage =
+  | RuntimeTextEditedMessage
   | RuntimeReadyMessage
   | RuntimeFitMessage
   | RuntimeSelectionMessage
@@ -76,7 +83,7 @@ export type AppRenderMarksMessage = Versioned & {
   marks: OverlayEntry[];
 };
 
-export const MARK_TOOLS = ["sticky"] as const;
+export const MARK_TOOLS = ["sticky", "text"] as const;
 
 export type MarkTool = (typeof MARK_TOOLS)[number];
 
@@ -211,4 +218,16 @@ export function editMarkMessage(markId: string): AppEditMarkMessage {
 
 export function removeMarkMessage(markId: string): RuntimeRemoveMarkMessage {
   return { version: BRIDGE_VERSION, type: "remove-mark", markId };
+}
+
+export function textEditedMessage(
+  anchor: TextAnchor,
+  replacement: string,
+): RuntimeTextEditedMessage {
+  return {
+    version: BRIDGE_VERSION,
+    type: "text-edited",
+    anchor,
+    replacement,
+  };
 }

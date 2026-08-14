@@ -94,7 +94,7 @@ describe("LandingPage", () => {
     expect(screen.queryByText(viewUrl)).toBeNull();
   });
 
-  it("falls back to the suggest link when the permission is set to edit, since direct editing isn't built yet", async () => {
+  it("hands out the edit link when the permission is set to edit", async () => {
     const { viewUrl, suggestUrl, editUrl } = stubUploadResponse();
 
     renderLandingPage();
@@ -106,10 +106,10 @@ describe("LandingPage", () => {
     });
 
     await vi.waitFor(() => {
-      expect(() => screen.getByText(suggestUrl)).not.toThrow();
+      expect(() => screen.getByText(editUrl)).not.toThrow();
     });
     expect(screen.queryByText(viewUrl)).toBeNull();
-    expect(screen.queryByText(editUrl)).toBeNull();
+    expect(screen.queryByText(suggestUrl)).toBeNull();
   });
 
   it("shows the server's error message and lets the reader try again", async () => {

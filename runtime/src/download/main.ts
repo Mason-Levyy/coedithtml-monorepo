@@ -1,5 +1,4 @@
 import type { EditEntry } from "@coedithtml/protocol";
-import { buildTextIndex } from "../dom/text-index";
 import { applyEdits } from "../edits/apply";
 
 declare global {
@@ -14,7 +13,7 @@ function applyOnce(): void {
     return;
   }
   try {
-    applyEdits(buildTextIndex(document.body), edits);
+    applyEdits(document.body, edits);
   } catch (error) {
     console.error("[coedit] could not apply the saved edits", error);
   }

@@ -17,6 +17,7 @@ import {
   selectionMessage,
   setCapabilitiesMessage,
   setToolMessage,
+  textEditedMessage,
   toolCancelledMessage,
   type AppToRuntimeMessage,
   type FitMode,
@@ -147,6 +148,15 @@ export function parseRuntimeToAppMessage(
   if (candidate.type === "remove-mark") {
     const markId = asFilledString(candidate.markId);
     return markId === null ? null : removeMarkMessage(markId);
+  }
+
+  if (candidate.type === "text-edited") {
+    const anchor = parseTextAnchorField(candidate.anchor);
+    const replacement =
+      typeof candidate.replacement === "string" ? candidate.replacement : null;
+    return anchor === null || replacement === null
+      ? null
+      : textEditedMessage(anchor, replacement);
   }
 
   return null;

@@ -8,6 +8,7 @@ import { ReplaceFileButton } from "@/components/ReplaceFileButton";
 import { SelectionAction } from "@/components/SelectionAction";
 import { ShareMenu } from "@/components/ShareMenu";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
+import { TextEditToggle } from "@/components/TextEditToggle";
 import { ViewerBar } from "@/components/ViewerBar";
 import { useArtifactBridge } from "@/hooks/useArtifactBridge";
 import { useReplaceArtifact } from "@/hooks/useArtifact";
@@ -17,6 +18,7 @@ import { useRuntimeChannel } from "@/hooks/useRuntimeChannel";
 import { useMarkAuthoring } from "@/hooks/useMarkAuthoring";
 import { useSelectionAnchor } from "@/hooks/useSelectionAnchor";
 import { useStickyPlacement } from "@/hooks/useStickyPlacement";
+import { useTextEditing } from "@/hooks/useTextEditing";
 import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
 import type { LinkPermission } from "@/lib/link-permission";
 import { describeReanchoring, reanchorCounts } from "@/lib/reanchor-report";
@@ -25,6 +27,7 @@ import {
   renderMarksMessage,
   revealMarkMessage,
   setCapabilitiesMessage,
+  setToolMessage,
   unresolvedCount,
   type EntryPatch,
   type ReaderPresence,
@@ -59,6 +62,10 @@ export function ArtifactViewer({
     },
     remove: (markId: string) => void markId,
     cancelTool: () => {},
+    textEdited: (anchor: TextAnchor, replacement: string) => {
+      void anchor;
+      void replacement;
+    },
   });
   const bridge = useArtifactBridge({
     sandboxOrigin,
@@ -66,6 +73,8 @@ export function ArtifactViewer({
     onPatchMark: (markId, patch) => acted.current.patch(markId, patch),
     onRemoveMark: (markId) => acted.current.remove(markId),
     onToolCancelled: () => acted.current.cancelTool(),
+    onTextEdited: (anchor, replacement) =>
+      acted.current.textEdited(anchor, replacement),
   });
   const sendToRuntime = useRuntimeChannel(frame, sandboxOrigin);
   const identity = useReaderIdentity();
@@ -135,6 +144,15 @@ export function ArtifactViewer({
     addEntry: room.addEntry,
   });
 
+  const textEditing = useTextEditing({
+    entries: room.entries,
+    canEdit: room.canEdit,
+    color: identity.color,
+    reader: identity.reader,
+    addEntry: room.addEntry,
+    patchEntry: room.patchEntry,
+  });
+
   const sticky = useStickyPlacement({
     placement: bridge.placement,
     placementSize: bridge.placementSize,
@@ -159,7 +177,19 @@ export function ArtifactViewer({
       }
     },
     cancelTool: sticky.disarm,
+    textEdited: textEditing.record,
   };
+
+  const [editingText, setEditingText] = useState(false);
+
+  function toggleTextEditing(): void {
+    const next = !editingText;
+    setEditingText(next);
+    if (next) {
+      sticky.disarm();
+    }
+    sendToRuntime(setToolMessage(next ? "text" : null));
+  }
 
   const fit = bridge.fit;
   const frameHeight =
@@ -272,6 +302,12 @@ export function ArtifactViewer({
                 color={identity.color}
                 onArm={armSticky}
                 onDrop={dropSticky}
+              />
+            )}
+            {room.canEdit && (
+              <TextEditToggle
+                armed={editingText}
+                onToggle={toggleTextEditing}
               />
             )}
             {canMarkUp && (
