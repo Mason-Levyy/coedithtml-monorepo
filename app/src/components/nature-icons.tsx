@@ -170,10 +170,12 @@ export const NATURE_ICONS = [
   FlowerIcon,
 ] as const;
 
-export function getNatureIcon(seed: string) {
+export function getNatureIcon(
+  seed: string
+): (props: SVGProps<SVGSVGElement>) => React.JSX.Element {
   let hash = 0;
   for (const char of seed) {
     hash = (hash * 31 + char.charCodeAt(0)) % 4294967296;
   }
-  return NATURE_ICONS[Math.abs(hash) % NATURE_ICONS.length];
+  return NATURE_ICONS[Math.abs(hash) % NATURE_ICONS.length] ?? PineIcon;
 }

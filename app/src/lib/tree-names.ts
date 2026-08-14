@@ -112,8 +112,8 @@ export function randomTreeName(seed?: string): string {
     for (const char of seed) {
       hash = (hash * 31 + char.charCodeAt(0)) % 4294967296;
     }
-    return TREE_NAMES[Math.abs(hash) % TREE_NAMES.length];
+    return TREE_NAMES[Math.abs(hash) % TREE_NAMES.length] ?? "Willow";
   }
   const index = Math.floor(Math.random() * TREE_NAMES.length);
-  return TREE_NAMES[index];
+  return TREE_NAMES[index] ?? "Willow";
 }
