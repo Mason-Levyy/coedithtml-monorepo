@@ -15,11 +15,13 @@ requires understanding the user's markup, it is probably the wrong change.
 
 ## Structure
 
-- `app/` — the Coedit web app (upload, dashboard, share settings). React + Vite.
+- `app/` — the Coedit web app (upload, viewer, comment rail). React + Vite. The
+  owner's own list and share settings arrive at v0.5; there is no dashboard yet.
 - `worker/` — Cloudflare Worker: API routes, artifact serving, Durable Objects
   holding per-document state and websocket fanout. **All backend logic lives here.**
 - `runtime/` — the injected editor script. Built standalone, zero dependencies.
-- `website/` — marketing site. Next.js on Cloudflare. No app logic.
+- `website/` — marketing site. Next.js, no app logic. Still the scaffold: no
+  content, and no deploy adapter chosen yet. Built at v0.4.
 
 ## Artifact Conventions
 

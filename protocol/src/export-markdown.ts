@@ -7,6 +7,10 @@ import {
   type ReplyEntry,
 } from "./overlay";
 
+// TODO(post-v1): a plugin replaces this. Copy-paste is the stopgap, so keep the
+// format small — improve the shell prompt and give stickies nearby text to sit
+// under, and leave richer structure to the connector. See planning/ROADMAP.md.
+
 const UNPLACED_NOTE =
   "These were left on content that is no longer in the file.";
 
