@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bubblePath, centreOf, tailNodes, type Size } from "./bubble-path";
+import { bubblePath, tailNodes, type Size } from "./sticky-geometry";
 
 const size: Size = { width: 200, height: 100 };
 
@@ -28,7 +28,7 @@ describe("tailNodes", () => {
   });
 
   it("draws nothing for a tip resting inside the shape", () => {
-    expect(tailNodes(size, centreOf(size))).toBeNull();
+    expect(tailNodes(size, { x: 100, y: 50 })).toBeNull();
     expect(tailNodes(size, { x: 150, y: 50 })).toBeNull();
     expect(tailNodes(size, null)).toBeNull();
   });

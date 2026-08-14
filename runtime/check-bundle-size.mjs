@@ -2,7 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const BUDGET_KB = { "runtime.js": 40, "download.js": 12 };
+const BUDGET_KB = { "runtime.js": 30, "author.js": 18, "download.js": 12 };
 
 const distDir = join(dirname(fileURLToPath(import.meta.url)), "dist");
 const jsFiles = readdirSync(distDir).filter((file) => file.endsWith(".js"));

@@ -1,24 +1,32 @@
 export const RUNTIME_ASSET_PATH = "/runtime.js";
 
-const RUNTIME_SCRIPT_PREFIX = "/__coedit/";
-const RUNTIME_SCRIPT_SUFFIX = "/runtime.js";
+export const AUTHOR_ASSET_PATH = "/author.js";
+
+const SANDBOX_SCRIPT_PREFIX = "/__coedit/";
+
+const SANDBOX_SCRIPTS = [RUNTIME_ASSET_PATH, AUTHOR_ASSET_PATH];
+
+export type SandboxScript = { revision: string; assetPath: string };
 
 export function runtimeScriptPath(revision: string): string {
-  return `${RUNTIME_SCRIPT_PREFIX}${revision}${RUNTIME_SCRIPT_SUFFIX}`;
+  return `${SANDBOX_SCRIPT_PREFIX}${revision}${RUNTIME_ASSET_PATH}`;
 }
 
-export function revisionInRuntimePath(pathname: string): string | null {
-  if (
-    !pathname.startsWith(RUNTIME_SCRIPT_PREFIX) ||
-    !pathname.endsWith(RUNTIME_SCRIPT_SUFFIX)
-  ) {
+export function sandboxScriptIn(pathname: string): SandboxScript | null {
+  if (!pathname.startsWith(SANDBOX_SCRIPT_PREFIX)) {
+    return null;
+  }
+  const assetPath = SANDBOX_SCRIPTS.find((known) => pathname.endsWith(known));
+  if (assetPath === undefined) {
     return null;
   }
   const revision = pathname.slice(
-    RUNTIME_SCRIPT_PREFIX.length,
-    pathname.length - RUNTIME_SCRIPT_SUFFIX.length,
+    SANDBOX_SCRIPT_PREFIX.length,
+    pathname.length - assetPath.length,
   );
-  return revision.length > 0 && !revision.includes("/") ? revision : null;
+  return revision.length > 0 && !revision.includes("/")
+    ? { revision, assetPath }
+    : null;
 }
 
 export function appendRuntimeScript(

@@ -51,23 +51,17 @@ function main() {
     return;
   }
 
-  const distDir = path.join(runtimeDir, 'dist');
-  if (!fs.existsSync(distDir)) return;
-
-  const jsFiles = fs.readdirSync(distDir).filter((f) => f.endsWith('.js'));
-  if (jsFiles.length === 0) return;
-
-  const LIMIT_KB = 40;
-  const LIMIT_BYTES = LIMIT_KB * 1024;
-  const oversized = jsFiles
-    .map((f) => ({ f, size: fs.statSync(path.join(distDir, f)).size }))
-    .filter(({ size }) => size > LIMIT_BYTES);
-
-  if (oversized.length > 0) {
-    const detail = oversized.map(({ f, size }) => `  ${f}: ${(size / 1024).toFixed(1)}KB`).join('\n');
-    block(
-      `runtime/ bundle exceeds the ${LIMIT_KB}KB minified budget (CLAUDE.md):\n${detail}\nReduce bundle size or justify the increase in the PR.`,
-    );
+  // The per-bundle budgets live in check-bundle-size.mjs, which CI runs too.
+  // A second copy of the numbers here is how the two quietly disagree.
+  try {
+    execSync('pnpm --filter runtime check-size', {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    const out = [err.stdout, err.stderr].filter(Boolean).join('\n').trim() || err.message;
+    block(out);
   }
 }
 

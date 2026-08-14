@@ -1,17 +1,129 @@
 import type { EntryPatch, StickyEntry, TailTip } from "@coedithtml/protocol";
-import { centreOf } from "./bubble-path";
-import { RESIZE_EDGES, type ResizeEdge } from "./elements";
+import type { TextIndex } from "../dom/text-index";
 import { beginGesture, type Gesture, type GestureUpdate } from "./gesture";
-import type { Rect } from "./geometry";
+import type { Point, Rect } from "./geometry";
+import { locateAnchor } from "./geometry";
 import type { OverlayLayer } from "./layer";
-import { isInside, resizeRect } from "./resize-math";
-import { toolOf } from "./sticky-tools";
-import type { StickyOverride, StickyView } from "./sticky-view";
+import { emptyPlacement, type Placement } from "./paint";
+import {
+  RESIZE_EDGES,
+  boxOf,
+  createStickyElement,
+  paintStickyShape,
+  toolOf,
+  updateStickyElement,
+  type ResizeEdge,
+  type StickyGeometry,
+} from "./sticky-element";
+import { defaultTip, isInside, resizeRect } from "./sticky-geometry";
+
+export type StickyOverride = {
+  markId: string;
+  offsetX: number;
+  offsetY: number;
+  width: number | null;
+  height: number | null;
+  tailTip: TailTip | null;
+};
+
+export type StickyView = {
+  reconcile(
+    index: TextIndex,
+    marks: StickyEntry[],
+    override: StickyOverride | null,
+  ): Placement;
+  elementFor(markId: string): HTMLElement | null;
+  markIdOf(element: HTMLElement): string | null;
+  rectOf(markId: string): Rect | null;
+  clear(): void;
+};
 
 export type StickyGestures = {
   isDragging(): boolean;
   stop(): void;
 };
+
+function geometryFor(
+  mark: StickyEntry,
+  at: Point,
+  override: StickyOverride | null,
+): StickyGeometry {
+  const source = override?.markId === mark.id ? override : mark;
+  return {
+    at,
+    offsetX: source.offsetX,
+    offsetY: source.offsetY,
+    width: source.width,
+    height: source.height,
+  };
+}
+
+function tipFor(
+  mark: StickyEntry,
+  override: StickyOverride | null,
+): TailTip | null {
+  return override?.markId === mark.id ? override.tailTip : mark.tail;
+}
+
+export function createStickyView(layer: OverlayLayer): StickyView {
+  const held = new Map<string, HTMLElement>();
+
+  function drop(markId: string): void {
+    held.get(markId)?.remove();
+    held.delete(markId);
+  }
+
+  return {
+    reconcile(index, marks, override) {
+      const placement = emptyPlacement();
+      const seen = new Set<string>();
+
+      for (const mark of marks) {
+        const located = locateAnchor(index, mark.anchor);
+        if (located.at === null) {
+          placement[located.why].push(mark.id);
+          drop(mark.id);
+          continue;
+        }
+        seen.add(mark.id);
+        if (!located.onScreen) {
+          placement.offscreen.push(mark.id);
+        }
+
+        let element = held.get(mark.id);
+        if (element === undefined) {
+          element = layer.stickies.appendChild(createStickyElement(mark));
+          held.set(mark.id, element);
+        }
+        updateStickyElement(
+          element,
+          mark,
+          geometryFor(mark, located.at, override),
+        );
+        paintStickyShape(element, mark, tipFor(mark, override));
+      }
+
+      for (const markId of [...held.keys()]) {
+        if (!seen.has(markId)) {
+          drop(markId);
+        }
+      }
+      return placement;
+    },
+    elementFor: (markId) => held.get(markId) ?? null,
+    markIdOf: (element) =>
+      element.closest<HTMLElement>(".sticky")?.dataset.mark ?? null,
+    rectOf: (markId) => {
+      const element = held.get(markId);
+      return element === undefined ? null : boxOf(element);
+    },
+    clear: () => {
+      for (const markId of [...held.keys()]) {
+        drop(markId);
+      }
+    },
+  };
+}
 
 type Intent =
   { kind: "move" } | { kind: "resize"; edge: ResizeEdge } | { kind: "tail" };
@@ -47,7 +159,7 @@ export function startStickyGestures(options: {
   onPatch(markId: string, patch: EntryPatch): void;
   onSelect(markId: string): void;
   onEdit(sticky: HTMLElement, markId: string, body: string): void;
-  onRemove?: (markId: string) => void;
+  onRemove(markId: string): void;
   canWrite(): boolean;
 }): StickyGestures {
   const surface = options.layer.stickies;
@@ -67,11 +179,10 @@ export function startStickyGestures(options: {
     });
   }
 
-  function draggedTip(update: GestureUpdate, from: TailTip): TailTip {
-    return { x: from.x + update.dx, y: from.y + update.dy };
-  }
-
-  function overrideFor(box: Rect, tailTip: TailTip | null) {
+  function overrideFor(
+    box: Rect,
+    tailTip: TailTip | null,
+  ): StickyOverride | null {
     if (live === null) {
       return null;
     }
@@ -107,7 +218,10 @@ export function startStickyGestures(options: {
         null,
       );
     }
-    return overrideFor(startBox, draggedTip(update, live.startTip));
+    return overrideFor(startBox, {
+      x: live.startTip.x + update.dx,
+      y: live.startTip.y + update.dy,
+    });
   }
 
   function committed(update: GestureUpdate): EntryPatch | null {
@@ -135,7 +249,10 @@ export function startStickyGestures(options: {
         height: box.height,
       };
     }
-    const tip = draggedTip(update, live.startTip);
+    const tip = {
+      x: live.startTip.x + update.dx,
+      y: live.startTip.y + update.dy,
+    };
     const box = { x: 0, y: 0, width: startBox.width, height: startBox.height };
     return { tail: isInside(box, tip) ? null : tip };
   }
@@ -164,12 +281,19 @@ export function startStickyGestures(options: {
       }
       return;
     }
-    const intent = intentOf(target);
-    if (element.classList.contains("editing") && intent?.kind === "move") {
+    const tool = toolOf(target);
+    if (tool !== null) {
+      event.stopPropagation();
+      event.preventDefault();
+      if (tool === "remove") {
+        options.onRemove(markId);
+      } else {
+        options.onPatch(markId, { width: null, height: null });
+      }
       return;
     }
-    if (toolOf(target) !== null) {
-      event.stopPropagation();
+    const intent = intentOf(target);
+    if (element.classList.contains("editing") && intent?.kind === "move") {
       return;
     }
     const mark = options.markById(markId);
@@ -248,7 +372,7 @@ export function startStickyGestures(options: {
       markId,
       intent,
       startBox,
-      startTip: mark.tail ?? centreOf(startBox),
+      startTip: mark.tail ?? defaultTip(startBox),
       gesture,
     };
     element.classList.add("dragging");
@@ -286,8 +410,8 @@ export function startStickyGestures(options: {
     }
     event.preventDefault();
     event.stopPropagation();
-    for (const id of [...selectedMarkIds]) {
-      options.onRemove?.(id);
+    for (const id of selectedMarkIds) {
+      options.onRemove(id);
     }
     selectedMarkIds.clear();
     updateSelectionVisuals();

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StickyEntry } from "@coedithtml/protocol";
 import { buildTextIndex, type TextIndex } from "../dom/text-index";
 import { createOverlayLayer, type OverlayLayer } from "./layer";
-import { createStickyView, type StickyView } from "./sticky-view";
+import { createStickyView, type StickyView } from "./sticky-controller";
 
 const REGION = {
   kind: "region" as const,
