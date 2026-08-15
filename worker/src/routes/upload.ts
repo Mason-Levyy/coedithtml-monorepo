@@ -6,20 +6,24 @@ import {
   TOO_LARGE,
   type AcceptedUpload,
 } from "@/lib/accept-upload";
+import { coeditStickiesIn } from "@/lib/artifact-reimport";
 import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { revisionOf } from "@/lib/content-hash";
 import type { WorkerEnv } from "@/lib/env";
 import { hashArtifactPassword } from "@/lib/password";
 import { jsonError, jsonResponse, SAVE_FAILED } from "@/lib/responses";
+import { seedRoomWithEntries } from "@/lib/room-seed";
 import { mintShareTokens } from "@/lib/share-tokens";
 import { viewerUrl } from "@/lib/share-links";
 import { newArtifactId } from "@/lib/storage-keys";
+
+type StoredUpload = { ok: true; revision: string } | { ok: false; response: Response };
 
 async function storeUpload(
   env: WorkerEnv,
   artifactId: string,
   upload: AcceptedUpload,
-): Promise<Response | null> {
+): Promise<StoredUpload> {
   const revision = await revisionOf(upload.bytes);
   const failedToStore = await storeRevision(
     env,
@@ -28,7 +32,7 @@ async function storeUpload(
     upload.bytes,
   );
   if (failedToStore) {
-    return failedToStore;
+    return { ok: false, response: failedToStore };
   }
 
   const passwordHash =
@@ -50,9 +54,9 @@ async function storeUpload(
   );
   if (!storedMetadata.ok) {
     console.error("Failed to store artifact metadata", storedMetadata.cause);
-    return jsonError(SAVE_FAILED, 500);
+    return { ok: false, response: jsonError(SAVE_FAILED, 500) };
   }
-  return null;
+  return { ok: true, revision };
 }
 
 export async function handleUpload(
@@ -74,15 +78,21 @@ export async function handleUpload(
   }
 
   const artifactId = newArtifactId();
-  const failedToStore = await storeUpload(env, artifactId, accepted.upload);
-  if (failedToStore) {
-    return failedToStore;
+  const stored = await storeUpload(env, artifactId, accepted.upload);
+  if (!stored.ok) {
+    return stored.response;
   }
 
   const minted = await mintShareTokens(env, artifactId);
   if (!minted.ok) {
     return minted.response;
   }
+
+  const restoredStickies = coeditStickiesIn(
+    new TextDecoder().decode(accepted.upload.bytes),
+    stored.revision,
+  );
+  await seedRoomWithEntries(env, artifactId, restoredStickies);
 
   const { viewToken, suggestToken, editToken } = minted.tokens;
   return jsonResponse(
@@ -94,6 +104,7 @@ export async function handleUpload(
       viewUrl: viewerUrl(request, env, viewToken),
       suggestUrl: viewerUrl(request, env, suggestToken),
       editUrl: viewerUrl(request, env, editToken),
+      restoredComments: restoredStickies.length,
     },
     201,
   );

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { StickyEntry } from "@coedithtml/protocol";
 import type { WorkerEnv } from "@/lib/env";
 import {
   FAKE_APP_HOST,
@@ -6,6 +7,7 @@ import {
   liveKv,
   recordingArtifactMetadata,
   recordingArtifactStore,
+  recordingDocRoom,
   testWorkerEnv,
 } from "@/lib/fakes";
 import { verifyArtifactPassword } from "@/lib/password";
@@ -61,6 +63,7 @@ async function upload(
     viewUrl?: string;
     suggestUrl?: string;
     editUrl?: string;
+    restoredComments?: number;
     error?: string;
   };
   return { response, body, store };
@@ -361,5 +364,86 @@ describe("handleUpload", () => {
     expect(response.status).toBe(500);
     expect(body.error).toBe("Could not save the file. Try again.");
     expect(JSON.stringify(body)).not.toMatch(/internal-host-9/);
+  });
+
+  it("reports no restored comments for a plain upload", async () => {
+    const { body } = await upload([{ name: "deck.html", body: VALID_HTML }]);
+
+    expect(body.restoredComments).toBe(0);
+  });
+});
+
+describe("handleUpload re-importing a previously downloaded file", () => {
+  function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
+    return {
+      kind: "sticky",
+      id: "s1",
+      parentId: null,
+      anchor: {
+        kind: "region",
+        path: "body",
+        fractionX: 0.5,
+        fractionY: 0.5,
+        revision: "old-revision",
+      },
+      body: "Looks great",
+      author: { id: "reader-2", displayName: "Priya", source: "anonymous" },
+      color: "yellow",
+      fill: null,
+      status: "open",
+      createdAt: "2026-08-13T12:00:00.000Z",
+      offsetX: 0,
+      offsetY: 0,
+      width: null,
+      height: null,
+      tail: null,
+      ...overrides,
+    };
+  }
+
+  function downloadedHtml(stickies: StickyEntry[]): string {
+    const payload = JSON.stringify({ edits: [], stickies });
+    return `${VALID_HTML}\n<script>window.__coeditDownload__=${payload};\nconsole.log("bundle")</script>\n`;
+  }
+
+  it("reports the restored comment count and seeds the room", async () => {
+    const store = recordingArtifactStore();
+    const docRoom = recordingDocRoom();
+    const env = testWorkerEnv({
+      ARTIFACT_STORE: store.bucket,
+      ARTIFACT_METADATA: fakeArtifactMetadata(),
+      DOC_ROOM: docRoom.namespace,
+    });
+
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: downloadedHtml([sticky()]) }]),
+      env,
+    );
+    const body = (await response.json()) as { artifactId: string; restoredComments: number };
+
+    expect(response.status).toBe(201);
+    expect(body.restoredComments).toBe(1);
+
+    const seeded = docRoom.connects.find((connect) => connect.name === body.artifactId);
+    expect(seeded).toBeDefined();
+    const entries = seeded && ((await seeded.request.json()) as StickyEntry[]);
+    expect(entries).toMatchObject([{ id: "s1", body: "Looks great" }]);
+  });
+
+  it("does not touch the room when there is nothing to restore", async () => {
+    const store = recordingArtifactStore();
+    const docRoom = recordingDocRoom();
+    const env = testWorkerEnv({
+      ARTIFACT_STORE: store.bucket,
+      ARTIFACT_METADATA: fakeArtifactMetadata(),
+      DOC_ROOM: docRoom.namespace,
+    });
+
+    await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      env,
+    );
+
+    expect(docRoom.connects).toHaveLength(0);
   });
 });
