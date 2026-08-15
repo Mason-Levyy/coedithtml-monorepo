@@ -3,6 +3,7 @@ import {
   type OverlayEntry,
   type StickyEntry,
 } from "@coedithtml/protocol";
+import { OVERLAY_HOST_ATTRIBUTE } from "../dom/constants";
 import type { TextIndex } from "../dom/text-index";
 import { isOnScreen, rectsForAnchor, type Rect } from "./geometry";
 import type { OverlayLayer } from "./layer";
@@ -93,11 +94,35 @@ export function paintMarks(
   );
 }
 
+function coversPoint(element: Element, x: number, y: number): boolean {
+  const rect = element.getBoundingClientRect();
+  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+}
+
+// A highlight takes no pointer events, so the words underneath stay
+// selectable, double-clickable, and clickable by the artifact's own handlers.
+// The reader still gets to open the thread by clicking it, which means asking
+// the painted rectangles where the click landed rather than being told.
+function highlightUnder(
+  layer: OverlayLayer,
+  x: number,
+  y: number,
+): string | null {
+  const painted = layer.highlights.children;
+  for (let index = painted.length - 1; index >= 0; index -= 1) {
+    const element = painted[index];
+    if (element instanceof HTMLElement && coversPoint(element, x, y)) {
+      return element.dataset.mark ?? null;
+    }
+  }
+  return null;
+}
+
 export function onMarkActivated(
   layer: OverlayLayer,
   onActivate: ActivateMark,
 ): () => void {
-  function handleClick(event: Event): void {
+  function handleStickyClick(event: Event): void {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
       return;
@@ -108,10 +133,23 @@ export function onMarkActivated(
     }
   }
 
-  layer.highlights.addEventListener("click", handleClick);
-  layer.stickies.addEventListener("click", handleClick);
+  function handleDocumentClick(event: Event): void {
+    if (!(event instanceof MouseEvent) || !(event.target instanceof Element)) {
+      return;
+    }
+    if (event.target.closest(`[${OVERLAY_HOST_ATTRIBUTE}]`) !== null) {
+      return;
+    }
+    const markId = highlightUnder(layer, event.clientX, event.clientY);
+    if (markId !== null) {
+      onActivate(markId);
+    }
+  }
+
+  layer.stickies.addEventListener("click", handleStickyClick);
+  document.addEventListener("click", handleDocumentClick, true);
   return () => {
-    layer.highlights.removeEventListener("click", handleClick);
-    layer.stickies.removeEventListener("click", handleClick);
+    layer.stickies.removeEventListener("click", handleStickyClick);
+    document.removeEventListener("click", handleDocumentClick, true);
   };
 }

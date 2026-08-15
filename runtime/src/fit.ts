@@ -11,13 +11,34 @@ function hidesItsOwnOverflow(element: Element | null): boolean {
   return overflowY === "hidden" || overflowY === "clip";
 }
 
+function edgeOf(value: string): number {
+  const pixels = Number.parseFloat(value);
+  return Number.isFinite(pixels) ? pixels : 0;
+}
+
+// The root element's scrollHeight can never come back smaller than the
+// viewport, and in a frame that grows to content the viewport is the height the
+// app set from the last report. Measuring the body instead breaks that circle:
+// a frame left taller than what it holds would otherwise stay that way forever.
+function contentHeight(): number {
+  const root = document.documentElement.scrollHeight;
+  const body = document.body;
+  if (body === null) {
+    return root;
+  }
+  const style = window.getComputedStyle(body);
+  const measured =
+    body.scrollHeight + edgeOf(style.marginTop) + edgeOf(style.marginBottom);
+  return measured > 0 ? Math.min(root, measured) : root;
+}
+
 function currentFit(): { mode: FitMode; contentHeight: number } {
-  const root = document.documentElement;
   const mode: FitMode =
-    hidesItsOwnOverflow(root) || hidesItsOwnOverflow(document.body)
+    hidesItsOwnOverflow(document.documentElement) ||
+    hidesItsOwnOverflow(document.body)
       ? "scrolls-itself"
       : "grows-to-content";
-  return { mode, contentHeight: root.scrollHeight };
+  return { mode, contentHeight: contentHeight() };
 }
 
 export function reportFit(): () => void {
