@@ -22,6 +22,10 @@ export default defineConfig({
         target: "http://127.0.0.1:8787",
         headers: { host: "app.localhost:8787" },
       },
+      "/tutorial": {
+        target: "http://127.0.0.1:8787",
+        headers: { host: "app.localhost:8787" },
+      },
     },
   },
   test: {
