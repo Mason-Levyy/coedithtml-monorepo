@@ -18,16 +18,22 @@ const NO_TEXT_INDEX: TextIndex = { text: "", segments: [] };
 // A trimmed, read-only subset of runtime/src/overlay/sheet.ts: no drag
 // handles, resize nodes, or toolbar — this bundle only ever paints a
 // sticky once and repaints its position, it never lets you touch one.
+//
+// Positions are absolute, in document coordinates, not fixed to the
+// viewport. A fixed overlay needed a scroll listener to chase the reader
+// down the page, and that JS always landed a frame behind the native
+// scroll — the sticky visibly lagged and drifted off its anchor. Absolute
+// positioning scrolls with the page for free.
 const SHEET =
-  ".surface{position:fixed;inset:0;pointer-events:none}" +
-  ".sticky{position:fixed;box-sizing:border-box;display:flex;min-width:120px;min-height:40px;max-width:220px;overflow:hidden;border-radius:8px;font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#17171a}" +
+  ".surface{position:absolute;top:0;left:0;pointer-events:none}" +
+  ".sticky{position:absolute;box-sizing:border-box;display:flex;min-width:120px;min-height:40px;max-width:220px;overflow:hidden;border-radius:8px;font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#17171a}" +
   ".shape{position:absolute;inset:0;overflow:visible}" +
   ".shape path{stroke-width:1;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.12))}" +
   ".content{position:relative;flex:1 1 auto;min-width:0;padding:9px 11px;white-space:pre-wrap;overflow-wrap:break-word}" +
   ".author{display:block;margin-top:5px;font-size:11px;letter-spacing:.01em;opacity:.6}";
 
 function createHost(): HTMLElement | null {
-  const parent = document.body;
+  const parent = document.documentElement;
   if (parent === null) {
     return null;
   }
@@ -35,7 +41,7 @@ function createHost(): HTMLElement | null {
   host.setAttribute(OVERLAY_HOST_ATTRIBUTE, "");
   host.setAttribute(
     "style",
-    "position:fixed;top:0;left:0;width:0;height:0;margin:0;padding:0;border:0;z-index:2147483000;pointer-events:none",
+    "position:absolute;top:0;left:0;width:0;height:0;margin:0;padding:0;border:0;z-index:2147483000;pointer-events:none",
   );
   const shadow = host.attachShadow({ mode: "closed" });
   const style = document.createElement("style");
@@ -70,8 +76,8 @@ function createStickyElement(mark: StickyEntry): HTMLElement {
 }
 
 function paintStickyElement(element: HTMLElement, mark: StickyEntry, at: Point): void {
-  element.style.left = `${at.x + mark.offsetX}px`;
-  element.style.top = `${at.y + mark.offsetY}px`;
+  element.style.left = `${at.x + window.scrollX + mark.offsetX}px`;
+  element.style.top = `${at.y + window.scrollY + mark.offsetY}px`;
   element.style.width = mark.width === null ? "" : `${Math.round(mark.width)}px`;
   element.style.height =
     mark.height === null ? "" : `${Math.round(mark.height)}px`;
@@ -115,7 +121,6 @@ export function paintStickies(stickies: StickyEntry[]): HTMLElement | null {
 
   const onFrame = (): void => repaint(surface);
   onFrame();
-  window.addEventListener("scroll", onFrame, true);
   window.addEventListener("resize", onFrame);
   return surface;
 }
