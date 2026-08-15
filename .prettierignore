@@ -11,6 +11,10 @@ worker/worker-configuration.d.ts
 # where the origin-isolation and binding rationale has to live.
 *.jsonc
 
+# Served verbatim to crawlers and to Cloudflare's asset router, which both care
+# about exact line shape.
+website/public/
+
 # Pre-existing hand-formatted content, not touched by the workspace scaffold.
 CLAUDE.md
 planning/

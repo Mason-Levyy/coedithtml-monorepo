@@ -1,0 +1,1 @@
+coeditHTML: send the file, not a screenshot. Upload one HTML file and get a link people can comment on and edit in their browser.

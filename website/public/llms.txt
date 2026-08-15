@@ -1,0 +1,38 @@
+# coeditHTML
+
+> coeditHTML turns a single HTML file into a shareable link that other people
+> can read, comment on, and edit in their browser, with no account and no
+> install. It is built for the self-contained HTML files AI tools produce:
+> decks, dashboards, reports, and one-pagers.
+
+The file is stored byte for byte and is never rewritten. The editor is added
+when the file is served, so comments and edits live alongside the file rather
+than inside it. Uploaded files are served from a separate domain from the app,
+so a file's own scripts cannot reach a page holding somebody's session.
+
+Every upload produces three separate links: one to read, one to comment, and
+one to edit the text. Each can be revoked on its own, and any link can be put
+behind a password. Feedback comes back as plain markdown, or as one HTML file
+with the edits applied.
+
+Limits: one self-contained HTML file per upload, up to 5MB. Project folders,
+JSX, and anything needing a build step are rejected at upload.
+
+Price: free while the product is early. No billing, no card.
+
+## Pages
+
+- [Home](https://coedithtml.com/): what the product does, who it is for, and
+  answers to the questions people ask first.
+- [Tutorial](https://coedithtml.com/tutorial/): opens a private working copy of
+  the app that walks through every feature. This is the explanation; there is
+  no separate documentation page.
+- [Report a file](https://coedithtml.com/report/): abuse and DMCA contacts.
+- [Privacy](https://coedithtml.com/privacy/): what is collected and kept.
+- [Terms](https://coedithtml.com/terms/): terms of service.
+
+## Contact
+
+support@coedithtml.com for general questions, abuse@coedithtml.com for
+malicious files, dmca@coedithtml.com for copyright notices,
+privacy@coedithtml.com for data requests.
