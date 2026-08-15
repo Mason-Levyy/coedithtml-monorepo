@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import Link from "next/link";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Report Abuse & DMCA Copyright Notices",
+export const metadata = pageMetadata({
+  title: "Report a File",
   description:
-    "How to report abuse, malicious files, or submit a formal DMCA copyright takedown notice to our designated DMCA agent.",
-};
+    "How to report abuse, malicious files, or send a formal DMCA copyright takedown notice to the designated agent for coeditHTML.",
+  path: "/report/",
+});
 
 export default function ReportPage() {
   return (
