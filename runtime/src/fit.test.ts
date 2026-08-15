@@ -8,6 +8,13 @@ function stubScrollHeight(pixels: number): void {
   });
 }
 
+function stubBodyScrollHeight(pixels: number): void {
+  Object.defineProperty(document.body, "scrollHeight", {
+    configurable: true,
+    get: () => pixels,
+  });
+}
+
 function sentMessages(postMessage: ReturnType<typeof vi.fn>): unknown[] {
   return postMessage.mock.calls.map((call) => call[0]);
 }
@@ -38,6 +45,7 @@ describe("reportFit", () => {
       config: { appOrigin: "https://app.example.com" },
     };
     document.body.innerHTML = "<p>artifact</p>";
+    document.body.style.margin = "0";
     document.body.style.overflowY = "";
     document.documentElement.style.overflowY = "";
   });
@@ -59,6 +67,39 @@ describe("reportFit", () => {
         type: "fit",
         mode: "grows-to-content",
         contentHeight: 4200,
+      },
+    ]);
+  });
+
+  it("reports what the body holds, not how tall the frame was left", () => {
+    stubScrollHeight(10000);
+    stubBodyScrollHeight(4200);
+
+    startReporting();
+
+    expect(sentMessages(postMessage)).toEqual([
+      {
+        version: 1,
+        type: "fit",
+        mode: "grows-to-content",
+        contentHeight: 4200,
+      },
+    ]);
+  });
+
+  it("counts the body's own margins as part of the content", () => {
+    stubScrollHeight(10000);
+    stubBodyScrollHeight(4200);
+    document.body.style.margin = "8px";
+
+    startReporting();
+
+    expect(sentMessages(postMessage)).toEqual([
+      {
+        version: 1,
+        type: "fit",
+        mode: "grows-to-content",
+        contentHeight: 4216,
       },
     ]);
   });
