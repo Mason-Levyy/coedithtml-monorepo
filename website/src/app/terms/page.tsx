@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Terms of Service",
   description:
-    "Terms of Service governing the use of coeditHTML, content ownership, licensing, prohibited activities, and disclaimers.",
-};
+    "Terms of Service governing the use of coeditHTML: content ownership, licensing, prohibited activities, and disclaimers.",
+  path: "/terms/",
+});
 
 export default function TermsPage() {
   return (

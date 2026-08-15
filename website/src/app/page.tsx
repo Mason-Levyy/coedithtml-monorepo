@@ -1,4 +1,5 @@
 import { ClosingCta } from "@/components/home/ClosingCta";
+import { Faq } from "@/components/home/Faq";
 import { FileKinds } from "@/components/home/FileKinds";
 import { Hero } from "@/components/home/Hero";
 import { Permissions } from "@/components/home/Permissions";
@@ -13,6 +14,7 @@ export default function HomePage() {
       <Walkthrough />
       <Permissions />
       <Promises />
+      <Faq />
       <ClosingCta />
     </>
   );

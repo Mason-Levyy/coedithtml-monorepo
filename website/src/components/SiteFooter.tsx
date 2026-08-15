@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
+import { APP_URL } from "@/lib/links";
 
 export function SiteFooter() {
   return (
@@ -18,10 +19,10 @@ export function SiteFooter() {
             <h2>Product</h2>
             <ul>
               <li>
-                <a href="https://app.coedithtml.com">Open the app</a>
+                <a href={APP_URL}>Open the app</a>
               </li>
               <li>
-                <Link href="/how-it-works/">How it works</Link>
+                <Link href="/tutorial/">Take the tutorial</Link>
               </li>
             </ul>
           </div>

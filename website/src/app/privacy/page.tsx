@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Privacy Notice",
   description:
-    "Privacy notice for coeditHTML: what we collect, how we use it, third-party code in artifacts, retention, and privacy rights.",
-};
+    "Privacy notice for coeditHTML: what we collect, how we use it, third-party code in uploaded files, how long things are kept, and your privacy rights.",
+  path: "/privacy/",
+});
 
 export default function PrivacyPage() {
   return (
