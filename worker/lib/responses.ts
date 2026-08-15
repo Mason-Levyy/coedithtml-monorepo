@@ -1,5 +1,7 @@
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 
+export const SAVE_FAILED = "Could not save the file. Try again.";
+
 export function jsonResponse(body: unknown, status: number): Response {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
 }

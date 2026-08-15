@@ -4,7 +4,7 @@ import type { WorkerEnv } from "@/lib/env";
 import { checkHtmlDocument, describeRejection } from "@/lib/html-document";
 import { isWithinRateLimit, recordRateLimitedAttempt } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
-import { jsonError } from "@/lib/responses";
+import { jsonError, SAVE_FAILED } from "@/lib/responses";
 import {
   MAX_UPLOAD_BODY_BYTES,
   uploadFieldName,
@@ -13,7 +13,6 @@ import {
 
 export const BAD_FORM = "Upload a single .html file as form data.";
 export const TOO_LARGE = "The file is larger than 5MB.";
-export const SAVE_FAILED = "Could not save the file. Try again.";
 
 const UPLOAD_LIMIT = 20;
 const UPLOAD_WINDOW_SECONDS = 3600;
