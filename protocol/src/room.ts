@@ -4,6 +4,8 @@ export const ROOM_VERSION = 1;
 
 export const UNLOCK_QUERY_PARAM = "u";
 
+export const TUTORIAL_QUERY_PARAM = "tour";
+
 type Versioned = { version: typeof ROOM_VERSION };
 
 export type ReaderPresence = { id: string; displayName: string };
