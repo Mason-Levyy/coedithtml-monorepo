@@ -108,5 +108,12 @@ export function useDocRoom(
     [dismissRejection, send],
   );
 
-  return { ...contents, status, addEntry, patchEntry, removeEntry, dismissRejection };
+  return {
+    ...contents,
+    status,
+    addEntry,
+    patchEntry,
+    removeEntry,
+    dismissRejection,
+  };
 }

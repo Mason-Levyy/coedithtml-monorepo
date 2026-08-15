@@ -10,8 +10,8 @@ export function SiteFooter() {
           <div>
             <Wordmark />
             <p className="site-footer__blurb">
-              One HTML file in, one link out. The people you send it to need
-              nothing but a browser.
+              Fast, simple collaboration on standalone HTML files. No accounts
+              or installation needed.
             </p>
           </div>
 
@@ -53,7 +53,8 @@ export function SiteFooter() {
         </div>
 
         <p className="site-footer__base">
-          coeditHTML hosts files other tools made. It does not make them.
+          coeditHTML is a lightweight collaboration tool for standalone HTML
+          files.
         </p>
       </div>
     </footer>

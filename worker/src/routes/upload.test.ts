@@ -419,12 +419,17 @@ describe("handleUpload re-importing a previously downloaded file", () => {
       uploadRequest([{ name: "deck.html", body: downloadedHtml([sticky()]) }]),
       env,
     );
-    const body = (await response.json()) as { artifactId: string; restoredComments: number };
+    const body = (await response.json()) as {
+      artifactId: string;
+      restoredComments: number;
+    };
 
     expect(response.status).toBe(201);
     expect(body.restoredComments).toBe(1);
 
-    const seeded = docRoom.connects.find((connect) => connect.name === body.artifactId);
+    const seeded = docRoom.connects.find(
+      (connect) => connect.name === body.artifactId,
+    );
     expect(seeded).toBeDefined();
     const entries = seeded && ((await seeded.request.json()) as StickyEntry[]);
     expect(entries).toMatchObject([{ id: "s1", body: "Looks great" }]);
@@ -461,7 +466,8 @@ describe("handleUpload re-importing a previously downloaded file", () => {
     );
 
     expect(store.puts).toHaveLength(1);
-    const stored = store.puts[0] && new TextDecoder().decode(store.puts[0].bytes);
+    const stored =
+      store.puts[0] && new TextDecoder().decode(store.puts[0].bytes);
     expect(stored).toBe(VALID_HTML);
     expect(stored).not.toMatch(/__coeditDownload__/);
   });

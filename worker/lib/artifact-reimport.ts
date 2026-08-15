@@ -25,7 +25,10 @@ function payloadJsonIn(html: string): string | null {
 // A file Coedit produced carries its own comments back with it. Detecting
 // them here lets a re-upload offer to restore them as live, editable
 // stickies instead of leaving them as the static painting the download drew.
-export function coeditStickiesIn(html: string, revision: string): StickyEntry[] {
+export function coeditStickiesIn(
+  html: string,
+  revision: string,
+): StickyEntry[] {
   const json = payloadJsonIn(html);
   if (json === null) {
     return [];
@@ -37,7 +40,11 @@ export function coeditStickiesIn(html: string, revision: string): StickyEntry[] 
   } catch {
     return [];
   }
-  if (typeof parsed !== "object" || parsed === null || !("stickies" in parsed)) {
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    !("stickies" in parsed)
+  ) {
     return [];
   }
   const candidates = (parsed as { stickies: unknown }).stickies;

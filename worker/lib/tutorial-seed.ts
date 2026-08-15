@@ -85,7 +85,7 @@ const EM_DASHES: StickySeed = {
   width: 250,
   height: 110,
   tail: { x: 72, y: -30 },
-  body: "This way you can get rid of those pesky em dashes and you can really write whatever you want.",
+  body: "Get rid of those pesky em dashes.",
   author: MARCUS,
   color: "pink",
 };
