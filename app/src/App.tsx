@@ -1,6 +1,6 @@
 import { ArtifactPage } from "@/components/ArtifactPage";
 import { LandingPage } from "@/components/LandingPage";
-import { viewerTokenFromPath } from "@/lib/viewer-path";
+import { isTutorialViewer, viewerTokenFromPath } from "@/lib/viewer-path";
 
 export function App() {
   const token = viewerTokenFromPath(window.location.pathname);
@@ -10,7 +10,10 @@ export function App() {
   }
   return (
     <div className="min-h-dvh">
-      <ArtifactPage token={token} />
+      <ArtifactPage
+        token={token}
+        tutorial={isTutorialViewer(window.location.search)}
+      />
     </div>
   );
 }

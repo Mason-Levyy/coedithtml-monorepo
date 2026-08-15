@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import type { ArmedTool, StickyIntent } from "@/hooks/useArmedTool";
 import { newSticky } from "@/lib/new-entry";
 import { paintFor } from "@/lib/paint";
 import {
   editMarkMessage,
   placeAtMessage,
-  setToolMessage,
   type Anchor,
   type AppToRuntimeMessage,
   type EntryPatch,
@@ -13,8 +13,6 @@ import {
 } from "@/lib/protocol";
 
 export type FramePoint = { x: number; y: number };
-
-type Intent = { kind: "new" } | { kind: "replace"; markId: string };
 
 export type StickyPlacement = {
   armed: boolean;
@@ -28,7 +26,7 @@ export type StickyPlacement = {
 export function useStickyPlacement(options: {
   placement: Anchor | null;
   placementSize?: { width: number; height: number } | null;
-  ready: boolean;
+  tools: ArmedTool;
   canMarkUp: boolean;
   reader: ReaderPresence;
   color: string;
@@ -36,51 +34,23 @@ export function useStickyPlacement(options: {
   patchEntry: (markId: string, patch: EntryPatch) => void;
   send: (message: AppToRuntimeMessage) => void;
 }): StickyPlacement {
-  const { placement, ready, canMarkUp, color, send } = options;
-  const [intent, setIntent] = useState<Intent | null>(null);
+  const { placement, tools, send } = options;
+  const { stickyIntent, disarm } = tools;
 
   const latest = useRef(options);
   latest.current = options;
 
-  const droppedIntentRef = useRef<Intent | null>(null);
-
-  useEffect(() => {
-    if (ready) {
-      send(
-        setToolMessage(
-          intent === null ? null : "sticky",
-          intent === null ? null : color,
-        ),
-      );
-    }
-  }, [intent, ready, color, send]);
-
-  useEffect(() => {
-    if (!canMarkUp) {
-      setIntent(null);
-    }
-  }, [canMarkUp]);
-
-  useEffect(() => {
-    if (intent === null) {
-      return;
-    }
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") {
-        setIntent(null);
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [intent]);
+  const droppedIntentRef = useRef<StickyIntent | null>(null);
+  const armedRef = useRef<StickyIntent | null>(stickyIntent);
+  armedRef.current = stickyIntent;
 
   useEffect(() => {
     if (placement === null) {
       return;
     }
-    setIntent(null);
     const reason = droppedIntentRef.current ?? { kind: "new" };
     droppedIntentRef.current = null;
+    disarm();
 
     const {
       canMarkUp: allowed,
@@ -108,31 +78,24 @@ export function useStickyPlacement(options: {
     });
     addEntry(sticky);
     latest.current.send(editMarkMessage(sticky.id));
-  }, [placement]);
+  }, [placement, disarm]);
 
   const dropAt = useCallback(
     (point: FramePoint) => {
-      setIntent((current) => {
-        droppedIntentRef.current = current;
-        return null;
-      });
+      droppedIntentRef.current = armedRef.current;
+      disarm();
       send(placeAtMessage(point.x, point.y));
     },
-    [send],
+    [disarm, send],
   );
 
   return {
-    armed: intent !== null,
-    replacingMarkId: intent?.kind === "replace" ? intent.markId : null,
-    toggleArmed: useCallback(
-      () => setIntent((current) => (current === null ? { kind: "new" } : null)),
-      [],
-    ),
-    armForMark: useCallback(
-      (markId: string) => setIntent({ kind: "replace", markId }),
-      [],
-    ),
-    disarm: useCallback(() => setIntent(null), []),
+    armed: stickyIntent !== null,
+    replacingMarkId:
+      stickyIntent?.kind === "replace" ? stickyIntent.markId : null,
+    toggleArmed: tools.toggleSticky,
+    armForMark: tools.armStickyFor,
+    disarm,
     dropAt,
   };
 }

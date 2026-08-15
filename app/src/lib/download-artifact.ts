@@ -12,7 +12,7 @@ export const DOWNLOAD_NOTE: Record<DownloadChoice, string> = {
   edits:
     "Your file with the text changes applied. Comments and sticky notes are not included.",
   everything:
-    "Your file with the text changes applied, and every comment listed at the end.",
+    "Your file with the text changes applied, sticky notes shown in place, and every comment listed at the end.",
   feedback: "Just the comments and changes, as a markdown file.",
 };
 

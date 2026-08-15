@@ -5,6 +5,7 @@ import { artifactSrcFor } from "@/lib/artifact-src";
 
 type ArtifactPageProps = {
   token: string;
+  tutorial: boolean;
 };
 
 function Notice({ children }: { children: string }) {
@@ -15,7 +16,7 @@ function Notice({ children }: { children: string }) {
   );
 }
 
-export function ArtifactPage({ token }: ArtifactPageProps) {
+export function ArtifactPage({ token, tutorial }: ArtifactPageProps) {
   const artifact = useArtifact(token);
   const unlock = useUnlockArtifact(token);
 
@@ -43,6 +44,7 @@ export function ArtifactPage({ token }: ArtifactPageProps) {
       fileName={artifact.data.fileName}
       revision={artifact.data.revision}
       shareLinks={artifact.data.shareLinks}
+      tutorial={tutorial}
     />
   );
 }

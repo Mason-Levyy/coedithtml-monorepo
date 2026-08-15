@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactFrame } from "@/components/ArtifactFrame";
 import { CommentRail } from "@/components/CommentRail";
+import { EditPen } from "@/components/EditPen";
+import { FinishTour } from "@/components/FinishTour";
 import { RailButton } from "@/components/RailButton";
 import { ReaderChip } from "@/components/ReaderChip";
 import { SelectionAction } from "@/components/SelectionAction";
@@ -8,6 +10,7 @@ import { ShareMenu } from "@/components/ShareMenu";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
 
 import { ViewerBar } from "@/components/ViewerBar";
+import { useArmedTool } from "@/hooks/useArmedTool";
 import { useArtifactBridge } from "@/hooks/useArtifactBridge";
 import { useDocRoom } from "@/hooks/useDocRoom";
 import { useReaderIdentity } from "@/hooks/useReaderIdentity";
@@ -37,6 +40,7 @@ type ArtifactViewerProps = {
   fileName: string;
   revision: string;
   shareLinks: Partial<Record<LinkPermission, string>>;
+  tutorial: boolean;
 };
 
 export function ArtifactViewer({
@@ -46,6 +50,7 @@ export function ArtifactViewer({
   fileName,
   revision,
   shareLinks,
+  tutorial,
 }: ArtifactViewerProps) {
   void revision;
   const frame = useRef<HTMLIFrameElement>(null);
@@ -133,10 +138,18 @@ export function ArtifactViewer({
     patchEntry: room.patchEntry,
   });
 
+  const tools = useArmedTool({
+    ready: bridge.ready,
+    canMarkUp,
+    canEdit: room.canEdit,
+    color: identity.color,
+    send: sendToRuntime,
+  });
+
   const sticky = useStickyPlacement({
     placement: bridge.placement,
     placementSize: bridge.placementSize,
-    ready: bridge.ready,
+    tools,
     canMarkUp,
     reader: identity.reader,
     color: identity.color,
@@ -159,8 +172,6 @@ export function ArtifactViewer({
     cancelTool: sticky.disarm,
     textEdited: textEditing.record,
   };
-
-
 
   const fit = bridge.fit;
   const frameHeight =
@@ -245,12 +256,20 @@ export function ArtifactViewer({
       <header className="sticky top-0 z-30 w-full flex-none">
         <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
           <div className="flex items-center gap-2.5 sm:gap-3">
+            {tutorial && <FinishTour />}
             {canMarkUp && (
               <StickyPad
                 armed={sticky.armed}
                 color={identity.color}
                 onArm={armSticky}
                 onDrop={dropSticky}
+              />
+            )}
+            {room.canEdit && (
+              <EditPen
+                armed={tools.editing}
+                color={identity.color}
+                onToggle={tools.toggleEditing}
               />
             )}
             <RailButton
