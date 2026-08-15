@@ -6,7 +6,10 @@ import {
   TOO_LARGE,
   type AcceptedUpload,
 } from "@/lib/accept-upload";
-import { coeditStickiesIn, withoutCoeditPayload } from "@/lib/artifact-reimport";
+import {
+  coeditStickiesIn,
+  withoutCoeditPayload,
+} from "@/lib/artifact-reimport";
 import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { revisionOf } from "@/lib/content-hash";
 import type { WorkerEnv } from "@/lib/env";
@@ -17,7 +20,8 @@ import { mintShareTokens } from "@/lib/share-tokens";
 import { viewerUrl } from "@/lib/share-links";
 import { newArtifactId } from "@/lib/storage-keys";
 
-type StoredUpload = { ok: true; revision: string } | { ok: false; response: Response };
+type StoredUpload =
+  { ok: true; revision: string } | { ok: false; response: Response };
 
 function bytesOf(text: string): ArrayBuffer {
   return new TextEncoder().encode(text).buffer as ArrayBuffer;

@@ -5,42 +5,42 @@ const QUESTIONS = [
   {
     question: "What is coeditHTML?",
     answer:
-      "coeditHTML turns a single HTML file into a link. Whoever opens the link sees the file running exactly as its author built it, and can leave comments on it, drop sticky notes on it, or edit its text in the browser. There is no account, no install, and no build step.",
+      "coeditHTML lets you share standalone HTML files using a single link. Anyone with the link can view the file running live, leave comments, drop sticky notes, or edit text directly in their browser with no accounts or installation required.",
   },
   {
     question: "What kind of file can I upload?",
     answer:
-      "One self-contained HTML file up to 5MB, with its styling and scripts inside it. That is the format most AI tools hand you when they generate a deck, a dashboard, a report, or a one-pager. Project folders, JSX, and anything needing a build step are turned away at the door.",
+      "Any self-contained HTML file up to 5MB with embedded styles and scripts. This includes AI-generated prototypes, dashboards, presentations, and reports. Multi-file project folders or files requiring a build step are not currently supported.",
   },
   {
     question: "Do the people I send it to need an account?",
     answer:
-      "No. They open the link in a browser and start reading. They are asked for a name only when they leave their first comment, and that name is not an account.",
+      "No. Anyone with the link can view and interact with the file immediately. When leaving a comment, reviewers simply enter a display name so others know who wrote it.",
   },
   {
     question: "Can I control whether someone comments or edits?",
     answer:
-      "Yes. Every upload produces three separate links: one to read, one to comment, and one to edit the words. You hand out whichever one fits, and each can be revoked on its own without disturbing the other two.",
+      "Yes. You can generate separate links for viewing, commenting, or editing. You choose which link to share, and you can revoke individual links at any time.",
   },
   {
     question: "Does uploading change my file?",
     answer:
-      "No. The file is stored byte for byte and the editor is added at the moment it is served, never written into your markup. Comments and edits are kept alongside the file rather than inside it, so removing them all leaves the file exactly as it was uploaded.",
+      "No. Your original file is stored untouched. Collaboration tools and overlays are applied dynamically in the browser, keeping your source code clean.",
   },
   {
-    question: "How do I get the feedback back out?",
+    question: "How do I export the feedback?",
     answer:
-      "Every comment, sticky note, and edit appears in one panel in the order it was left. You can copy the lot as plain markdown, or download a single HTML file with the edits already applied.",
+      "All comments, sticky notes, and text edits are organized in a feedback panel. You can copy everything as clean markdown or download an updated HTML file with accepted changes applied.",
   },
   {
     question: "Is it safe to open a file somebody sent me?",
     answer:
-      "Uploaded files are served from a different domain than the site and the app, so a file's own scripts can never reach a page holding your session. Files can also be locked behind a password before the link is sent.",
+      "Yes. Uploaded files are served from an isolated domain with sandboxing protections so scripts cannot access your session or sensitive data. Creators can also password-protect links for added security.",
   },
   {
     question: "What does it cost?",
     answer:
-      "Nothing while it is early. There is no billing, and no card is asked for at any point.",
+      "coeditHTML is completely free to use. No credit card or account is required.",
   },
 ];
 
@@ -49,12 +49,12 @@ export function Faq() {
     <section className="band band--wash" id="faq">
       <div className="shell">
         <div className="band-head">
-          <p className="eyebrow">The short version</p>
-          <h2>Questions people ask first</h2>
+          <p className="eyebrow">FAQ</p>
+          <h2>Frequently asked questions</h2>
           <p>
-            Or skip the reading:{" "}
-            <Link href="/tutorial/">take the three minute tutorial</Link> and
-            use the thing itself.
+            Prefer a hands-on walkthrough?{" "}
+            <Link href="/tutorial/">Try our interactive 3-minute tutorial</Link>
+            .
           </p>
         </div>
 

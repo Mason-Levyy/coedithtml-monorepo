@@ -10,10 +10,11 @@ export const DOWNLOAD_LABEL: Record<DownloadChoice, string> = {
 
 export const DOWNLOAD_NOTE: Record<DownloadChoice, string> = {
   edits:
-    "Your file with the text changes applied. Comments and sticky notes are not included.",
+    "Your file with text changes applied. Comments and sticky notes are excluded.",
   everything:
-    "Your file with the text changes applied, sticky notes shown in place, and every comment listed at the end.",
-  feedback: "Just the comments and changes, as a markdown file.",
+    "Your file with text changes applied, sticky notes shown in place, and comments listed at the end.",
+  feedback:
+    "A markdown summary of all comments, sticky notes, and text changes.",
 };
 
 export function downloadUrlFor(

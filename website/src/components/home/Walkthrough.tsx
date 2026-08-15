@@ -2,26 +2,26 @@ import { MediaSlot } from "@/components/MediaSlot";
 
 const STEPS = [
   {
-    title: "Drop the file in",
-    body: "One HTML file with its styling and scripts inside it. The kind an AI tool hands you, up to 5MB. Anything that needs a build step first is turned away, with a note saying so.",
+    title: "Upload your file",
+    body: "Drop in any self-contained HTML file up to 5MB, including embedded styles and scripts. No build steps or configuration required.",
     slot: "upload.gif",
     hint: "File dragged onto the upload panel, link appears.",
   },
   {
-    title: "Decide what the link allows",
-    body: "Read, comment, or edit. Add a password if the file should not be opened by whoever finds the link. Hand out a different link later and the first one still means what it meant.",
+    title: "Choose permissions",
+    body: "Set access to view, comment, or edit. You can also add an optional password to protect sensitive files.",
     slot: "share.gif",
     hint: "Permission picked in the share menu, link copied.",
   },
   {
-    title: "Send it to whoever needs it",
-    body: "They open your file running in their browser, with a thin bar along the top. They highlight a sentence and say what is wrong with it, drop a sticky note on a chart, or fix the typo themselves. No account, just a name.",
+    title: "Share the link",
+    body: "Collaborators open the live file directly in their browser. They can highlight text to comment, drop sticky notes anywhere, or edit copy in place.",
     slot: "markup.gif",
     hint: "Sentence highlighted, comment written, sticky note dropped.",
   },
   {
-    title: "Take the feedback back",
-    body: "Comments, sticky notes, and changes land in one panel in the order they were left. Copy the lot as text, or download the file with the changes already in it.",
+    title: "Collect feedback and edits",
+    body: "Review all comments and edits in an organized sidebar. Copy everything as clean markdown or download the updated HTML file with changes applied.",
     slot: "export.gif",
     hint: "Rail scrolled, thread copied, file downloaded.",
   },
@@ -32,8 +32,8 @@ export function Walkthrough() {
     <section className="band" id="walkthrough">
       <div className="shell">
         <div className="band-head">
-          <p className="eyebrow">Start to finish</p>
-          <h2>Four steps, and the file comes out unchanged</h2>
+          <p className="eyebrow">How it works</p>
+          <h2>Simple collaboration in four easy steps</h2>
         </div>
 
         <div className="walk__rows">

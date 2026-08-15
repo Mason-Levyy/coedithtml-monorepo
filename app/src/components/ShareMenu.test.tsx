@@ -147,7 +147,7 @@ describe("ShareMenu", () => {
 
     expect(
       screen.getByText(
-        "Your file with the text changes applied. Comments and sticky notes are not included.",
+        "Your file with text changes applied. Comments and sticky notes are excluded.",
       ),
     ).toBeTruthy();
   });
@@ -161,7 +161,7 @@ describe("ShareMenu", () => {
 
     expect(
       screen.getByText(
-        "Your file with the text changes applied, and every comment listed at the end.",
+        "Your file with text changes applied, sticky notes shown in place, and comments listed at the end.",
       ),
     ).toBeTruthy();
   });

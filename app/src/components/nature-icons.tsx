@@ -171,7 +171,7 @@ export const NATURE_ICONS = [
 ] as const;
 
 export function getNatureIcon(
-  seed: string
+  seed: string,
 ): (props: SVGProps<SVGSVGElement>) => React.JSX.Element {
   let hash = 0;
   for (const char of seed) {
