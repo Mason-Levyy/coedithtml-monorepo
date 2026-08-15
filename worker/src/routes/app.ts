@@ -5,9 +5,11 @@ import { handleGetArtifact } from "./artifact";
 import { handleReplaceArtifact } from "./revisions";
 import { handleRevokeToken } from "./revoke";
 import { handleRoomConnect } from "./room";
+import { handleStartTutorial } from "./tutorial";
 import { handleUnlockArtifact } from "./unlock";
 import { handleUpload } from "./upload";
 
+const TUTORIAL_PATH = "/tutorial";
 const ARTIFACT_TOKEN_PATH = /^\/api\/artifacts\/([^/]+)$/;
 const ARTIFACT_UNLOCK_PATH = /^\/api\/artifacts\/([^/]+)\/unlock$/;
 const ARTIFACT_ROOM_PATH = /^\/api\/artifacts\/([^/]+)\/room$/;
@@ -65,6 +67,12 @@ export function handleAppRequest(
 
   if (pathname.startsWith("/api/")) {
     return jsonError("Not found.", 404);
+  }
+
+  if (pathname === TUTORIAL_PATH || pathname === `${TUTORIAL_PATH}/`) {
+    return request.method === "GET"
+      ? handleStartTutorial(request, env)
+      : new Response("Method not allowed", { status: 405 });
   }
 
   if (!READ_METHODS.has(request.method)) {

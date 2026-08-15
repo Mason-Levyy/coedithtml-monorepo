@@ -1,9 +1,14 @@
 import type { WorkerEnv } from "@/lib/env";
 import { AUTHOR_ASSET_PATH, RUNTIME_ASSET_PATH } from "@/lib/artifact-render";
+import { TUTORIAL_DECK_ASSET_PATH } from "@/lib/tutorial-deck";
 
 const SPA_DOCUMENT_PATH = "/index.html";
 
-const SANDBOX_ONLY_ASSETS = [RUNTIME_ASSET_PATH, AUTHOR_ASSET_PATH];
+const WITHHELD_FROM_APP_ORIGIN = [
+  RUNTIME_ASSET_PATH,
+  AUTHOR_ASSET_PATH,
+  TUTORIAL_DECK_ASSET_PATH,
+];
 const FILE_EXTENSION = /\.[a-z0-9]+$/i;
 
 async function fetchAsset(env: WorkerEnv, url: URL): Promise<Response | null> {
@@ -25,7 +30,7 @@ export async function serveAppAsset(
   env: WorkerEnv,
 ): Promise<Response> {
   const url = new URL(request.url);
-  if (SANDBOX_ONLY_ASSETS.includes(url.pathname)) {
+  if (WITHHELD_FROM_APP_ORIGIN.includes(url.pathname)) {
     return new Response("Not found", { status: 404 });
   }
 

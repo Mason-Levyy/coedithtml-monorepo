@@ -7,7 +7,7 @@ import {
   appendToArtifact,
   DOWNLOAD_ASSET_PATH,
   downloadFileName,
-  editScript,
+  downloadScript,
   feedbackSection,
   type DownloadChoice,
 } from "@/lib/artifact-download";
@@ -113,7 +113,7 @@ export async function handleArtifactDownload(options: {
   return attachment(
     appendToArtifact(
       stored.bytes,
-      editScript(entries, bundle),
+      downloadScript(entries, bundle, choice),
       choice === "everything" ? feedbackSection(entries) : "",
     ),
     fileName,

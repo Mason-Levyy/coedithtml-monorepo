@@ -73,6 +73,15 @@ export async function handleSandboxRequest(
   }
 
   const url = new URL(request.url);
+  if (url.pathname === "/robots.txt") {
+    return sandboxResponse(
+      "User-agent: *\nDisallow: /\n",
+      200,
+      headers,
+      "text/plain; charset=utf-8",
+    );
+  }
+
   const script = sandboxScriptIn(url.pathname);
   if (script !== null) {
     return serveSandboxScript(request, env, headers, script);

@@ -330,6 +330,53 @@ describe("a live DocRoom", () => {
     expect(response.status).toBe(426);
   });
 
+  it("hands seeded notes to the first reader who arrives", async () => {
+    const stub = env.DOC_ROOM.get(env.DOC_ROOM.idFromName("seeded-room"));
+
+    const seeded = await stub.fetch("https://room.invalid/seed", {
+      method: "POST",
+      body: JSON.stringify([comment({ body: "Left before anyone opened it" })]),
+    });
+    expect(seeded.status).toBe(204);
+
+    const arriving = await connect("seeded-room", "edit");
+    expect(entriesIn(await arriving.next())).toMatchObject([
+      { id: "c1", body: "Left before anyone opened it" },
+    ]);
+  });
+
+  it("refuses to seed a room somebody has already written in", async () => {
+    const writer = await connect("twice-seeded-room", "edit");
+    await writer.next();
+    send(writer, addEntryMessage(comment({ body: "Mine first" })));
+    await writer.next();
+
+    const stub = env.DOC_ROOM.get(env.DOC_ROOM.idFromName("twice-seeded-room"));
+    const seeded = await stub.fetch("https://room.invalid/seed", {
+      method: "POST",
+      body: JSON.stringify([comment({ id: "c2", body: "Too late" })]),
+    });
+
+    expect(seeded.status).toBe(409);
+    const arriving = await connect("twice-seeded-room", "view");
+    expect(entriesIn(await arriving.next())).toMatchObject([
+      { id: "c1", body: "Mine first" },
+    ]);
+  });
+
+  it("turns away seed entries it cannot parse", async () => {
+    const stub = env.DOC_ROOM.get(env.DOC_ROOM.idFromName("bad-seed-room"));
+
+    const seeded = await stub.fetch("https://room.invalid/seed", {
+      method: "POST",
+      body: JSON.stringify([{ kind: "comment", id: "c1" }]),
+    });
+
+    expect(seeded.status).toBe(400);
+    const arriving = await connect("bad-seed-room", "view");
+    expect(entriesIn(await arriving.next())).toStrictEqual([]);
+  });
+
   it("rejects a message it cannot parse without dropping the connection", async () => {
     const writer = await connect("garbage-room", "edit");
     await writer.next();

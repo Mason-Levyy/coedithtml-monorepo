@@ -67,6 +67,16 @@ function request(path: string, method = "GET"): Request {
 }
 
 describe("handleSandboxRequest", () => {
+  it("tells crawlers to stay out, so share tokens never reach an index", async () => {
+    const response = await handleSandboxRequest(
+      request("/robots.txt"),
+      knownArtifactEnv(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("User-agent: *\nDisallow: /\n");
+  });
+
   it("serves the stored artifact with the runtime script appended", async () => {
     const response = await handleSandboxRequest(
       request(`/${VIEW_TOKEN}`),
