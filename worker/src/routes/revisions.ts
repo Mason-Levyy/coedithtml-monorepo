@@ -3,7 +3,6 @@ import {
   chargeUploadAttempt,
   declaredBodyTooLarge,
   storeRevision,
-  SAVE_FAILED,
   TOO_LARGE,
 } from "@/lib/accept-upload";
 import {
@@ -14,7 +13,7 @@ import {
 import { revisionOf } from "@/lib/content-hash";
 import type { WorkerEnv } from "@/lib/env";
 import { resolveArtifactByToken } from "@/lib/resolve-artifact";
-import { jsonError, jsonResponse } from "@/lib/responses";
+import { jsonError, jsonResponse, SAVE_FAILED } from "@/lib/responses";
 
 const EDIT_ONLY = "This link cannot replace the file.";
 

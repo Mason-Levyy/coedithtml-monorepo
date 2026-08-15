@@ -2,16 +2,19 @@ import { DurableObject } from "cloudflare:workers";
 import {
   emptyOverlay,
   parseClientToRoomMessage,
+  parseOverlayEntry,
   presenceMessage,
   rejectedMessage,
   snapshotMessage,
   type OverlayDocument,
+  type OverlayEntry,
   type RoomToClientMessage,
 } from "@coedithtml/protocol";
 import { createEntryStore } from "@/lib/entry-store-sqlite";
 import {
   applyClientMessage,
   entryIdIn,
+  MAX_ENTRIES_PER_ROOM,
   type EntryStore,
 } from "@/lib/overlay-log";
 import { capabilitiesInHeader } from "@/lib/room-capabilities";
@@ -20,6 +23,7 @@ import {
   ROOM_KIND_HEADER,
   ROOM_OVERLAY_PATH,
   ROOM_REVISION_HEADER,
+  ROOM_SEED_PATH,
 } from "@/lib/room-headers";
 
 const MAX_CONNECTIONS = 64;
@@ -34,6 +38,22 @@ function decodeClientMessage(
   }
 }
 
+async function entriesInBody(request: Request): Promise<OverlayEntry[] | null> {
+  const body: unknown = await request.json().catch(() => null);
+  if (!Array.isArray(body) || body.length > MAX_ENTRIES_PER_ROOM) {
+    return null;
+  }
+  const entries: OverlayEntry[] = [];
+  for (const candidate of body) {
+    const entry = parseOverlayEntry(candidate);
+    if (entry === null) {
+      return null;
+    }
+    entries.push(entry);
+  }
+  return entries;
+}
+
 export class DocRoom extends DurableObject<Env> {
   private readonly entries: EntryStore;
 
@@ -42,10 +62,14 @@ export class DocRoom extends DurableObject<Env> {
     this.entries = createEntryStore(ctx.storage.sql);
   }
 
-  override fetch(request: Request): Response {
-    if (new URL(request.url).pathname === ROOM_OVERLAY_PATH) {
+  override fetch(request: Request): Response | Promise<Response> {
+    const { pathname } = new URL(request.url);
+    if (pathname === ROOM_OVERLAY_PATH) {
       const revision = request.headers.get(ROOM_REVISION_HEADER) ?? "unknown";
       return Response.json(this.overlay(revision));
+    }
+    if (pathname === ROOM_SEED_PATH) {
+      return this.seedOnce(request);
     }
     if (request.headers.get("upgrade") !== "websocket") {
       return new Response("Expected a websocket upgrade.", { status: 426 });
@@ -125,6 +149,20 @@ export class DocRoom extends DurableObject<Env> {
     this.broadcast(
       presenceMessage(readersAmong(this.ctx.getWebSockets(), socket)),
     );
+  }
+
+  private async seedOnce(request: Request): Promise<Response> {
+    if (this.entries.count() > 0) {
+      return new Response("This room already holds entries.", { status: 409 });
+    }
+    const entries = await entriesInBody(request);
+    if (entries === null) {
+      return new Response("Malformed seed entries.", { status: 400 });
+    }
+    for (const entry of entries) {
+      this.entries.put(entry);
+    }
+    return new Response(null, { status: 204 });
   }
 
   private overlay(artifactRevision: string): OverlayDocument {

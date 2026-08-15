@@ -1,5 +1,6 @@
 import {
   editsAmong,
+  isFloating,
   repliesTo,
   threadsIn,
   type OverlayEntry,
@@ -58,11 +59,11 @@ function threadHtml(entries: OverlayEntry[], thread: OverlayEntry): string {
   return `<li><h3>${headingFor(thread)}</h3>${spoken}</li>`;
 }
 
-// Text changes are not listed here. They are already in the document above,
-// applied — printing them again as a before and after says the same thing
-// twice and reads like a diff nobody asked for.
+// Text changes and sticky notes are not listed here. Edits are already in the
+// document above, applied, and stickies are painted onto the page itself —
+// printing either again as text says the same thing twice.
 export function feedbackSection(entries: OverlayEntry[]): string {
-  const threads = threadsIn(entries);
+  const threads = threadsIn(entries).filter((entry) => !isFloating(entry));
   if (threads.length === 0) {
     return "";
   }
@@ -74,12 +75,17 @@ export function feedbackSection(entries: OverlayEntry[]): string {
   ].join("");
 }
 
-export function editScript(entries: OverlayEntry[], bundle: string): string {
+export function downloadScript(
+  entries: OverlayEntry[],
+  bundle: string,
+  choice: DownloadChoice,
+): string {
   const edits = editsAmong(entries);
-  if (edits.length === 0) {
+  const stickies = choice === "everything" ? entries.filter(isFloating) : [];
+  if (edits.length === 0 && stickies.length === 0) {
     return "";
   }
-  const data = escapeForScript(JSON.stringify({ edits }));
+  const data = escapeForScript(JSON.stringify({ edits, stickies }));
   return `\n<script>window.__coeditDownload__=${data};\n${bundle}</script>\n`;
 }
 

@@ -30,9 +30,14 @@ export async function putArtifactMetadata(
   kv: KVNamespace,
   artifactId: string,
   metadata: ArtifactMetadata,
+  options: { expirationTtl?: number } = {},
 ): Promise<PutMetadataResult> {
   try {
-    await kv.put(artifactMetadataKey(artifactId), JSON.stringify(metadata));
+    await kv.put(
+      artifactMetadataKey(artifactId),
+      JSON.stringify(metadata),
+      options,
+    );
     return { ok: true };
   } catch (cause) {
     return { ok: false, cause };

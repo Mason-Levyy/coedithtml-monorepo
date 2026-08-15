@@ -3,19 +3,17 @@ import {
   chargeUploadAttempt,
   declaredBodyTooLarge,
   storeRevision,
-  SAVE_FAILED,
   TOO_LARGE,
   type AcceptedUpload,
-  type Rejected,
 } from "@/lib/accept-upload";
-import { putAccessToken } from "@/lib/access-tokens";
 import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { revisionOf } from "@/lib/content-hash";
 import type { WorkerEnv } from "@/lib/env";
 import { hashArtifactPassword } from "@/lib/password";
-import { jsonError, jsonResponse } from "@/lib/responses";
+import { jsonError, jsonResponse, SAVE_FAILED } from "@/lib/responses";
+import { mintShareTokens } from "@/lib/share-tokens";
 import { viewerUrl } from "@/lib/share-links";
-import { newArtifactId, newToken } from "@/lib/storage-keys";
+import { newArtifactId } from "@/lib/storage-keys";
 
 async function storeUpload(
   env: WorkerEnv,
@@ -55,52 +53,6 @@ async function storeUpload(
     return jsonError(SAVE_FAILED, 500);
   }
   return null;
-}
-
-type ShareTokens = {
-  viewToken: string;
-  suggestToken: string;
-  editToken: string;
-};
-
-async function mintShareTokens(
-  env: WorkerEnv,
-  artifactId: string,
-): Promise<{ ok: true; tokens: ShareTokens } | Rejected> {
-  const tokens: ShareTokens = {
-    viewToken: newToken(),
-    suggestToken: newToken(),
-    editToken: newToken(),
-  };
-  const siblingTokens = {
-    view: tokens.viewToken,
-    suggest: tokens.suggestToken,
-    edit: tokens.editToken,
-  };
-  const results = await Promise.all([
-    putAccessToken(env.ARTIFACT_METADATA, tokens.viewToken, {
-      artifactId,
-      kind: "view",
-      siblingTokens,
-    }),
-    putAccessToken(env.ARTIFACT_METADATA, tokens.suggestToken, {
-      artifactId,
-      kind: "suggest",
-      siblingTokens,
-    }),
-    putAccessToken(env.ARTIFACT_METADATA, tokens.editToken, {
-      artifactId,
-      kind: "edit",
-      siblingTokens,
-    }),
-  ]);
-
-  const failed = results.find((result) => !result.ok);
-  if (failed && !failed.ok) {
-    console.error("Failed to store access tokens", failed.cause);
-    return { ok: false, response: jsonError(SAVE_FAILED, 500) };
-  }
-  return { ok: true, tokens };
 }
 
 export async function handleUpload(
