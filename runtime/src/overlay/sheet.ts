@@ -7,7 +7,7 @@ const FONT = "system-ui, -apple-system, Segoe UI, sans-serif";
 export const SHEET =
   `
 .surface { position: fixed; inset: 0; pointer-events: none; }
-.highlight { position: fixed; border-radius: 2px; opacity: 0.25; mix-blend-mode: multiply; pointer-events: auto; cursor: pointer; }
+.highlight { position: fixed; border-radius: 2px; opacity: 0.25; mix-blend-mode: multiply; pointer-events: none; }
 .sticky { position: fixed; box-sizing: border-box; display: flex; min-width: 120px; min-height: 40px; max-width: 220px; border-radius: 8px; font: 13px/1.45 ${FONT}; color: #17171a; pointer-events: auto; cursor: pointer; scrollbar-width: none; -ms-overflow-style: none; }
 .sticky::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .sticky[style*="width"] { max-width: none; }
