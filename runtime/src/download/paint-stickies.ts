@@ -1,0 +1,121 @@
+import {
+  effectiveEdge,
+  effectiveFill,
+  textOn,
+  type StickyEntry,
+} from "@coedithtml/protocol";
+import { OVERLAY_HOST_ATTRIBUTE } from "../dom/constants";
+import { locateAnchor, type Point } from "../overlay/geometry";
+import { bubblePath } from "../overlay/sticky-geometry";
+import type { TextIndex } from "../dom/text-index";
+
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+
+// Stickies always carry a region anchor, never a text one, so the sticky
+// view never touches the text index to locate them — a stub is enough.
+const NO_TEXT_INDEX: TextIndex = { text: "", segments: [] };
+
+// A trimmed, read-only subset of runtime/src/overlay/sheet.ts: no drag
+// handles, resize nodes, or toolbar — this bundle only ever paints a
+// sticky once and repaints its position, it never lets you touch one.
+const SHEET =
+  ".surface{position:fixed;inset:0;pointer-events:none}" +
+  ".sticky{position:fixed;box-sizing:border-box;display:flex;min-width:120px;min-height:40px;max-width:220px;overflow:hidden;border-radius:8px;font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#17171a}" +
+  ".shape{position:absolute;inset:0;overflow:visible}" +
+  ".shape path{stroke-width:1;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.12))}" +
+  ".content{position:relative;flex:1 1 auto;min-width:0;padding:9px 11px;white-space:pre-wrap;overflow-wrap:break-word}" +
+  ".author{display:block;margin-top:5px;font-size:11px;letter-spacing:.01em;opacity:.6}";
+
+function createHost(): HTMLElement | null {
+  const parent = document.body;
+  if (parent === null) {
+    return null;
+  }
+  const host = document.createElement("div");
+  host.setAttribute(OVERLAY_HOST_ATTRIBUTE, "");
+  host.setAttribute(
+    "style",
+    "position:fixed;top:0;left:0;width:0;height:0;margin:0;padding:0;border:0;z-index:2147483000;pointer-events:none",
+  );
+  const shadow = host.attachShadow({ mode: "closed" });
+  const style = document.createElement("style");
+  style.textContent = SHEET;
+  const surface = document.createElement("div");
+  surface.className = "surface";
+  shadow.append(style, surface);
+  parent.appendChild(host);
+  return surface;
+}
+
+function createStickyElement(mark: StickyEntry): HTMLElement {
+  const element = document.createElement("div");
+  element.className = "sticky";
+
+  const svg = document.createElementNS(SVG_NAMESPACE, "svg");
+  svg.setAttribute("class", "shape");
+  svg.appendChild(document.createElementNS(SVG_NAMESPACE, "path"));
+  element.appendChild(svg);
+
+  const content = document.createElement("div");
+  content.className = "content";
+  const body = document.createElement("span");
+  body.textContent = mark.body;
+  const author = document.createElement("span");
+  author.className = "author";
+  author.textContent = mark.author.displayName;
+  content.append(body, author);
+  element.appendChild(content);
+
+  return element;
+}
+
+function paintStickyElement(element: HTMLElement, mark: StickyEntry, at: Point): void {
+  element.style.left = `${at.x + mark.offsetX}px`;
+  element.style.top = `${at.y + mark.offsetY}px`;
+  element.style.width = mark.width === null ? "" : `${Math.round(mark.width)}px`;
+  element.style.height =
+    mark.height === null ? "" : `${Math.round(mark.height)}px`;
+  element.style.color = textOn(effectiveFill(mark));
+
+  const box = element.getBoundingClientRect();
+  const path = element.querySelector("path");
+  if (path === null) {
+    return;
+  }
+  path.setAttribute("d", bubblePath(box, mark.tail));
+  path.setAttribute("fill", effectiveFill(mark));
+  path.setAttribute("stroke", effectiveEdge(mark));
+}
+
+export function paintStickies(stickies: StickyEntry[]): HTMLElement | null {
+  if (stickies.length === 0) {
+    return null;
+  }
+  const surface = createHost();
+  if (surface === null) {
+    return null;
+  }
+
+  const elements = new Map<string, HTMLElement>();
+
+  function repaint(onto: HTMLElement): void {
+    for (const mark of stickies) {
+      const located = locateAnchor(NO_TEXT_INDEX, mark.anchor);
+      if (located.at === null) {
+        continue;
+      }
+      let element = elements.get(mark.id);
+      if (element === undefined) {
+        element = onto.appendChild(createStickyElement(mark));
+        elements.set(mark.id, element);
+      }
+      paintStickyElement(element, mark, located.at);
+    }
+  }
+
+  const onFrame = (): void => repaint(surface);
+  onFrame();
+  window.addEventListener("scroll", onFrame, true);
+  window.addEventListener("resize", onFrame);
+  return surface;
+}
