@@ -5,6 +5,8 @@ import {
 } from "@coedithtml/protocol";
 
 const PAYLOAD_MARKER = "window.__coeditDownload__=";
+const SCRIPT_OPEN = `<script>${PAYLOAD_MARKER}`;
+const SCRIPT_CLOSE = "</script>";
 
 // downloadScript (artifact-download.ts) always writes the payload as
 // `${json};\n${bundle}`, and JSON.stringify never emits a raw newline byte
@@ -51,4 +53,25 @@ export function coeditStickiesIn(html: string, revision: string): StickyEntry[] 
     }
   }
   return stickies;
+}
+
+// The wrapper downloadScript writes (artifact-download.ts) both applies its
+// edits and paints its stickies the moment the file loads. Left in a
+// re-uploaded file, it would keep doing that inside Coedit's own live
+// viewer too — on top of the overlay this same data was just restored
+// into, drawing every sticky twice. Strip the wrapper once its data has
+// been read back out, leaving the artifact's own bytes untouched.
+export function withoutCoeditPayload(html: string): string {
+  const openAt = html.indexOf(SCRIPT_OPEN);
+  if (openAt === -1) {
+    return html;
+  }
+  const closeAt = html.indexOf(SCRIPT_CLOSE, openAt);
+  if (closeAt === -1) {
+    return html;
+  }
+  const start = html[openAt - 1] === "\n" ? openAt - 1 : openAt;
+  const afterClose = closeAt + SCRIPT_CLOSE.length;
+  const end = html[afterClose] === "\n" ? afterClose + 1 : afterClose;
+  return html.slice(0, start) + html.slice(end);
 }

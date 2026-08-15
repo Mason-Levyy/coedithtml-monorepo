@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { StickyEntry } from "@coedithtml/protocol";
-import { coeditStickiesIn } from "./artifact-reimport";
+import { coeditStickiesIn, withoutCoeditPayload } from "./artifact-reimport";
 
 function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
   return {
@@ -89,5 +89,33 @@ describe("coeditStickiesIn", () => {
     const html = "<p>window.__coeditDownload__= is what the runtime sets</p>";
 
     expect(coeditStickiesIn(html, "r2")).toEqual([]);
+  });
+});
+
+describe("withoutCoeditPayload", () => {
+  it("leaves a plain artifact byte-for-byte unchanged", () => {
+    const html = "<html><body><p>Revenue grew 18%</p></body></html>";
+
+    expect(withoutCoeditPayload(html)).toBe(html);
+  });
+
+  it("strips the injected script, restoring the artifact's own bytes", () => {
+    const artifact = "<html><body><p>Revenue grew 18%</p></body></html>";
+    const html = downloadedHtml({ edits: [], stickies: [sticky()] });
+
+    expect(withoutCoeditPayload(html)).toBe(artifact);
+  });
+
+  it("strips an edits-only payload just the same, even with no stickies", () => {
+    const artifact = "<html><body><p>Revenue grew 18%</p></body></html>";
+    const html = downloadedHtml({ edits: [{ ...sticky(), kind: "edit", rev: 0 }], stickies: [] });
+
+    expect(withoutCoeditPayload(html)).toBe(artifact);
+  });
+
+  it("does not touch content that merely mentions the marker in passing", () => {
+    const html = "<p>window.__coeditDownload__ is a global the runtime sets</p>";
+
+    expect(withoutCoeditPayload(html)).toBe(html);
   });
 });

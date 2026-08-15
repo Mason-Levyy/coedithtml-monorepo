@@ -6,7 +6,7 @@ import {
   TOO_LARGE,
   type AcceptedUpload,
 } from "@/lib/accept-upload";
-import { coeditStickiesIn } from "@/lib/artifact-reimport";
+import { coeditStickiesIn, withoutCoeditPayload } from "@/lib/artifact-reimport";
 import { putArtifactMetadata } from "@/lib/artifact-metadata";
 import { revisionOf } from "@/lib/content-hash";
 import type { WorkerEnv } from "@/lib/env";
@@ -18,6 +18,10 @@ import { viewerUrl } from "@/lib/share-links";
 import { newArtifactId } from "@/lib/storage-keys";
 
 type StoredUpload = { ok: true; revision: string } | { ok: false; response: Response };
+
+function bytesOf(text: string): ArrayBuffer {
+  return new TextEncoder().encode(text).buffer as ArrayBuffer;
+}
 
 async function storeUpload(
   env: WorkerEnv,
@@ -77,8 +81,15 @@ export async function handleUpload(
     return accepted.response;
   }
 
+  const originalHtml = new TextDecoder().decode(accepted.upload.bytes);
+  const cleanedHtml = withoutCoeditPayload(originalHtml);
+  const upload =
+    cleanedHtml === originalHtml
+      ? accepted.upload
+      : { ...accepted.upload, bytes: bytesOf(cleanedHtml) };
+
   const artifactId = newArtifactId();
-  const stored = await storeUpload(env, artifactId, accepted.upload);
+  const stored = await storeUpload(env, artifactId, upload);
   if (!stored.ok) {
     return stored.response;
   }
@@ -88,10 +99,7 @@ export async function handleUpload(
     return minted.response;
   }
 
-  const restoredStickies = coeditStickiesIn(
-    new TextDecoder().decode(accepted.upload.bytes),
-    stored.revision,
-  );
+  const restoredStickies = coeditStickiesIn(originalHtml, stored.revision);
   await seedRoomWithEntries(env, artifactId, restoredStickies);
 
   const { viewToken, suggestToken, editToken } = minted.tokens;
