@@ -446,4 +446,23 @@ describe("handleUpload re-importing a previously downloaded file", () => {
 
     expect(docRoom.connects).toHaveLength(0);
   });
+
+  it("stores the artifact stripped of its old download script, not as re-uploaded", async () => {
+    const store = recordingArtifactStore();
+    const env = testWorkerEnv({
+      ARTIFACT_STORE: store.bucket,
+      ARTIFACT_METADATA: fakeArtifactMetadata(),
+      DOC_ROOM: recordingDocRoom().namespace,
+    });
+
+    await handleUpload(
+      uploadRequest([{ name: "deck.html", body: downloadedHtml([sticky()]) }]),
+      env,
+    );
+
+    expect(store.puts).toHaveLength(1);
+    const stored = store.puts[0] && new TextDecoder().decode(store.puts[0].bytes);
+    expect(stored).toBe(VALID_HTML);
+    expect(stored).not.toMatch(/__coeditDownload__/);
+  });
 });
