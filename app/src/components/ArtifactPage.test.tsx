@@ -12,7 +12,7 @@ function renderPage() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <ArtifactPage token={TOKEN} />
+      <ArtifactPage token={TOKEN} tutorial={false} />
     </QueryClientProvider>,
   );
 }
