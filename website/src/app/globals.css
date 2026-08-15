@@ -130,6 +130,10 @@ strong {
   color: var(--ink-soft);
 }
 
+.launch {
+  margin: 1.75rem 0 clamp(3rem, 7vw, 5rem);
+}
+
 .contact {
   font-family: var(--font-mono);
   font-size: 0.95rem;
@@ -357,6 +361,37 @@ strong {
 
 .page-head .lede {
   margin-top: 0.9rem;
+}
+
+.page-head__actions {
+  margin: 1.4rem 0 0;
+}
+
+.try-it {
+  margin: 1.4rem 0 0.5rem;
+}
+
+.faq {
+  margin: 2rem 0 0;
+  max-width: 44rem;
+}
+
+.faq > div {
+  padding: 1.1rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.faq dt {
+  margin-bottom: 0.4rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.faq dd {
+  margin: 0;
+  max-width: var(--measure);
+  color: var(--ink-soft);
+  line-height: 1.65;
 }
 
 .prose {

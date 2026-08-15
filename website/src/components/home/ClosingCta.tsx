@@ -1,3 +1,5 @@
+import { APP_URL } from "@/lib/links";
+
 export function ClosingCta() {
   return (
     <section className="closing">
@@ -8,7 +10,7 @@ export function ClosingCta() {
           Free while it is early. Nothing to install, nothing to sign up for,
           and nothing to explain to the people you send it to.
         </p>
-        <a className="btn" href="https://app.coedithtml.com">
+        <a className="btn" href={APP_URL}>
           Upload a file
         </a>
       </div>
