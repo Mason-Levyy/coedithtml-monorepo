@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A tour of coeditHTML</title>
+    <style>
+      :root {
+        --paper: #e9eae4;
+        --paper-2: #f2f2ee;
+        --ink: #14161a;
+        --ink-soft: #43474e;
+        --line: #c9cabf;
+        --wet: #1b44e0;
+        --tape: #e8c547;
+        --font-sans:
+          "Archivo", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+        --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 17px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      main {
+        margin: 0 auto;
+        max-width: 54rem;
+        padding: 0 1.5rem 5rem;
+      }
+
+      section {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 32rem;
+        padding: 4.5rem 0;
+        border-bottom: 2px solid var(--ink);
+      }
+
+      section:last-of-type {
+        border-bottom: none;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 1.25rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.06;
+        text-transform: uppercase;
+        text-wrap: balance;
+      }
+
+      h1 {
+        font-size: clamp(2.25rem, 6vw, 3.5rem);
+      }
+
+      h2 {
+        font-size: clamp(1.6rem, 3.4vw, 2.25rem);
+      }
+
+      p {
+        margin: 0 0 1rem;
+        max-width: 34rem;
+        color: var(--ink-soft);
+      }
+
+      p.lede {
+        font-size: 1.15rem;
+        color: var(--ink);
+      }
+
+      .eyebrow {
+        margin-bottom: 1.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--wet);
+      }
+
+      .cue {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-top: 2.5rem;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+
+      .cue::after {
+        content: "↓";
+        font-size: 1.1rem;
+        animation: nudge 1.8s ease-in-out infinite;
+      }
+
+      @keyframes nudge {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(4px);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .cue::after {
+          animation: none;
+        }
+      }
+
+      .modes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0.5rem 0 1.5rem;
+      }
+
+      .mode {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        min-width: 9.5rem;
+        padding: 0.85rem 1.1rem;
+        border: 2px solid var(--ink);
+        border-radius: 0;
+        background: var(--paper-2);
+        color: var(--ink);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition:
+          transform 90ms ease,
+          box-shadow 90ms ease,
+          background-color 90ms ease;
+      }
+
+      .mode:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+
+      .mode[aria-expanded="true"] {
+        background: var(--wet);
+        color: var(--paper-2);
+        box-shadow: 3px 3px 0 var(--ink);
+      }
+
+      .mode-name {
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+      }
+
+      .mode-tag {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        opacity: 0.7;
+      }
+
+      .mode-body {
+        max-width: 34rem;
+        padding: 1.1rem 1.25rem;
+        border-left: 4px solid var(--wet);
+        background: var(--paper-2);
+      }
+
+      .mode-body p {
+        margin: 0;
+      }
+
+      .mode-body p + p {
+        margin-top: 0.75rem;
+        font-weight: 600;
+        color: var(--ink);
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 3rem;
+        align-items: center;
+      }
+
+      @media (max-width: 46rem) {
+        .split {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 2rem;
+        }
+      }
+
+      .split figure {
+        margin: 0;
+      }
+
+      .split svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 2px solid var(--ink);
+        background: var(--paper-2);
+      }
+
+      figcaption {
+        margin-top: 0.6rem;
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+
+      .mock {
+        margin: 0 0 2rem;
+        max-width: 26rem;
+      }
+
+      .mock svg {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 2px solid var(--ink);
+        background: var(--paper-2);
+      }
+
+      .do {
+        max-width: 34rem;
+        margin-top: 1.5rem;
+        padding: 1rem 1.25rem;
+        border: 2px solid var(--ink);
+        background: var(--paper-2);
+        box-shadow: 5px 5px 0 var(--ink);
+        font-weight: 600;
+      }
+
+      .draft {
+        margin-bottom: 8.5rem;
+        padding-left: 1rem;
+        border-left: 4px solid var(--tape);
+        font-size: 1.05rem;
+        color: var(--ink);
+      }
+
+      .finish {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.9rem;
+        margin-top: 3rem;
+        text-align: center;
+      }
+
+      .cta {
+        display: inline-block;
+        padding: 1rem 2.25rem;
+        border: 2px solid var(--ink);
+        background: var(--wet);
+        color: var(--paper-2);
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        text-decoration: none;
+        box-shadow: 5px 5px 0 var(--ink);
+        transition:
+          transform 90ms ease,
+          box-shadow 90ms ease;
+      }
+
+      .cta:hover {
+        transform: translate(-2px, -2px);
+        box-shadow: 7px 7px 0 var(--ink);
+      }
+
+      .cta:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0 var(--ink);
+      }
+
+      .cta-note {
+        max-width: 26rem;
+        margin: 0;
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        line-height: 1.5;
+        color: var(--ink-soft);
+      }
+
+      [hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <div class="eyebrow">Step 1 of 5 &middot; Welcome</div>
+        <h1>Welcome to the tutorial.</h1>
+        <p class="lede">
+          This is the easiest way to edit HTML files and make them exactly how
+          you want them. Let's get started.
+        </p>
+        <p>
+          Everything around this page is the product: the bar at the top, the
+          notes on the words, the panel on the right. The page itself is an
+          ordinary HTML file that somebody uploaded, and none of it was
+          rewritten to make the tour work.
+        </p>
+        <div class="cue">Scroll down</div>
+      </section>
+
+      <section>
+        <div class="eyebrow">Step 2 of 5 &middot; Sharing</div>
+        <h2>Three modes, one link.</h2>
+        <p class="lede">
+          You upload the file once. Then you pick which of these three modes the
+          person on the other end gets. Click one to see what it does.
+        </p>
+        <div class="modes">
+          <button type="button" class="mode" data-mode="view">
+            <span class="mode-name">View</span>
+            <span class="mode-tag">Look only</span>
+          </button>
+          <button type="button" class="mode" data-mode="suggest">
+            <span class="mode-name">Suggest</span>
+            <span class="mode-tag">Recommended</span>
+          </button>
+          <button type="button" class="mode" data-mode="edit">
+            <span class="mode-name">Edit</span>
+            <span class="mode-tag">Rewrite</span>
+          </button>
+        </div>
+        <div class="mode-body" data-body="view" hidden>
+          <p>
+            They open the link and read the page. That is all. No notes, no
+            edits, no account, and no way to change a thing you sent.
+          </p>
+        </div>
+        <div class="mode-body" data-body="suggest">
+          <p>
+            They can stick notes anywhere on the page and comment on any
+            sentence, without altering a word of the file itself. You read it
+            all back in one place and decide what to keep.
+          </p>
+          <p>In most cases, this is the one to send.</p>
+        </div>
+        <div class="mode-body" data-body="edit" hidden>
+          <p>
+            They can rewrite the text in place, right where it sits on the page.
+            The words change. The layout, the styling, and the code underneath
+            stay exactly as they were.
+          </p>
+        </div>
+        <div class="cue">Scroll down</div>
+      </section>
+
+      <section>
+        <div class="eyebrow">Step 3 of 5 &middot; View</div>
+        <div class="split">
+          <div>
+            <h2>A view link is just a look.</h2>
+            <p>
+              Hand someone a view link and the page arrives as a finished thing.
+              They can read it on a phone, on a laptop, in bed, without
+              installing anything or signing into anything.
+            </p>
+            <p>
+              Nothing they do can change it. Send this one when the work is done
+              and you only want it seen.
+            </p>
+          </div>
+          <figure>
+            <svg viewBox="0 0 320 240" role="img" aria-label="A framed picture">
+              <rect x="0" y="0" width="320" height="240" fill="#f2f2ee" />
+              <circle cx="232" cy="62" r="30" fill="#e8c547" />
+              <path d="M0 240 L104 118 L182 240 Z" fill="#1b44e0" />
+              <path d="M132 240 L216 146 L300 240 Z" fill="#14161a" />
+              <rect x="0" y="214" width="320" height="26" fill="#14161a" />
+            </svg>
+            <figcaption>Nice to look at, impossible to touch</figcaption>
+          </figure>
+        </div>
+        <div class="cue">Scroll down</div>
+      </section>
+
+      <section>
+        <div class="eyebrow">Step 4 of 5 &middot; Suggest</div>
+        <h2>A suggest link lets people answer.</h2>
+        <p class="lede">
+          Two notes are already waiting on this page. A sticky lands anywhere,
+          even on a picture with no words to select. A comment attaches to a
+          sentence you highlight. Both carry the name of whoever wrote them, and
+          both show up in the panel on the right.
+        </p>
+        <figure class="mock">
+          <svg viewBox="0 0 300 180" role="img" aria-label="A page mockup">
+            <rect x="0" y="0" width="300" height="180" fill="#f2f2ee" />
+            <rect x="24" y="26" width="150" height="18" fill="#14161a" />
+            <rect x="24" y="58" width="252" height="8" fill="#c9cabf" />
+            <rect x="24" y="76" width="252" height="8" fill="#c9cabf" />
+            <rect x="24" y="94" width="180" height="8" fill="#c9cabf" />
+            <rect x="24" y="124" width="96" height="28" fill="#1b44e0" />
+          </svg>
+          <figcaption>The draft everybody is arguing about</figcaption>
+        </figure>
+        <p>
+          A review usually runs in the same order every time: first you upload
+          the file, then you send the link, then you read what came back.
+        </p>
+        <div class="do">
+          Do this: reply to both notes, then select a sentence of your own and
+          leave a third.
+        </div>
+        <div class="cue">Scroll down</div>
+      </section>
+
+      <section>
+        <div class="eyebrow">Step 5 of 5 &middot; Edit</div>
+        <h2>An edit link changes the words.</h2>
+        <p class="lede">
+          Double-click any sentence on this page and it opens for typing. If you
+          would rather not double-click, switch on the pen in the bar at the top
+          and a single click does the same thing.
+        </p>
+        <p class="draft">
+          Our fourth quarter results — which were, on the whole, quite strong —
+          came in ahead of the forecast we published in June.
+        </p>
+        <div class="finish">
+          <a
+            class="cta"
+            id="upload-link"
+            href="https://app.coedithtml.com/"
+            target="_top"
+            >Upload your own file</a
+          >
+          <p class="cta-note" id="upload-note" hidden>
+            This page is running inside a frame that is not allowed to navigate
+            for you. Use Finish in the bar at the top instead.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        var buttons = document.querySelectorAll(".mode");
+        var bodies = document.querySelectorAll(".mode-body");
+
+        function show(mode) {
+          buttons.forEach(function (button) {
+            button.setAttribute(
+              "aria-expanded",
+              String(button.dataset.mode === mode),
+            );
+          });
+          bodies.forEach(function (body) {
+            body.hidden = body.dataset.body !== mode;
+          });
+        }
+
+        buttons.forEach(function (button) {
+          button.addEventListener("click", function () {
+            show(button.dataset.mode);
+          });
+        });
+
+        show("suggest");
+
+        var link = document.getElementById("upload-link");
+        var note = document.getElementById("upload-note");
+        link.addEventListener("click", function () {
+          window.setTimeout(function () {
+            note.hidden = false;
+          }, 200);
+        });
+      })();
+    </script>
+  </body>
+</html>

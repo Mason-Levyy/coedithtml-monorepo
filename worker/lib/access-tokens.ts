@@ -22,9 +22,10 @@ export async function putAccessToken(
   kv: KVNamespace,
   token: string,
   record: TokenRecord,
+  options: { expirationTtl?: number } = {},
 ): Promise<PutTokenResult> {
   try {
-    await kv.put(accessTokenKey(token), JSON.stringify(record));
+    await kv.put(accessTokenKey(token), JSON.stringify(record), options);
     return { ok: true };
   } catch (cause) {
     return { ok: false, cause };

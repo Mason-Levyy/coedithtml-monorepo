@@ -17,3 +17,8 @@ for (const bundle of ["runtime.js", "author.js", "download.js"]) {
     path.join(publicDir, bundle),
   );
 }
+
+await cp(
+  path.join(workerDir, "tutorial/deck.html"),
+  path.join(publicDir, "tutorial-deck.html"),
+);

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { CommentEntry, EditEntry } from "@coedithtml/protocol";
+import type { CommentEntry, EditEntry, StickyEntry } from "@coedithtml/protocol";
 import {
   appendToArtifact,
   downloadChoiceIn,
   downloadFileName,
-  editScript,
+  downloadScript,
   feedbackSection,
 } from "./artifact-download";
 
@@ -46,6 +46,33 @@ function textEdit(overrides: Partial<EditEntry> = {}): EditEntry {
   };
 }
 
+function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
+  return {
+    kind: "sticky",
+    id: "s1",
+    parentId: null,
+    anchor: {
+      kind: "region",
+      path: "body",
+      fractionX: 0.5,
+      fractionY: 0.5,
+      revision: "r1",
+    },
+    body: "Looks great",
+    author: { id: "reader-2", displayName: "Priya", source: "anonymous" },
+    color: "yellow",
+    fill: null,
+    status: "open",
+    createdAt: "2026-08-13T12:00:00.000Z",
+    offsetX: 0,
+    offsetY: 0,
+    width: null,
+    height: null,
+    tail: null,
+    ...overrides,
+  };
+}
+
 function decode(bytes: ArrayBuffer): string {
   return new TextDecoder().decode(bytes);
 }
@@ -67,28 +94,47 @@ describe("appendToArtifact", () => {
   });
 });
 
-describe("editScript", () => {
+describe("downloadScript", () => {
   it("carries the edits and the bundle that applies them", () => {
-    const script = editScript([textEdit()], "APPLY();");
+    const script = downloadScript([textEdit()], "APPLY();", "edits");
 
     expect(script).toContain("window.__coeditDownload__=");
     expect(script).toContain("Revenue fell 4%");
     expect(script).toContain("APPLY();");
   });
 
-  it("writes nothing when the file was never edited", () => {
-    expect(editScript([comment()], "APPLY();")).toBe("");
+  it("writes nothing when the file was never edited or annotated", () => {
+    expect(downloadScript([comment()], "APPLY();", "edits")).toBe("");
   });
 
   it("cannot be broken out of by an edit that contains a closing tag", () => {
-    const script = editScript(
+    const script = downloadScript(
       [textEdit({ body: "</script><script>alert(1)</script>" })],
       "APPLY();",
+      "edits",
     );
     const opened = script.match(/<script/g) ?? [];
 
     expect(opened).toHaveLength(1);
     expect(script).toContain("\\u003c/script");
+  });
+
+  it("carries stickies for the everything choice", () => {
+    const script = downloadScript([sticky()], "APPLY();", "everything");
+
+    expect(script).toContain("Looks great");
+  });
+
+  it("leaves stickies out for the edits-only choice", () => {
+    const script = downloadScript([sticky()], "APPLY();", "edits");
+
+    expect(script).toBe("");
+  });
+
+  it("leaves stickies out of the feedback choice, which is markdown, not this HTML script", () => {
+    const script = downloadScript([sticky()], "APPLY();", "feedback");
+
+    expect(script).toBe("");
   });
 });
 
@@ -109,6 +155,16 @@ describe("feedbackSection", () => {
 
   it("writes nothing for a file that was only edited", () => {
     expect(feedbackSection([textEdit()])).toBe("");
+  });
+
+  it("says nothing about stickies, which are painted onto the page itself", () => {
+    const section = feedbackSection([comment(), sticky()]);
+
+    expect(section).not.toContain("Looks great");
+  });
+
+  it("writes nothing for a file that only has sticky notes", () => {
+    expect(feedbackSection([sticky()])).toBe("");
   });
 
   it("escapes a comment that contains markup", () => {
