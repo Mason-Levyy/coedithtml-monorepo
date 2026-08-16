@@ -154,9 +154,10 @@ export function parseRuntimeToAppMessage(
     const anchor = parseTextAnchorField(candidate.anchor);
     const replacement =
       typeof candidate.replacement === "string" ? candidate.replacement : null;
-    return anchor === null || replacement === null
+    const sessionId = asFilledString(candidate.sessionId);
+    return anchor === null || replacement === null || sessionId === null
       ? null
-      : textEditedMessage(anchor, replacement);
+      : textEditedMessage(anchor, replacement, sessionId);
   }
 
   return null;

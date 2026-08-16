@@ -5,6 +5,7 @@ import { EditPen } from "@/components/EditPen";
 import { FinishTour } from "@/components/FinishTour";
 import { RailButton } from "@/components/RailButton";
 import { ReaderChip } from "@/components/ReaderChip";
+import { SaveIndicator } from "@/components/SaveIndicator";
 import { SelectionAction } from "@/components/SelectionAction";
 import { ShareMenu } from "@/components/ShareMenu";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
@@ -68,9 +69,14 @@ export function ArtifactViewer({
     },
     remove: (markId: string) => void markId,
     cancelTool: () => {},
-    textEdited: (anchor: TextAnchor, replacement: string) => {
+    textEdited: (
+      anchor: TextAnchor,
+      replacement: string,
+      sessionId: string,
+    ) => {
       void anchor;
       void replacement;
+      void sessionId;
     },
   });
   const bridge = useArtifactBridge({
@@ -79,8 +85,8 @@ export function ArtifactViewer({
     onPatchMark: (markId, patch) => acted.current.patch(markId, patch),
     onRemoveMark: (markId) => acted.current.remove(markId),
     onToolCancelled: () => acted.current.cancelTool(),
-    onTextEdited: (anchor, replacement) =>
-      acted.current.textEdited(anchor, replacement),
+    onTextEdited: (anchor, replacement, sessionId) =>
+      acted.current.textEdited(anchor, replacement, sessionId),
   });
   const sendToRuntime = useRuntimeChannel(frame, sandboxOrigin);
   const identity = useReaderIdentity();
@@ -275,6 +281,7 @@ export function ArtifactViewer({
       <header className="sticky top-0 z-30 w-full flex-none">
         <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
           <div className="flex items-center gap-2.5 sm:gap-3">
+            {canMarkUp && <SaveIndicator state={room.saveState} />}
             {tutorial && <FinishTour />}
             {canMarkUp && (
               <StickyPad

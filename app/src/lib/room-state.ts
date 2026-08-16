@@ -7,6 +7,10 @@ import {
   type RoomToClientMessage,
 } from "@/lib/protocol";
 
+// A write is in flight from the moment it is sent until the room echoes it
+// back. Anything else the reader is told about their work is a guess.
+export type SaveState = "idle" | "saving" | "saved" | "failed";
+
 export type RoomContents = {
   entries: OverlayEntry[];
   readers: ReaderPresence[];
@@ -15,6 +19,9 @@ export type RoomContents = {
   rejection: RejectionReason | null;
   loaded: boolean;
   undo: Record<string, OverlayEntry[]>;
+  pending: string[];
+  landed: boolean;
+  failed: boolean;
 };
 
 export const EMPTY_ROOM: RoomContents = {
@@ -25,7 +32,42 @@ export const EMPTY_ROOM: RoomContents = {
   rejection: null,
   loaded: false,
   undo: {},
+  pending: [],
+  landed: false,
+  failed: false,
 };
+
+export function saveStateOf(state: RoomContents): SaveState {
+  if (state.pending.length > 0) {
+    return "saving";
+  }
+  if (state.failed) {
+    return "failed";
+  }
+  return state.landed ? "saved" : "idle";
+}
+
+export function writeSent(state: RoomContents, id: string): RoomContents {
+  return { ...state, pending: [...state.pending, id], failed: false };
+}
+
+export function writesAbandoned(state: RoomContents): RoomContents {
+  return state.pending.length === 0
+    ? state
+    : { ...state, pending: [], failed: true };
+}
+
+function settled(
+  state: RoomContents,
+  id: string,
+  outcome: { landed: boolean },
+): Pick<RoomContents, "pending" | "landed" | "failed"> {
+  return {
+    pending: state.pending.filter((held) => held !== id),
+    landed: state.landed || outcome.landed,
+    failed: outcome.landed ? state.failed : true,
+  };
+}
 
 function byCreatedAt(a: OverlayEntry, b: OverlayEntry): number {
   if (a.createdAt === b.createdAt) {
@@ -120,6 +162,9 @@ export function applyRoomMessage(
         rejection: null,
         loaded: true,
         undo: {},
+        pending: [],
+        landed: false,
+        failed: false,
       };
     case "entry-added":
     case "entry-patched":
@@ -127,6 +172,7 @@ export function applyRoomMessage(
         ...state,
         entries: withEntry(state.entries, message.entry),
         undo: without(state.undo, message.entry.id),
+        ...settled(state, message.entry.id, { landed: true }),
       };
     case "entry-removed":
       return {
@@ -135,18 +181,20 @@ export function applyRoomMessage(
           (entry) => entry.id !== message.id && entry.parentId !== message.id,
         ),
         undo: without(state.undo, message.id),
+        ...settled(state, message.id, { landed: true }),
       };
     case "presence":
       return { ...state, readers: message.readers };
     case "rejected":
       if (message.id === null) {
-        return { ...state, rejection: message.reason };
+        return { ...state, rejection: message.reason, failed: true };
       }
       return {
         ...state,
         rejection: message.reason,
         entries: rolledBack(state, message.id),
         undo: without(state.undo, message.id),
+        ...settled(state, message.id, { landed: false }),
       };
   }
 }

@@ -46,9 +46,9 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
   const surface = startEditSurface({
     revision: host.revision,
     canEdit: () => canEdit,
-    onCommit: (anchor, replacement) => {
+    onCommit: (anchor, replacement, sessionId) => {
       host.editMadeHere(anchor, replacement);
-      host.send(textEditedMessage(anchor, replacement));
+      host.send(textEditedMessage(anchor, replacement, sessionId));
     },
     onStateChange: (editing) => {
       host.holdIndex(editing);
