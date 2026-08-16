@@ -32,3 +32,11 @@ export function unlockGrantKey(grant: string): string {
 export function newUnlockGrant(): string {
   return randomId();
 }
+
+export function newOwnerId(): string {
+  return randomId();
+}
+
+export function ownerArtifactsKey(ownerId: string): string {
+  return `owners/${ownerId}/artifacts`;
+}
