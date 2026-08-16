@@ -1,6 +1,8 @@
 import { ChangeLog } from "@/components/ChangeLog";
 import { CommentComposer } from "@/components/CommentComposer";
 import { CommentThread } from "@/components/CommentThread";
+import { RailBucket } from "@/components/RailBucket";
+import { RemoveAllChanges } from "@/components/RemoveAllChanges";
 import { Button } from "@/components/ui/button";
 import type { MarkPlacement } from "@/hooks/useArtifactBridge";
 import type { DocRoom } from "@/hooks/useDocRoom";
@@ -8,8 +10,10 @@ import type { ReaderIdentity } from "@/hooks/useReaderIdentity";
 import { placementOf } from "@/lib/mark-placement";
 import {
   editsAmong,
+  isFloating,
   repliesTo,
   threadsIn,
+  type OverlayEntry,
   type RejectionReason,
   type TextAnchor,
 } from "@/lib/protocol";
@@ -36,6 +40,8 @@ type CommentRailProps = {
   onReplace: (markId: string) => void;
   onComment: (body: string, displayName: string | null) => void;
   onReply: (parentId: string, body: string, displayName: string | null) => void;
+  onRemoveEdit: (markId: string) => void;
+  onRemoveEveryEdit: () => void;
   onDismissSelection: () => void;
   onClose: () => void;
 };
@@ -52,16 +58,45 @@ export function CommentRail({
   onReplace,
   onComment,
   onReply,
+  onRemoveEdit,
+  onRemoveEveryEdit,
   onDismissSelection,
   onClose,
 }: CommentRailProps) {
   const threads = threadsIn(room.entries);
+  const stickies = threads.filter(isFloating);
+  const comments = threads.filter((entry) => !isFloating(entry));
   const changes = editsAmong(room.entries);
   const others = room.readers.filter(
     (reader) => reader.id !== identity.reader.id,
   );
   const canMarkUp = room.canWrite;
   const needsName = room.canWrite && !identity.named;
+
+  function threadOf(entry: OverlayEntry) {
+    return (
+      <CommentThread
+        key={entry.id}
+        entry={entry}
+        replies={repliesTo(room.entries, entry.id)}
+        canWrite={canMarkUp}
+        needsName={needsName}
+        active={entry.id === activeMarkId}
+        placement={placementOf(marks, entry.id)}
+        replacing={entry.id === replacingMarkId}
+        onActivate={() => onActivate(entry.id)}
+        onReveal={() => onReveal(entry.id)}
+        onReplace={() => onReplace(entry.id)}
+        onReply={(body, displayName) => onReply(entry.id, body, displayName)}
+        onResolve={(resolved) =>
+          room.patchEntry(entry.id, {
+            status: resolved ? "resolved" : "open",
+          })
+        }
+        onRemove={() => room.removeEntry(entry.id)}
+      />
+    );
+  }
 
   return (
     <aside
@@ -128,32 +163,33 @@ export function CommentRail({
           </p>
         )}
 
-        {threads.map((entry) => (
-          <CommentThread
-            key={entry.id}
-            entry={entry}
-            replies={repliesTo(room.entries, entry.id)}
-            canWrite={canMarkUp}
-            needsName={needsName}
-            active={entry.id === activeMarkId}
-            placement={placementOf(marks, entry.id)}
-            replacing={entry.id === replacingMarkId}
-            onActivate={() => onActivate(entry.id)}
-            onReveal={() => onReveal(entry.id)}
-            onReplace={() => onReplace(entry.id)}
-            onReply={(body, displayName) =>
-              onReply(entry.id, body, displayName)
-            }
-            onResolve={(resolved) =>
-              room.patchEntry(entry.id, {
-                status: resolved ? "resolved" : "open",
-              })
-            }
-            onRemove={() => room.removeEntry(entry.id)}
-          />
-        ))}
+        <RailBucket label="Stickies" count={stickies.length}>
+          {stickies.map(threadOf)}
+        </RailBucket>
 
-        <ChangeLog edits={changes} onReveal={onReveal} />
+        <RailBucket label="Comments" count={comments.length}>
+          {comments.map(threadOf)}
+        </RailBucket>
+
+        <RailBucket
+          label="Direct edits"
+          count={changes.length}
+          action={
+            room.canEdit && (
+              <RemoveAllChanges
+                count={changes.length}
+                onConfirm={onRemoveEveryEdit}
+              />
+            )
+          }
+        >
+          <ChangeLog
+            edits={changes}
+            canEdit={room.canEdit}
+            onReveal={onReveal}
+            onRemove={onRemoveEdit}
+          />
+        </RailBucket>
       </div>
     </aside>
   );
