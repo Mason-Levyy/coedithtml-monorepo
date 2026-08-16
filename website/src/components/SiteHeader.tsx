@@ -9,7 +9,6 @@ export function SiteHeader() {
         <Wordmark />
         <nav>
           <Link href="/tutorial/">Tutorial</Link>
-          <Link href="/privacy/">Privacy</Link>
           <Link href="/report/">Report a File</Link>
           <a className="btn btn--small" href={APP_URL}>
             Open the app
