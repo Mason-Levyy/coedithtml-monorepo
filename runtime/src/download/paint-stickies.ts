@@ -75,10 +75,15 @@ function createStickyElement(mark: StickyEntry): HTMLElement {
   return element;
 }
 
-function paintStickyElement(element: HTMLElement, mark: StickyEntry, at: Point): void {
+function paintStickyElement(
+  element: HTMLElement,
+  mark: StickyEntry,
+  at: Point,
+): void {
   element.style.left = `${at.x + window.scrollX + mark.offsetX}px`;
   element.style.top = `${at.y + window.scrollY + mark.offsetY}px`;
-  element.style.width = mark.width === null ? "" : `${Math.round(mark.width)}px`;
+  element.style.width =
+    mark.width === null ? "" : `${Math.round(mark.width)}px`;
   element.style.height =
     mark.height === null ? "" : `${Math.round(mark.height)}px`;
   element.style.color = textOn(effectiveFill(mark));

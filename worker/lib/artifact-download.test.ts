@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { CommentEntry, EditEntry, StickyEntry } from "@coedithtml/protocol";
+import type {
+  CommentEntry,
+  EditEntry,
+  StickyEntry,
+} from "@coedithtml/protocol";
 import {
   appendToArtifact,
   downloadChoiceIn,

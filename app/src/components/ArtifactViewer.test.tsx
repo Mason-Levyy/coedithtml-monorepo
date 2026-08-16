@@ -87,8 +87,6 @@ describe("ArtifactViewer", () => {
     expect(screen.queryByText("Injected")).toBeNull();
   });
 
-
-
   it("adds no navigation of its own, only the share and rail controls", () => {
     renderViewer();
 

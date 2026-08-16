@@ -29,7 +29,10 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
   };
 }
 
-function downloadedHtml(payload: unknown, bundle = 'console.log("bundle")'): string {
+function downloadedHtml(
+  payload: unknown,
+  bundle = 'console.log("bundle")',
+): string {
   return [
     "<html><body><p>Revenue grew 18%</p></body></html>",
     `\n<script>window.__coeditDownload__=${JSON.stringify(payload)};\n${bundle}</script>\n`,
@@ -80,7 +83,8 @@ describe("coeditStickiesIn", () => {
   });
 
   it("fails open on a truncated or hand-edited payload", () => {
-    const html = "<html><body>hi</body></html>\n<script>window.__coeditDownload__={not valid json";
+    const html =
+      "<html><body>hi</body></html>\n<script>window.__coeditDownload__={not valid json";
 
     expect(coeditStickiesIn(html, "r2")).toEqual([]);
   });
@@ -108,13 +112,17 @@ describe("withoutCoeditPayload", () => {
 
   it("strips an edits-only payload just the same, even with no stickies", () => {
     const artifact = "<html><body><p>Revenue grew 18%</p></body></html>";
-    const html = downloadedHtml({ edits: [{ ...sticky(), kind: "edit", rev: 0 }], stickies: [] });
+    const html = downloadedHtml({
+      edits: [{ ...sticky(), kind: "edit", rev: 0 }],
+      stickies: [],
+    });
 
     expect(withoutCoeditPayload(html)).toBe(artifact);
   });
 
   it("does not touch content that merely mentions the marker in passing", () => {
-    const html = "<p>window.__coeditDownload__ is a global the runtime sets</p>";
+    const html =
+      "<p>window.__coeditDownload__ is a global the runtime sets</p>";
 
     expect(withoutCoeditPayload(html)).toBe(html);
   });

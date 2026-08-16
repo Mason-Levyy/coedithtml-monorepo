@@ -25,28 +25,26 @@ export function Promises() {
     <section className="band">
       <div className="shell promise">
         <div>
-          <p className="eyebrow">byte for byte</p>
-          <h3>Your file is not touched</h3>
+          <p className="eyebrow">File integrity</p>
+          <h3>Your original file stays untouched</h3>
           <p>
-            Comments and edits are stored next to your file, never inside it.
-            The bytes you upload are the bytes served back. Same markup, same
-            scripts, same styling, down to the whitespace.
+            Comments and edits are stored separately from your original file. We
+            serve your HTML file exactly as written, preserving every tag,
+            script, and style.
           </p>
           <p>
-            Download it whenever you want, with or without the changes people
-            made. Files are served from a different domain than this one, so a
-            file running its own scripts never shares an origin with a page
-            holding your session.
+            Download your file anytime with or without suggested edits. Uploaded
+            files run on an isolated domain for complete security and privacy.
           </p>
         </div>
 
         <div>
-          <p className="eyebrow">back where it came from</p>
-          <h3>When the feedback is in</h3>
+          <p className="eyebrow">Seamless workflow</p>
+          <h3>Export feedback directly to your tools</h3>
           <p>
-            Copy the whole thread as text and paste it into whatever wrote the
-            file in the first place. Every quote, every comment, every change,
-            already in order.
+            Copy the entire comment thread and edit history as formatted
+            markdown. Paste it directly into your AI coding assistant, issue
+            tracker, or team notes.
           </p>
           <pre className="paste">{PASTED_THREAD}</pre>
         </div>
