@@ -35,3 +35,5 @@ const RANDOM_ID_PATTERN = /^[0-9a-f]{32}$/;
 export const artifactIdSchema = z.string().regex(RANDOM_ID_PATTERN);
 
 export const accessTokenSchema = z.string().regex(RANDOM_ID_PATTERN);
+
+export const ownerIdSchema = z.string().regex(RANDOM_ID_PATTERN);
