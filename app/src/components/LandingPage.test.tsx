@@ -1,6 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { jsonResponse, renderWithQueryClient } from "@/lib/fakes";
 import { LandingPage } from "./LandingPage";
 
 function htmlFile(name: string, byteLength: number): File {
@@ -16,43 +16,55 @@ function getInput(): HTMLInputElement {
 }
 
 function renderLandingPage() {
-  const queryClient = new QueryClient({
-    defaultOptions: { mutations: { retry: false } },
-  });
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <LandingPage />
-    </QueryClientProvider>,
-  );
+  return renderWithQueryClient(<LandingPage />);
 }
 
-function jsonResponse(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
-}
-
-function stubUploadResponse() {
+function stubTwoStepUploadAndPublish() {
   const viewUrl = "https://sandbox.test/" + "a".repeat(32);
   const suggestUrl = "https://sandbox.test/" + "b".repeat(32);
   const editUrl = "https://sandbox.test/" + "c".repeat(32);
+
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue(
-      jsonResponse(
-        {
-          artifactId: "a".repeat(32),
-          viewToken: "a".repeat(32),
-          suggestToken: "b".repeat(32),
-          editToken: "c".repeat(32),
-          viewUrl,
-          suggestUrl,
-          editUrl,
-        },
-        201,
-      ),
-    ),
+    vi.fn().mockImplementation((url: string | Request) => {
+      const urlStr = typeof url === "string" ? url : url.url;
+      if (urlStr.includes("/api/my-artifacts")) {
+        return Promise.resolve(jsonResponse({ artifacts: [] }, 200));
+      }
+      if (urlStr.includes("/publish")) {
+        return Promise.resolve(
+          jsonResponse(
+            {
+              artifactId: "a".repeat(32),
+              viewToken: "a".repeat(32),
+              suggestToken: "b".repeat(32),
+              editToken: "c".repeat(32),
+              viewUrl,
+              suggestUrl,
+              editUrl,
+              published: true,
+              hasPassword: false,
+            },
+            200,
+          ),
+        );
+      }
+      if (urlStr.includes("/api/artifacts")) {
+        return Promise.resolve(
+          jsonResponse(
+            {
+              artifactId: "a".repeat(32),
+              fileName: "deck.html",
+              size: 100,
+              uploadedAt: new Date().toISOString(),
+              draft: true,
+            },
+            201,
+          ),
+        );
+      }
+      return Promise.resolve(jsonResponse({}, 404));
+    }),
   );
   return { viewUrl, suggestUrl, editUrl };
 }
@@ -62,60 +74,63 @@ describe("LandingPage", () => {
     vi.unstubAllGlobals();
   });
 
-  it("defaults to the view-only link", async () => {
-    const { viewUrl, suggestUrl, editUrl } = stubUploadResponse();
+  it("walks through two-step upload and publish flow", async () => {
+    const { viewUrl } = stubTwoStepUploadAndPublish();
 
     renderLandingPage();
     fireEvent.change(getInput(), {
       target: { files: [htmlFile("deck.html", 100)] },
     });
+
+    await vi.waitFor(() => {
+      expect(() => screen.getByText("Step 2 of 2")).not.toThrow();
+    });
+
+    fireEvent.click(screen.getByText("Publish link"));
 
     await vi.waitFor(() => {
       expect(() => screen.getByText(viewUrl)).not.toThrow();
     });
-    expect(screen.queryByText(suggestUrl)).toBeNull();
-    expect(screen.queryByText(editUrl)).toBeNull();
   });
 
-  it("uses the suggest link when the permission is set to suggest", async () => {
-    const { viewUrl, suggestUrl } = stubUploadResponse();
+  it("allows switching permissions during publish step", async () => {
+    const { editUrl } = stubTwoStepUploadAndPublish();
 
     renderLandingPage();
-    fireEvent.change(screen.getByLabelText("Permissions"), {
-      target: { value: "suggest" },
-    });
     fireEvent.change(getInput(), {
       target: { files: [htmlFile("deck.html", 100)] },
     });
 
     await vi.waitFor(() => {
-      expect(() => screen.getByText(suggestUrl)).not.toThrow();
+      expect(() => screen.getByText("Step 2 of 2")).not.toThrow();
     });
-    expect(screen.queryByText(viewUrl)).toBeNull();
-  });
 
-  it("hands out the edit link when the permission is set to edit", async () => {
-    const { viewUrl, suggestUrl, editUrl } = stubUploadResponse();
-
-    renderLandingPage();
-    fireEvent.change(screen.getByLabelText("Permissions"), {
-      target: { value: "edit" },
-    });
-    fireEvent.change(getInput(), {
-      target: { files: [htmlFile("deck.html", 100)] },
-    });
+    fireEvent.click(screen.getByText("Edit directly"));
+    fireEvent.click(screen.getByText("Publish link"));
 
     await vi.waitFor(() => {
       expect(() => screen.getByText(editUrl)).not.toThrow();
     });
-    expect(screen.queryByText(viewUrl)).toBeNull();
-    expect(screen.queryByText(suggestUrl)).toBeNull();
   });
 
-  it("shows the server's error message and lets the reader try again", async () => {
+  it("shows the server's rejection error in the error card", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(jsonResponse({ error: "Too big." }, 413)),
+      vi.fn().mockImplementation((url: string | Request) => {
+        const urlStr = typeof url === "string" ? url : url.url;
+        if (urlStr.includes("/api/my-artifacts")) {
+          return Promise.resolve(jsonResponse({ artifacts: [] }, 200));
+        }
+        return Promise.resolve(
+          jsonResponse(
+            {
+              error:
+                "This file needs a build step. Upload the HTML a browser would run, not its source.",
+            },
+            415,
+          ),
+        );
+      }),
     );
 
     renderLandingPage();
@@ -124,18 +139,47 @@ describe("LandingPage", () => {
     });
 
     await vi.waitFor(() => {
-      expect(() => screen.getByText("Too big.")).not.toThrow();
+      expect(() => screen.getByText("Upload rejected")).not.toThrow();
+      expect(() =>
+        screen.getByText(
+          "This file needs a build step. Upload the HTML a browser would run, not its source.",
+        ),
+      ).not.toThrow();
     });
     expect(() => screen.getByText(/Drop a \.html file/)).not.toThrow();
   });
 
+  it("switches to My Files tab and back", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(jsonResponse({ artifacts: [] }, 200)),
+    );
+
+    renderLandingPage();
+    fireEvent.click(screen.getByText("My Files"));
+
+    await vi.waitFor(() => {
+      expect(() => screen.getByText("No files uploaded yet")).not.toThrow();
+    });
+
+    fireEvent.click(screen.getByText("Upload"));
+    await vi.waitFor(() => {
+      expect(() => screen.getByText(/Drop a \.html file/)).not.toThrow();
+    });
+  });
+
   it("returns to the dropzone after Upload another", async () => {
-    const { viewUrl } = stubUploadResponse();
+    const { viewUrl } = stubTwoStepUploadAndPublish();
 
     renderLandingPage();
     fireEvent.change(getInput(), {
       target: { files: [htmlFile("deck.html", 100)] },
     });
+    await vi.waitFor(() => {
+      expect(() => screen.getByText("Step 2 of 2")).not.toThrow();
+    });
+
+    fireEvent.click(screen.getByText("Publish link"));
     await vi.waitFor(() => {
       expect(() => screen.getByText(viewUrl)).not.toThrow();
     });
