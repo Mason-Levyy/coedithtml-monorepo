@@ -55,6 +55,19 @@ export async function hashArtifactPassword(password: string): Promise<string> {
   return `${ALGORITHM}$${ITERATIONS}$${toHex(salt)}$${derived}`;
 }
 
+export async function nextPasswordHash(
+  current: string | undefined,
+  requested: string | null | undefined,
+): Promise<string | undefined> {
+  if (requested === undefined) {
+    return current;
+  }
+  if (requested === null || requested.length === 0) {
+    return undefined;
+  }
+  return hashArtifactPassword(requested);
+}
+
 export async function verifyArtifactPassword(
   password: string,
   stored: string,
