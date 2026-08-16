@@ -21,11 +21,16 @@ export type AcceptedUpload = {
   fileName: string;
   bytes: ArrayBuffer;
   password: string | null;
+  draft: boolean;
 };
 
 export type Rejected = { ok: false; response: Response };
 
-type ParsedForm = { files: File[]; password: string | null };
+type ParsedForm = {
+  files: File[];
+  password: string | null;
+  draft: boolean;
+};
 
 type ReadFormResult =
   { ok: true; form: ParsedForm } | { ok: false; status: 400 | 413 };
@@ -48,7 +53,9 @@ async function parseFormBytes(
       typeof passwordField === "string" && passwordField.length > 0
         ? passwordField
         : null;
-    return { files, password };
+    const draftField = form.get("draft");
+    const draft = draftField === "true" || draftField === "1";
+    return { files, password, draft };
   } catch {
     return null;
   }
@@ -117,7 +124,7 @@ export async function acceptUpload(
     };
   }
 
-  const { files, password } = read.form;
+  const { files, password, draft } = read.form;
   const file = files[0];
   if (files.length !== 1 || !file) {
     return {
@@ -149,7 +156,7 @@ export async function acceptUpload(
     };
   }
 
-  return { ok: true, upload: { fileName: file.name, bytes, password } };
+  return { ok: true, upload: { fileName: file.name, bytes, password, draft } };
 }
 
 export async function storeRevision(

@@ -1,7 +1,15 @@
 import { serveAppAsset } from "@/lib/app-assets";
 import type { WorkerEnv } from "@/lib/env";
 import { jsonError } from "@/lib/responses";
+import type { TokenKind } from "@/lib/room-capabilities";
 import { handleGetArtifact } from "./artifact";
+import {
+  handleDeleteArtifact,
+  handleUpdateArtifactSettings,
+} from "./artifact-settings";
+import { handleListMyArtifacts } from "./my-artifacts";
+import { handlePublishArtifact } from "./publish";
+import { handleRegenerateLink } from "./regenerate-link";
 import { handleReplaceArtifact } from "./revisions";
 import { handleRevokeToken } from "./revoke";
 import { handleRoomConnect } from "./room";
@@ -10,17 +18,35 @@ import { handleUnlockArtifact } from "./unlock";
 import { handleUpload } from "./upload";
 
 const TUTORIAL_PATH = "/tutorial";
+const MY_ARTIFACTS_PATH = "/api/my-artifacts";
+const MY_ARTIFACT_PATH = /^\/api\/my-artifacts\/([^/]+)$/;
 const ARTIFACT_TOKEN_PATH = /^\/api\/artifacts\/([^/]+)$/;
+const ARTIFACT_PUBLISH_PATH = /^\/api\/artifacts\/([^/]+)\/publish$/;
+const ARTIFACT_SETTINGS_PATH = /^\/api\/artifacts\/([^/]+)\/settings$/;
 const ARTIFACT_UNLOCK_PATH = /^\/api\/artifacts\/([^/]+)\/unlock$/;
 const ARTIFACT_ROOM_PATH = /^\/api\/artifacts\/([^/]+)\/room$/;
 const ARTIFACT_REVISIONS_PATH = /^\/api\/artifacts\/([^/]+)\/revisions$/;
+const ARTIFACT_LINK_REGENERATE_PATH =
+  /^\/api\/artifacts\/([^/]+)\/links\/(view|suggest|edit)\/regenerate$/;
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
-export function handleAppRequest(
+export async function handleAppRequest(
   request: Request,
   env: WorkerEnv,
-): Promise<Response> | Response {
+): Promise<Response> {
   const { pathname } = new URL(request.url);
+
+  if (!pathname.startsWith("/api/")) {
+    if (pathname === TUTORIAL_PATH || pathname === `${TUTORIAL_PATH}/`) {
+      return request.method === "GET"
+        ? handleStartTutorial(request, env)
+        : new Response("Method not allowed", { status: 405 });
+    }
+    if (!READ_METHODS.has(request.method)) {
+      return new Response("Method not allowed", { status: 405 });
+    }
+    return serveAppAsset(request, env);
+  }
 
   if (pathname === "/api/artifacts") {
     if (request.method !== "POST") {
@@ -29,12 +55,57 @@ export function handleAppRequest(
     return handleUpload(request, env);
   }
 
+  if (pathname === MY_ARTIFACTS_PATH) {
+    if (request.method !== "GET") {
+      return jsonError("Method not allowed.", 405);
+    }
+    return handleListMyArtifacts(request, env);
+  }
+
+  const myArtifactMatch = MY_ARTIFACT_PATH.exec(pathname);
+  if (myArtifactMatch) {
+    if (request.method !== "DELETE") {
+      return jsonError("Method not allowed.", 405);
+    }
+    return handleDeleteArtifact(myArtifactMatch[1] ?? "", request, env);
+  }
+
+  const publishMatch = ARTIFACT_PUBLISH_PATH.exec(pathname);
+  if (publishMatch) {
+    if (request.method !== "POST") {
+      return jsonError("Method not allowed.", 405);
+    }
+    return handlePublishArtifact(publishMatch[1] ?? "", request, env);
+  }
+
+  const settingsMatch = ARTIFACT_SETTINGS_PATH.exec(pathname);
+  if (settingsMatch) {
+    if (request.method !== "PATCH") {
+      return jsonError("Method not allowed.", 405);
+    }
+    return handleUpdateArtifactSettings(settingsMatch[1] ?? "", request, env);
+  }
+
   const unlockMatch = ARTIFACT_UNLOCK_PATH.exec(pathname);
   if (unlockMatch) {
     if (request.method !== "POST") {
       return jsonError("Method not allowed.", 405);
     }
     return handleUnlockArtifact(unlockMatch[1] ?? "", request, env);
+  }
+
+  const linkRegenerateMatch = ARTIFACT_LINK_REGENERATE_PATH.exec(pathname);
+  if (linkRegenerateMatch) {
+    if (request.method !== "POST") {
+      return jsonError("Method not allowed.", 405);
+    }
+    const kind = linkRegenerateMatch[2] as TokenKind;
+    return handleRegenerateLink(
+      linkRegenerateMatch[1] ?? "",
+      kind,
+      request,
+      env,
+    );
   }
 
   const revisionsMatch = ARTIFACT_REVISIONS_PATH.exec(pathname);
@@ -60,23 +131,10 @@ export function handleAppRequest(
       return handleGetArtifact(token, request, env);
     }
     if (request.method === "DELETE") {
-      return handleRevokeToken(token, env);
+      return handleRevokeToken(token, request, env);
     }
     return jsonError("Method not allowed.", 405);
   }
 
-  if (pathname.startsWith("/api/")) {
-    return jsonError("Not found.", 404);
-  }
-
-  if (pathname === TUTORIAL_PATH || pathname === `${TUTORIAL_PATH}/`) {
-    return request.method === "GET"
-      ? handleStartTutorial(request, env)
-      : new Response("Method not allowed", { status: 405 });
-  }
-
-  if (!READ_METHODS.has(request.method)) {
-    return new Response("Method not allowed", { status: 405 });
-  }
-  return serveAppAsset(request, env);
+  return jsonError("Not found.", 404);
 }

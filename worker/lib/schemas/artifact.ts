@@ -30,6 +30,12 @@ export const unlockRequestSchema = z.object({
   password: z.string().min(1).max(MAX_PASSWORD_LENGTH),
 });
 
+export const passwordUpdateBodySchema = z.object({
+  password: z.string().max(MAX_PASSWORD_LENGTH).nullable().optional(),
+});
+
+export type PasswordUpdateBody = z.infer<typeof passwordUpdateBodySchema>;
+
 const RANDOM_ID_PATTERN = /^[0-9a-f]{32}$/;
 
 export const artifactIdSchema = z.string().regex(RANDOM_ID_PATTERN);

@@ -36,3 +36,16 @@ export async function putArtifact(
     return { ok: false, cause };
   }
 }
+
+export async function deleteArtifact(
+  store: R2Bucket,
+  artifactId: string,
+  revision: string,
+): Promise<StoreResult> {
+  try {
+    await store.delete(artifactObjectKey(artifactId, revision));
+    return { ok: true };
+  } catch (cause) {
+    return { ok: false, cause };
+  }
+}
