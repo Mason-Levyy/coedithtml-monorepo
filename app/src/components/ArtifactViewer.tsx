@@ -19,9 +19,11 @@ import { useMarkAuthoring } from "@/hooks/useMarkAuthoring";
 import { useSelectionAnchor } from "@/hooks/useSelectionAnchor";
 import { useStickyPlacement } from "@/hooks/useStickyPlacement";
 import { useTextEditing } from "@/hooks/useTextEditing";
+import { frameSrcFor } from "@/lib/artifact-src";
 import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
 import type { LinkPermission } from "@/lib/link-permission";
 import {
+  editsAmong,
   overlayToMarkdown,
   renderMarksMessage,
   revealMarkMessage,
@@ -54,6 +56,11 @@ export function ArtifactViewer({
 }: ArtifactViewerProps) {
   void revision;
   const frame = useRef<HTMLIFrameElement>(null);
+  const [resetCount, setResetCount] = useState(0);
+  const frameSrc = useMemo(
+    () => frameSrcFor(src, resetCount),
+    [src, resetCount],
+  );
   const acted = useRef({
     patch: (markId: string, patch: EntryPatch) => {
       void markId;
@@ -68,7 +75,7 @@ export function ArtifactViewer({
   });
   const bridge = useArtifactBridge({
     sandboxOrigin,
-    src,
+    src: frameSrc,
     onPatchMark: (markId, patch) => acted.current.patch(markId, patch),
     onRemoveMark: (markId) => acted.current.remove(markId),
     onToolCancelled: () => acted.current.cancelTool(),
@@ -231,6 +238,18 @@ export function ArtifactViewer({
     setIdentityOpen(true);
   }
 
+  function removeEdit(markId: string): void {
+    room.removeEntry(markId);
+    setResetCount((count) => count + 1);
+  }
+
+  function removeEveryEdit(): void {
+    for (const edit of editsAmong(room.entries)) {
+      room.removeEntry(edit.id);
+    }
+    setResetCount((count) => count + 1);
+  }
+
   function armSticky(): void {
     if (identity.named) {
       sticky.toggleArmed();
@@ -299,8 +318,9 @@ export function ArtifactViewer({
       <div className="relative flex min-h-0 flex-1 flex-col">
         <div className={frameHeight ? undefined : "min-h-0 flex-1"}>
           <ArtifactFrame
+            key={frameSrc}
             ref={frame}
-            src={src}
+            src={frameSrc}
             title={fileName}
             height={frameHeight}
           />
@@ -330,6 +350,8 @@ export function ArtifactViewer({
               onReplace={sticky.armForMark}
               onComment={writeComment}
               onReply={writeReply}
+              onRemoveEdit={removeEdit}
+              onRemoveEveryEdit={removeEveryEdit}
               onClose={() => setRailOpen(false)}
               onDismissSelection={closeComposer}
             />
