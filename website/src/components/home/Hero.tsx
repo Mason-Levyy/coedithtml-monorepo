@@ -7,22 +7,24 @@ export function Hero() {
     <section className="hero">
       <div className="shell hero__grid">
         <div>
-          <p className="eyebrow">One file · one link · no account</p>
-          <h1>Send the file, not a screenshot.</h1>
+          <p className="eyebrow">Real-time HTML collaboration</p>
+          <h1>Review and edit HTML together.</h1>
           <p className="lede">
-            You have an HTML file. A deck, a dashboard, a one-pager. And three
-            people who need to react to it. Upload it here and you get a link.
-            It opens in their browser and works the way you built it.
+            Share interactive HTML files with a simple link. Viewers can explore
+            the live page, leave comments, and edit copy directly in their
+            browser with no accounts or installation required.
           </p>
           <div className="hero__actions">
             <a className="btn" href={APP_URL}>
               Upload a file
             </a>
             <Link className="btn btn--quiet" href="/tutorial/">
-              Take the tutorial
+              Try the tutorial
             </Link>
           </div>
-          <p className="note">No account. No install. One file, one link.</p>
+          <p className="note">
+            Free to use. Instant setup. Works in any browser.
+          </p>
         </div>
 
         <ArtifactMock />

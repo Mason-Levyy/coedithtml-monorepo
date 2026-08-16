@@ -10,17 +10,9 @@ import {
   editsAmong,
   repliesTo,
   threadsIn,
-  unresolvedCount,
   type RejectionReason,
   type TextAnchor,
 } from "@/lib/protocol";
-import type { RoomStatus } from "@/lib/room-socket";
-
-const STATUS_LABEL: Record<RoomStatus, string> = {
-  connecting: "Connecting\u2026",
-  open: "Comments",
-  closed: "Reconnecting\u2026",
-};
 
 const REJECTION_LABEL: Record<RejectionReason, string> = {
   "read-only": "This link can read comments but not write them.",

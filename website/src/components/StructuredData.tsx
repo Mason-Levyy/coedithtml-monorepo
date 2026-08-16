@@ -37,15 +37,15 @@ export function StructuredData() {
             browserRequirements: "Requires JavaScript",
             publisher: { "@id": PUBLISHER_ID },
             description:
-              "coeditHTML turns a single HTML file into a shareable link that other people can read, comment on, and edit in their browser, without an account or an install.",
+              "coeditHTML turns a single HTML file into a shareable link that collaborators can view, comment on, and edit in their browser with no accounts or installation required.",
             featureList: [
               "Share a single HTML file as a link",
-              "Comment on a selected sentence",
+              "Comment on selected text",
               "Drop sticky notes on charts and images",
-              "Edit the text of the file in place",
-              "Separate read, comment, and edit links",
+              "Edit text directly in place",
+              "Separate view, comment, and edit links",
               "Password protect a link",
-              "Download the edited file as one HTML file",
+              "Download the edited file as a single HTML document",
             ],
             offers: {
               "@type": "Offer",

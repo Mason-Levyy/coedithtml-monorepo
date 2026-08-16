@@ -1,18 +1,18 @@
 const LEVELS = [
   {
     tone: "read",
-    title: "Read",
-    body: "They open it and use it. Every link is a working copy of your file, so a prototype still clicks and a dashboard still filters.",
+    title: "View",
+    body: "View-only access. Viewers interact with your live file normally (buttons click, charts filter, and animations run) without making edits.",
   },
   {
     tone: "comment",
     title: "Comment",
-    body: "They highlight a sentence and say what is wrong with it, or drop a sticky note anywhere on the page, including on a chart with no text to select.",
+    body: "Leave feedback. Reviewers can highlight text to start comment threads or drop sticky notes anywhere on the page, including charts and images.",
   },
   {
     tone: "edit",
     title: "Edit",
-    body: "They fix the typo themselves. Only words change; structure, attributes, and scripts are left alone. Every change is listed, and any of them can go back.",
+    body: "Direct text editing. Collaborators can update copy in place. Your layout, styles, and scripts remain intact, and all changes can be reviewed or reverted.",
   },
 ];
 
@@ -21,12 +21,12 @@ export function Permissions() {
     <section className="band band--wash">
       <div className="shell">
         <div className="band-head">
-          <p className="eyebrow">one link, one permission</p>
-          <h2>You choose what the other person can do</h2>
+          <p className="eyebrow">Granular access</p>
+          <h2>Control how people interact with your file</h2>
           <p>
-            Set it when you make the link, and hand out a different one later. A
-            read link cannot be used to comment, and a comment link cannot be
-            used to edit.
+            Create unique links for viewing, commenting, or editing. You can
+            share different access levels with different collaborators at any
+            time.
           </p>
         </div>
 

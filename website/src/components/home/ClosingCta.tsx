@@ -4,11 +4,11 @@ export function ClosingCta() {
   return (
     <section className="closing">
       <div className="shell">
-        <p className="eyebrow">Takes about a minute</p>
-        <h2>Put your file somewhere people can answer it</h2>
+        <p className="eyebrow">Get started in seconds</p>
+        <h2>Ready to collaborate on your HTML file?</h2>
         <p>
-          Free while it is early. Nothing to install, nothing to sign up for,
-          and nothing to explain to the people you send it to.
+          Free to use with nothing to install or configure. Upload your file and
+          start collaborating immediately.
         </p>
         <a className="btn" href={APP_URL}>
           Upload a file

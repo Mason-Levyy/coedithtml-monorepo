@@ -1,1 +1,1 @@
-coeditHTML: send the file, not a screenshot. Upload one HTML file and get a link people can comment on and edit in their browser.
+coeditHTML: review and edit HTML together. Upload one HTML file and get a shareable link that collaborators can comment on and edit directly in their browser.

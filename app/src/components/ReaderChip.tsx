@@ -30,7 +30,9 @@ export function ReaderChip({ identity, open, onOpenChange }: ReaderChipProps) {
           type="button"
           aria-label="Your name and colour"
           title={
-            identity.named ? identity.reader.displayName : "Your name and colour"
+            identity.named
+              ? identity.reader.displayName
+              : "Your name and colour"
           }
           className="flex size-8 items-center justify-center rounded-full transition-transform hover:scale-105 active:scale-95 cursor-pointer"
           {...props}
