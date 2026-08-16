@@ -9,11 +9,9 @@ import {
   downloadUrlFor,
   type DownloadChoice,
 } from "@/lib/download-artifact";
-import type { LinkPermission } from "@/lib/link-permission";
+import { LINK_PERMISSIONS, type LinkPermission } from "@/lib/link-permission";
 
 const NOTHING_TO_COPY = "No feedback to copy yet.";
-
-const PERMISSION_ORDER: LinkPermission[] = ["view", "suggest", "edit"];
 
 const PERMISSION_LABEL: Record<LinkPermission, string> = {
   view: "View",
@@ -38,7 +36,7 @@ export function ShareMenu({
   const notes = useCopyToClipboard();
   const hasFeedback = feedback.length > 0;
 
-  const available = PERMISSION_ORDER.filter(
+  const available = LINK_PERMISSIONS.filter(
     (kind) => shareLinks[kind] !== undefined,
   );
   const ownPermission = available.at(-1) ?? "view";
