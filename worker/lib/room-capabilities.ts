@@ -2,6 +2,12 @@ export const TOKEN_KINDS = ["view", "suggest", "edit"] as const;
 
 export type TokenKind = (typeof TOKEN_KINDS)[number];
 
+export const TOKEN_FIELD = {
+  view: "viewToken",
+  suggest: "suggestToken",
+  edit: "editToken",
+} as const satisfies Record<TokenKind, string>;
+
 export type SiblingTokens = Record<TokenKind, string>;
 
 export function kindsAtOrBelow(kind: TokenKind): TokenKind[] {
