@@ -435,6 +435,47 @@ describe("handleUpload re-importing a previously downloaded file", () => {
     expect(entries).toMatchObject([{ id: "s1", body: "Looks great" }]);
   });
 
+  it("restores stickies for a draft upload too, not only an immediate publish", async () => {
+    const store = recordingArtifactStore();
+    const docRoom = recordingDocRoom();
+    const env = testWorkerEnv({
+      ARTIFACT_STORE: store.bucket,
+      ARTIFACT_METADATA: fakeArtifactMetadata(),
+      DOC_ROOM: docRoom.namespace,
+    });
+
+    const form = new FormData();
+    form.append(
+      "file",
+      new File([downloadedHtml([sticky()])], "deck.html", {
+        type: "text/html",
+      }),
+    );
+    form.append("draft", "true");
+    const request = new Request("https://app.test/api/artifacts", {
+      method: "POST",
+      body: form,
+    });
+
+    const response = await handleUpload(request, env);
+    const body = (await response.json()) as {
+      artifactId: string;
+      draft: true;
+      restoredComments: number;
+    };
+
+    expect(response.status).toBe(201);
+    expect(body.draft).toBe(true);
+    expect(body.restoredComments).toBe(1);
+
+    const seeded = docRoom.connects.find(
+      (connect) => connect.name === body.artifactId,
+    );
+    expect(seeded).toBeDefined();
+    const entries = seeded && ((await seeded.request.json()) as StickyEntry[]);
+    expect(entries).toMatchObject([{ id: "s1", body: "Looks great" }]);
+  });
+
   it("does not touch the room when there is nothing to restore", async () => {
     const store = recordingArtifactStore();
     const docRoom = recordingDocRoom();
