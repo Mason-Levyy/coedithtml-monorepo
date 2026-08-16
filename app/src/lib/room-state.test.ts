@@ -11,6 +11,9 @@ import {
   applyLocalPatch,
   applyLocalRemove,
   applyRoomMessage,
+  saveStateOf,
+  writeSent,
+  writesAbandoned,
 } from "@/lib/room-state";
 
 const ANCHOR = {
@@ -248,5 +251,75 @@ describe("applyRoomMessage", () => {
 
     expect(state.entries).toHaveLength(1);
     expect(state.readers).toHaveLength(1);
+  });
+});
+
+describe("what the reader is told about their own writes", () => {
+  function opened() {
+    return applyRoomMessage(EMPTY_ROOM, snapshot([]));
+  }
+
+  it("says nothing until the reader has written something", () => {
+    expect(saveStateOf(opened())).toBe("idle");
+  });
+
+  it("is saving from the moment a write goes out", () => {
+    expect(saveStateOf(writeSent(opened(), "c1"))).toBe("saving");
+  });
+
+  it("is saved only once the room echoes the write back", () => {
+    const state = applyRoomMessage(writeSent(opened(), "c1"), {
+      version: 1,
+      type: "entry-added",
+      entry: comment(),
+    });
+
+    expect(saveStateOf(state)).toBe("saved");
+  });
+
+  it("keeps saying saving while any write is still out", () => {
+    const sent = writeSent(writeSent(opened(), "c1"), "c2");
+    const state = applyRoomMessage(sent, {
+      version: 1,
+      type: "entry-added",
+      entry: comment(),
+    });
+
+    expect(saveStateOf(state)).toBe("saving");
+  });
+
+  it("says a rejected write failed rather than pretending it landed", () => {
+    const state = applyRoomMessage(writeSent(opened(), "c1"), {
+      version: 1,
+      type: "rejected",
+      reason: "stale",
+      id: "c1",
+    });
+
+    expect(saveStateOf(state)).toBe("failed");
+  });
+
+  it("counts a socket that went away with writes out as a failure", () => {
+    expect(saveStateOf(writesAbandoned(writeSent(opened(), "c1")))).toBe(
+      "failed",
+    );
+  });
+
+  it("leaves a settled room alone when the socket closes", () => {
+    const settled = opened();
+
+    expect(writesAbandoned(settled)).toBe(settled);
+  });
+
+  it("clears the failure when the reader tries again", () => {
+    const failed = writesAbandoned(writeSent(opened(), "c1"));
+
+    expect(saveStateOf(writeSent(failed, "c1"))).toBe("saving");
+  });
+
+  it("forgets what a previous connection was doing on a fresh snapshot", () => {
+    const failed = writesAbandoned(writeSent(opened(), "c1"));
+
+    expect(saveStateOf(applyRoomMessage(failed, snapshot([])))).toBe("idle");
   });
 });

@@ -10,6 +10,8 @@ import { changedSpan } from "./changed-span";
 
 const EDITING_ATTRIBUTE = "data-coedit-editing";
 
+export const AUTOSAVE_IDLE_MS = 900;
+
 export type EditSurface = {
   arm(on: boolean): void;
   isEditing(): boolean;
@@ -21,7 +23,13 @@ type Editing = {
   before: string;
   offset: number;
   documentBefore: string;
+  sessionId: string;
+  sent: string | null;
 };
+
+function newSessionId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 function blockFor(target: EventTarget | null): HTMLElement | null {
   const start =
@@ -57,28 +65,31 @@ function documentAround(
 export function startEditSurface(options: {
   revision: string;
   canEdit: () => boolean;
-  onCommit: (anchor: TextAnchor, replacement: string) => void;
+  onCommit: (
+    anchor: TextAnchor,
+    replacement: string,
+    sessionId: string,
+  ) => void;
   onStateChange: (editing: boolean) => void;
 }): EditSurface {
   let armed = false;
   let editing: Editing | null = null;
+  let idle = 0;
 
-  function close(commit: boolean): void {
+  // Committing does not end the session, so a caret can save several times
+  // over. The baseline it diffs against is the block as it stood when the
+  // caret arrived, never as it stood at the last save: the anchor has to keep
+  // quoting the author's original words or it resolves onto its own output.
+  function commitNow(): void {
     if (editing === null) {
       return;
     }
-    const { block, before, offset, documentBefore } = editing;
-    editing = null;
-
-    block.removeAttribute("contenteditable");
-    block.removeAttribute(EDITING_ATTRIBUTE);
-    block.removeEventListener("keydown", onKeyDown);
-    block.removeEventListener("blur", onBlur);
-    block.removeEventListener("paste", onPaste);
-    options.onStateChange(false);
-
+    const { block, before, offset, documentBefore, sessionId } = editing;
     const after = buildTextIndex(block).text;
-    const span = commit ? changedSpan(before, after) : null;
+    if (after === editing.sent) {
+      return;
+    }
+    const span = changedSpan(before, after);
     if (span === null) {
       return;
     }
@@ -94,8 +105,34 @@ export function startEditSurface(options: {
       revision: options.revision,
     });
     if (anchor !== null) {
-      options.onCommit(anchor, span.text);
+      editing.sent = after;
+      options.onCommit(anchor, span.text, sessionId);
     }
+  }
+
+  function close(commit: boolean): void {
+    if (editing === null) {
+      return;
+    }
+    const { block } = editing;
+    window.clearTimeout(idle);
+    if (commit) {
+      commitNow();
+    }
+    editing = null;
+
+    block.removeAttribute("contenteditable");
+    block.removeAttribute(EDITING_ATTRIBUTE);
+    block.removeEventListener("keydown", onKeyDown);
+    block.removeEventListener("blur", onBlur);
+    block.removeEventListener("paste", onPaste);
+    block.removeEventListener("input", onInput);
+    options.onStateChange(false);
+  }
+
+  function onInput(): void {
+    window.clearTimeout(idle);
+    idle = window.setTimeout(commitNow, AUTOSAVE_IDLE_MS);
   }
 
   function onKeyDown(event: Event): void {
@@ -162,12 +199,15 @@ export function startEditSurface(options: {
       before: buildTextIndex(block).text,
       offset: around.offset,
       documentBefore: around.text,
+      sessionId: newSessionId(),
+      sent: null,
     };
     block.setAttribute("contenteditable", "plaintext-only");
     block.setAttribute(EDITING_ATTRIBUTE, "");
     block.addEventListener("keydown", onKeyDown);
     block.addEventListener("blur", onBlur);
     block.addEventListener("paste", onPaste);
+    block.addEventListener("input", onInput);
     block.focus();
     options.onStateChange(true);
   }
