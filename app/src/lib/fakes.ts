@@ -9,6 +9,13 @@ export function renderWithQueryClient(node: ReactElement): RenderResult {
   return render(createElement(QueryClientProvider, { client, children: node }));
 }
 
+export function jsonResponse(body: unknown, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
 export class FakeWebSocket extends EventTarget {
   static readonly OPEN = 1;
 
