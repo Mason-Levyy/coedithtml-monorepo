@@ -29,10 +29,9 @@ const STEPS = [
 
 export function Walkthrough() {
   return (
-    <section className="band" id="walkthrough">
+    <section className="band band--wash" id="walkthrough">
       <div className="shell">
         <div className="band-head">
-          <p className="eyebrow">How it works</p>
           <h2>Simple collaboration in four easy steps</h2>
         </div>
 
