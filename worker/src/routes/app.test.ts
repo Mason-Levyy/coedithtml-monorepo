@@ -67,6 +67,19 @@ describe("handleAppRequest asset serving", () => {
     expect(response.headers.get("content-type")).toContain("application/json");
   });
 
+  it("tells crawlers to skip a viewer page, since its URL carries a share token", async () => {
+    const response = await handleAppRequest(
+      get(`/a/${"a".repeat(32)}`),
+      envWithApp(),
+    );
+    expect(response.headers.get("x-robots-tag")).toBe("noindex");
+  });
+
+  it("leaves the landing page indexable", async () => {
+    const response = await handleAppRequest(get("/"), envWithApp());
+    expect(response.headers.get("x-robots-tag")).toBeNull();
+  });
+
   it("guards the page that holds the owner cookie and the revoke button", async () => {
     const response = await handleAppRequest(get("/"), envWithApp());
     const policy = response.headers.get("content-security-policy") ?? "";
