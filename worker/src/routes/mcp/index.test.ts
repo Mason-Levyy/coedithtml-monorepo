@@ -129,22 +129,60 @@ describe("the MCP endpoint", () => {
     expect(body.error).toMatchObject({ code: -32601 });
   });
 
-  it("tells a client still expecting a handshake which version it speaks", async () => {
+  it("shakes hands with a client that still opens with initialize", async () => {
     const body = await send(
       legacy("initialize", { protocolVersion: "2025-06-18" }),
     );
 
-    expect(body.status).toBe(400);
-    expect(body.error).toMatchObject({
-      code: -32022,
-      data: { supported: [MODERN_PROTOCOL_VERSION] },
+    expect(body.status).toBe(200);
+    expect(body.result).toMatchObject({
+      protocolVersion: "2025-06-18",
+      serverInfo: { name: "coedit" },
     });
   });
 
-  it("refuses a request that declares no protocol version at all", async () => {
-    const body = await send(legacy("tools/list"));
+  it("offers a legacy client a version it can speak when it asks for a modern one", async () => {
+    const body = await send(
+      legacy("initialize", { protocolVersion: MODERN_PROTOCOL_VERSION }),
+    );
 
-    expect(body.status).toBe(400);
+    expect((body.result as Body).protocolVersion).toBe("2025-11-25");
+  });
+
+  it("accepts the notification that follows a handshake", async () => {
+    const response = await handleAppRequest(
+      post({ jsonrpc: "2.0", method: "notifications/initialized" }),
+      testWorkerEnv(),
+    );
+
+    expect(response.status).toBe(202);
+  });
+
+  it("answers the keepalive a legacy client sends", async () => {
+    expect((await send(legacy("ping"))).status).toBe(200);
+  });
+
+  it("does not put the modern result fields in a legacy answer", async () => {
+    const result = (await send(legacy("tools/list"))).result as Body;
+
+    expect(result.tools).toEqual([]);
+    expect(result).not.toHaveProperty("resultType");
+    expect(result).not.toHaveProperty("ttlMs");
+  });
+
+  it("still refuses a declared version it does not speak", async () => {
+    const body = await send(
+      post(
+        {
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/list",
+          params: { _meta: { [PROTOCOL_VERSION_META]: "1900-01-01" } },
+        },
+        { "mcp-protocol-version": "1900-01-01", "mcp-method": "tools/list" },
+      ),
+    );
+
     expect(body.error).toMatchObject({ code: -32022 });
   });
 
