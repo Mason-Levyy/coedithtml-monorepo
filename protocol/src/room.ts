@@ -73,6 +73,7 @@ export const REJECTION_REASONS = [
   "too-long",
   "not-editable",
   "stale",
+  "too-fast",
 ] as const;
 
 export type RejectionReason = (typeof REJECTION_REASONS)[number];
