@@ -1,5 +1,4 @@
 import type { WorkerEnv } from "@/lib/env";
-import { OWNER_COOKIE_NAME } from "@/lib/owner-cookie";
 import { handleAppRequest } from "@/routes/app";
 import { handleSandboxRequest } from "@/routes/sandbox";
 
@@ -9,34 +8,25 @@ async function dispatched(response: Response): Promise<Dispatched> {
   return { status: response.status, body: await response.text() };
 }
 
-export async function callApp(
-  env: WorkerEnv,
-  options: {
-    path: string;
-    method: string;
-    ownerId?: string;
-    body?: BodyInit;
-    clientIp: string;
-  },
-): Promise<Dispatched> {
-  const headers = new Headers({ "cf-connecting-ip": options.clientIp });
-  if (options.ownerId !== undefined) {
-    headers.set("cookie", `${OWNER_COOKIE_NAME}=${options.ownerId}`);
-  }
-  const request = new Request(`https://${env.APP_HOST}${options.path}`, {
-    method: options.method,
-    headers,
-    ...(options.body === undefined ? {} : { body: options.body }),
-  });
-  return dispatched(await handleAppRequest(request, env));
-}
-
-export async function callSandbox(
+export async function readFromApp(
   env: WorkerEnv,
   path: string,
 ): Promise<Dispatched> {
-  const request = new Request(`https://${env.SANDBOX_HOST}${path}`);
-  return dispatched(await handleSandboxRequest(request, env));
+  return dispatched(
+    await handleAppRequest(new Request(`https://${env.APP_HOST}${path}`), env),
+  );
+}
+
+export async function readFromSandbox(
+  env: WorkerEnv,
+  path: string,
+): Promise<Dispatched> {
+  return dispatched(
+    await handleSandboxRequest(
+      new Request(`https://${env.SANDBOX_HOST}${path}`),
+      env,
+    ),
+  );
 }
 
 export function jsonOf(dispatched: Dispatched): Record<string, unknown> | null {
