@@ -15,13 +15,18 @@ requires understanding the user's markup, it is probably the wrong change.
 
 ## Structure
 
-- `app/` — the Coedit web app (upload, viewer, comment rail). React + Vite. The
-  owner's own list and share settings arrive at v0.5; there is no dashboard yet.
+- `app/` — the Coedit web app: upload, viewer, comment rail, and the owner's own
+  file list and share settings. React + Vite.
 - `worker/` — Cloudflare Worker: API routes, artifact serving, Durable Objects
   holding per-document state and websocket fanout. **All backend logic lives here.**
 - `runtime/` — the injected editor script. Built standalone, zero dependencies.
-- `website/` — marketing site. Next.js, no app logic. Still the scaffold: no
-  content, and no deploy adapter chosen yet. Built at v0.4.
+- `protocol/` — the shared vocabulary both sides of the wire agree on: anchors,
+  overlay entries, room messages, and the markdown export. **Dependency-free and
+  DOM-free, always.** `runtime/` imports it directly, so a Zod import here lands
+  inside the injected script; the parsers here are hand-written and the worker
+  wraps them in its own Zod schemas.
+- `website/` — marketing site at the apex. Next.js static export
+  (`output: "export"`), served by `website/wrangler.jsonc`. No app logic.
 
 ## Artifact Conventions
 
@@ -118,6 +123,11 @@ else's document.
 - Secrets live in Worker environment bindings. Only `.env.example` is committed.
   Never read a secret in client code.
 - Enforce upload size and rate limits at the Worker before touching storage.
+- **There is no CORS anywhere, and there should not be.** Every cross-origin
+  interaction is either a same-origin fetch or an origin-checked `postMessage`.
+  A browser page on any other origin cannot call the API at all — that is the
+  intent, not an oversight. Adding an `Access-Control-Allow-Origin` header to
+  reach the API from somewhere else is the wrong fix.
 
 ## Testing
 
@@ -126,6 +136,13 @@ else's document.
 - Required coverage: Zod schema boundaries, Durable Object state transitions
   (especially concurrent edits and reconnects), and token authorization paths.
 - Skip tests for pure presentational components.
+- The worker's tests run through `worker/run-tests.mjs`, not vitest directly. On
+  Windows the workers pool cannot unlink the rooms' SQLite files when it deletes
+  its own temp directory, so a run where every test passed exits 1 about half the
+  time. The wrapper recognises that one failure — an `EBUSY`/`EPERM` unlink with
+  no failing test reported — and nothing else. Do not widen it, and do not
+  silence it with `dangerouslyIgnoreUnhandledErrors`; that hides the report
+  without changing the exit code.
 
 ## Conventions
 
