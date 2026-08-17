@@ -54,6 +54,71 @@ describe("MyArtifactsList", () => {
     });
   });
 
+  // The sweep writes the date down; this is the only place an owner with no
+  // account and no email address will ever see it.
+  it("tells the owner a file is about to be swept, and how to stop it", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          {
+            artifacts: [
+              {
+                artifactId: "art1",
+                fileName: "quarterly.html",
+                size: 1024,
+                uploadedAt: "2026-07-01T00:00:00.000Z",
+                published: true,
+                hasPassword: false,
+                expiresAt: "2026-08-20T00:00:00.000Z",
+              },
+            ],
+          },
+          200,
+        ),
+      ),
+    );
+
+    renderWithQueryClient(<MyArtifactsList onUploadClick={vi.fn()} />);
+
+    await vi.waitFor(() => {
+      expect(
+        screen.getByText(/Nobody has opened this in a while/),
+      ).toBeDefined();
+    });
+    expect(screen.getByText(/unless somebody does/)).toBeDefined();
+  });
+
+  it("says nothing about expiry for a file nobody is about to lose", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          {
+            artifacts: [
+              {
+                artifactId: "art1",
+                fileName: "quarterly.html",
+                size: 1024,
+                uploadedAt: "2026-08-01T00:00:00.000Z",
+                published: true,
+                hasPassword: false,
+              },
+            ],
+          },
+          200,
+        ),
+      ),
+    );
+
+    renderWithQueryClient(<MyArtifactsList onUploadClick={vi.fn()} />);
+
+    await vi.waitFor(() => {
+      expect(screen.getByText("quarterly.html")).toBeDefined();
+    });
+    expect(screen.queryByText(/Nobody has opened this/)).toBeNull();
+  });
+
   it("opens settings modal when Settings is clicked", async () => {
     vi.stubGlobal(
       "fetch",
