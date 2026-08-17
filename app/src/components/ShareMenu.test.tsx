@@ -55,7 +55,7 @@ describe("ShareMenu", () => {
     );
 
     expect(screen.queryByText("Copy link")).toBeNull();
-    expect(screen.queryByText("Copy feedback for AI tool")).toBeNull();
+    expect(screen.queryByText("Copy the changes instead")).toBeNull();
   });
 
   it("copies the sole link when the reader has no choice of permission", async () => {
@@ -113,7 +113,7 @@ describe("ShareMenu", () => {
     openMenu();
 
     fireEvent.click(
-      screen.getByRole("button", { name: "Copy feedback for AI tool" }),
+      screen.getByRole("button", { name: "Copy the changes instead" }),
     );
 
     await waitFor(() => expect(clipboard.written).toEqual([FEEDBACK]));
@@ -127,19 +127,67 @@ describe("ShareMenu", () => {
 
     await screen.findByRole("button", { name: "Copied" });
     expect(
-      screen.getByRole("button", { name: "Copy feedback for AI tool" }),
+      screen.getByRole("button", { name: "Copy the changes instead" }),
     ).toBeTruthy();
+  });
+
+  it("opens the chosen tool with the changes already in the prompt", () => {
+    const opened: string[] = [];
+    vi.stubGlobal("open", (url: string) => {
+      opened.push(url);
+      return null;
+    });
+    openMenu();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Claude" }));
+
+    expect(opened).toHaveLength(1);
+    expect(opened[0]).toContain("claude.ai/new?q=");
+    expect(new URL(opened[0] ?? "").searchParams.get("q")).toBe(FEEDBACK);
+  });
+
+  it("switches tools without changing what it sends", () => {
+    const opened: string[] = [];
+    vi.stubGlobal("open", (url: string) => {
+      opened.push(url);
+      return null;
+    });
+    openMenu();
+
+    fireEvent.change(screen.getByLabelText("Make changes with"), {
+      target: { value: "chatgpt" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Open ChatGPT" }));
+
+    expect(opened[0]).toContain("chatgpt.com/?q=");
+  });
+
+  it("copies a review too long for a URL rather than truncating it", async () => {
+    const clipboard = stubClipboard();
+    const opened: string[] = [];
+    vi.stubGlobal("open", (url: string) => {
+      opened.push(url);
+      return null;
+    });
+    const long = "x".repeat(4000);
+    openMenu(long);
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Claude" }));
+
+    await waitFor(() => expect(clipboard.written).toEqual([long]));
+    expect(opened[0]).not.toContain("?q=");
+    await screen.findByRole("button", { name: "Copied — paste it in" });
   });
 
   it("refuses to copy an empty document and says why", () => {
     openMenu("");
 
     const copy = screen.getByRole("button", {
-      name: "Copy feedback for AI tool",
+      name: "Copy the changes instead",
     });
 
     expect(copy).toHaveProperty("disabled", true);
-    expect(screen.getByText("No feedback to copy yet.")).toBeTruthy();
+    expect(screen.getByText("No changes to send yet.")).toBeTruthy();
   });
 
   it("warns that the plain download leaves comments out", () => {
