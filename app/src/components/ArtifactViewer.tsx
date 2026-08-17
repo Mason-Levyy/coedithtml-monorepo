@@ -21,7 +21,7 @@ import { useMarkAuthoring } from "@/hooks/useMarkAuthoring";
 import { useSelectionAnchor } from "@/hooks/useSelectionAnchor";
 import { useStickyPlacement } from "@/hooks/useStickyPlacement";
 import { useTextEditing } from "@/hooks/useTextEditing";
-import { frameSrcFor } from "@/lib/artifact-src";
+import { frameSrcFor, withoutUnlockGrant } from "@/lib/artifact-src";
 import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
 import type { LinkPermission } from "@/lib/link-permission";
 import {
@@ -113,8 +113,9 @@ export function ArtifactViewer({
         fileName,
         entries: room.entries,
         orphaned: bridge.marks.orphaned,
+        artifactUrl: withoutUnlockGrant(src),
       }),
-    [fileName, room.entries, bridge.marks.orphaned],
+    [fileName, src, room.entries, bridge.marks.orphaned],
   );
 
   useEffect(() => {

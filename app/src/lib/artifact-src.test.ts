@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { artifactSrcFor, frameSrcFor } from "./artifact-src";
+import {
+  artifactSrcFor,
+  frameSrcFor,
+  withoutUnlockGrant,
+} from "./artifact-src";
 
 describe("artifactSrcFor", () => {
   it("carries the revision so a replaced file reloads the frame", () => {
@@ -23,6 +27,20 @@ describe("artifactSrcFor", () => {
         revision: "aaaa1111",
       }),
     ).toBe("https://sandbox.example.com/tok?u=9999&r=aaaa1111");
+  });
+});
+
+describe("withoutUnlockGrant", () => {
+  it("drops the grant, so a password stays out of anything we hand an AI tool", () => {
+    expect(
+      withoutUnlockGrant("https://sandbox.example.com/tok?u=9999&r=aaaa1111"),
+    ).toBe("https://sandbox.example.com/tok?r=aaaa1111");
+  });
+
+  it("leaves a URL that never had one alone", () => {
+    expect(
+      withoutUnlockGrant("https://sandbox.example.com/tok?r=aaaa1111"),
+    ).toBe("https://sandbox.example.com/tok?r=aaaa1111");
   });
 });
 
