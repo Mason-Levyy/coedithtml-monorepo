@@ -106,6 +106,7 @@ export async function handleArtifactDownload(options: {
     env.ARTIFACT_STORE,
     artifactId,
     metadata.revision,
+    metadata,
   );
   if (!stored.ok) {
     console.error("Failed to read an artifact for download", stored.cause);
