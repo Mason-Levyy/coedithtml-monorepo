@@ -438,9 +438,10 @@ describe("the comment rail", () => {
     expect(screen.queryByText("The text this points at is gone")).toBeNull();
   });
 
-  describe("copying feedback for an AI tool", () => {
-    function copyFeedback(): string[] {
+  describe("handing feedback to an AI tool", () => {
+    async function sentPrompt(): Promise<string> {
       const written: string[] = [];
+      const opened: string[] = [];
       vi.stubGlobal("navigator", {
         clipboard: {
           writeText: (text: string) => {
@@ -449,23 +450,31 @@ describe("the comment rail", () => {
           },
         },
       });
+      vi.stubGlobal("open", (url: string) => {
+        opened.push(url);
+        return null;
+      });
       fireEvent.click(screen.getByRole("button", { name: "Share" }));
-      fireEvent.click(
-        screen.getByRole("button", { name: "Copy the changes instead" }),
+      fireEvent.click(screen.getByRole("button", { name: "Send changes" }));
+      await waitFor(() =>
+        expect(written.length + opened.length).toBeGreaterThan(0),
       );
-      return written;
+      return (
+        written[0] ??
+        new URL(opened[0] ?? "https://none.test").searchParams.get("q") ??
+        ""
+      );
     }
 
     it("renders what the room is actually holding", async () => {
       renderViewer();
       openRoomWith([comment()], true, true);
 
-      const written = copyFeedback();
+      const prompt = await sentPrompt();
 
-      await waitFor(() => expect(written).toHaveLength(1));
-      expect(written[0]).toContain("# Feedback on q3-review.html");
-      expect(written[0]).toContain('## On "Revenue grew 18%"');
-      expect(written[0]).toContain("**Priya:** Net or gross?");
+      expect(prompt).toContain("# Feedback on q3-review.html");
+      expect(prompt).toContain('## On "Revenue grew 18%"');
+      expect(prompt).toContain("**Priya:** Net or gross?");
     });
 
     it("separates threads the runtime reported as orphaned", async () => {
@@ -473,20 +482,19 @@ describe("the comment rail", () => {
       openRoomWith([comment()], true, true);
       reportPlaced({ orphaned: ["c1"] });
 
-      const written = copyFeedback();
+      const prompt = await sentPrompt();
 
-      await waitFor(() => expect(written).toHaveLength(1));
-      expect(written[0]).toContain("## Unplaced");
+      expect(prompt).toContain("## Unplaced");
     });
 
-    it("cannot be copied when the room is empty", () => {
+    it("has nothing to send when the room is empty", () => {
       renderViewer();
       openRoomWith([], true, true);
 
       fireEvent.click(screen.getByRole("button", { name: "Share" }));
 
       expect(
-        screen.getByRole("button", { name: "Copy the changes instead" }),
+        screen.getByRole("button", { name: "Send changes" }),
       ).toHaveProperty("disabled", true);
     });
   });
