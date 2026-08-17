@@ -16,6 +16,7 @@ export {
   placeAtMessage,
   textOn,
   helloMessage,
+  isEdit,
   isFloating,
   parseRoomToClientMessage,
   parseRuntimeToAppMessage,
