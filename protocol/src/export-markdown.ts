@@ -31,7 +31,11 @@ function headingFor(entry: OverlayEntry, depth: string): string {
   if (entry.anchor.kind === "text") {
     return `${depth} On "${collapse(entry.anchor.quote)}"${suffix}`;
   }
-  return `${depth} Sticky note${suffix}`;
+  const excerpt = entry.anchor.excerpt ?? "";
+  if (excerpt.length === 0) {
+    return `${depth} Sticky note${suffix}`;
+  }
+  return `${depth} Sticky note on "${collapse(excerpt)}"${suffix}`;
 }
 
 function saidBy(entry: OverlayEntry | ReplyEntry): string {
