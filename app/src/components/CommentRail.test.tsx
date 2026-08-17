@@ -887,6 +887,95 @@ describe("the comment rail", () => {
     });
   });
 
+  describe("taking it back", () => {
+    it("offers nothing to undo until the reader has done something", () => {
+      renderViewer();
+      openRoomWith([comment()]);
+
+      expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+    });
+
+    it("takes back the comment the reader just wrote", () => {
+      renderViewer();
+      openRoomWith([]);
+      selectText();
+      writeComment("Tighten this.");
+      const written = lastSentOfType("add-entry")?.entry as { id: string };
+
+      fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+
+      expect(lastSentOfType("remove-entry")).toMatchObject({ id: written.id });
+    });
+
+    it("puts it back again on redo", () => {
+      renderViewer();
+      openRoomWith([]);
+      selectText();
+      writeComment("Tighten this.");
+      fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+
+      fireEvent.click(screen.getByRole("button", { name: "Redo" }));
+
+      expect(lastSentOfType("add-entry")?.entry).toMatchObject({
+        body: "Tighten this.",
+      });
+    });
+
+    it("reopens a thread it watched somebody resolve", () => {
+      renderViewer();
+      openRoomWith([comment()]);
+      fireEvent.click(screen.getByRole("button", { name: "Resolve" }));
+
+      fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+
+      expect(lastSentOfType("patch-entry")).toMatchObject({
+        id: "c1",
+        patch: { status: "open" },
+      });
+    });
+
+    it("reloads the artifact when the step it undid was a change to the text", () => {
+      renderViewer();
+      openRoomWith([edit()], true, true);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Put back “Revenue grew 18%”" }),
+      );
+      const afterRemoval = frameSrc();
+
+      fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+
+      expect(lastSentOfType("add-entry")?.entry).toMatchObject({ id: "e1" });
+      expect(frameSrc()).not.toBe(afterRemoval);
+    });
+
+    it("answers the keyboard the same way as the button", () => {
+      renderViewer();
+      openRoomWith([]);
+      selectText();
+      writeComment("Tighten this.");
+      const written = lastSentOfType("add-entry")?.entry as { id: string };
+
+      fireEvent.keyDown(window, { key: "z", metaKey: true });
+
+      expect(lastSentOfType("remove-entry")).toMatchObject({ id: written.id });
+    });
+
+    it("leaves the key to the browser while the reader is typing in a field", () => {
+      renderViewer();
+      openRoomWith([comment()]);
+      fireEvent.click(screen.getByRole("button", { name: "Resolve" }));
+
+      fireEvent.keyDown(screen.getByLabelText("Reply to Priya"), {
+        key: "z",
+        metaKey: true,
+      });
+
+      expect(lastSentOfType("patch-entry")).toMatchObject({
+        patch: { status: "resolved" },
+      });
+    });
+  });
+
   describe("a reader who has not said who they are", () => {
     it("is asked for nothing until they arrive", () => {
       renderViewer({ named: false });

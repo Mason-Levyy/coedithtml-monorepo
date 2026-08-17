@@ -18,7 +18,7 @@ export type RoomContents = {
   canEdit: boolean;
   rejection: RejectionReason | null;
   loaded: boolean;
-  undo: Record<string, OverlayEntry[]>;
+  rollback: Record<string, OverlayEntry[]>;
   pending: string[];
   landed: boolean;
   failed: boolean;
@@ -31,7 +31,7 @@ export const EMPTY_ROOM: RoomContents = {
   canEdit: false,
   rejection: null,
   loaded: false,
-  undo: {},
+  rollback: {},
   pending: [],
   landed: false,
   failed: false,
@@ -84,9 +84,12 @@ function withEntry(
   return [...others, entry].sort(byCreatedAt);
 }
 
-function without(undo: RoomContents["undo"], id: string): RoomContents["undo"] {
+function without(
+  rollback: RoomContents["rollback"],
+  id: string,
+): RoomContents["rollback"] {
   return Object.fromEntries(
-    Object.entries(undo).filter(([held]) => held !== id),
+    Object.entries(rollback).filter(([held]) => held !== id),
   );
 }
 
@@ -98,8 +101,10 @@ function remembering(
   state: RoomContents,
   id: string,
   replaced: OverlayEntry[],
-): RoomContents["undo"] {
-  return id in state.undo ? state.undo : { ...state.undo, [id]: replaced };
+): RoomContents["rollback"] {
+  return id in state.rollback
+    ? state.rollback
+    : { ...state.rollback, [id]: replaced };
 }
 
 export function applyLocalPatch(
@@ -118,7 +123,7 @@ export function applyLocalPatch(
   return {
     ...state,
     entries: withEntry(state.entries, patched),
-    undo: remembering(state, id, [existing]),
+    rollback: remembering(state, id, [existing]),
   };
 }
 
@@ -133,12 +138,12 @@ export function applyLocalRemove(
   return {
     ...state,
     entries: state.entries.filter((entry) => !removed.includes(entry)),
-    undo: remembering(state, id, removed),
+    rollback: remembering(state, id, removed),
   };
 }
 
 function rolledBack(state: RoomContents, id: string): RoomContents["entries"] {
-  const held = state.undo[id];
+  const held = state.rollback[id];
   if (held === undefined) {
     return state.entries;
   }
@@ -161,7 +166,7 @@ export function applyRoomMessage(
         canEdit: message.canEdit,
         rejection: null,
         loaded: true,
-        undo: {},
+        rollback: {},
         pending: [],
         landed: false,
         failed: false,
@@ -171,7 +176,7 @@ export function applyRoomMessage(
       return {
         ...state,
         entries: withEntry(state.entries, message.entry),
-        undo: without(state.undo, message.entry.id),
+        rollback: without(state.rollback, message.entry.id),
         ...settled(state, message.entry.id, { landed: true }),
       };
     case "entry-removed":
@@ -180,7 +185,7 @@ export function applyRoomMessage(
         entries: state.entries.filter(
           (entry) => entry.id !== message.id && entry.parentId !== message.id,
         ),
-        undo: without(state.undo, message.id),
+        rollback: without(state.rollback, message.id),
         ...settled(state, message.id, { landed: true }),
       };
     case "presence":
@@ -193,7 +198,7 @@ export function applyRoomMessage(
         ...state,
         rejection: message.reason,
         entries: rolledBack(state, message.id),
-        undo: without(state.undo, message.id),
+        rollback: without(state.rollback, message.id),
         ...settled(state, message.id, { landed: false }),
       };
   }
