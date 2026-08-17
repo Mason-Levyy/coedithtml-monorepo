@@ -1,6 +1,6 @@
 import type { WorkerEnv } from "@/lib/env";
 import { originFor } from "@/lib/origins";
-import { kindsAtOrBelow, type TokenKind } from "@/lib/room-capabilities";
+import { siblingsVisibleTo, type TokenKind } from "@/lib/room-capabilities";
 import type { ResolvedArtifact } from "@/lib/resolve-artifact";
 import { artifactUrl, viewerUrl } from "@/lib/share-links";
 
@@ -10,16 +10,14 @@ function shareLinksFor(
   artifact: ResolvedArtifact,
 ): Partial<Record<TokenKind, string>> {
   const { record, token } = artifact;
-  const { siblingTokens } = record;
-  if (siblingTokens === undefined) {
-    return { [record.kind]: viewerUrl(request, env, token) };
-  }
-  return Object.fromEntries(
-    kindsAtOrBelow(record.kind).map((kind) => [
-      kind,
-      viewerUrl(request, env, siblingTokens[kind]),
-    ]),
-  );
+  const visible = siblingsVisibleTo(record.kind, record.siblingTokens ?? {});
+  const links = Object.entries(visible).map(([kind, sibling]) => [
+    kind,
+    viewerUrl(request, env, sibling),
+  ]);
+  return links.length > 0
+    ? Object.fromEntries(links)
+    : { [record.kind]: viewerUrl(request, env, token) };
 }
 
 export function unlockedArtifactPayload(

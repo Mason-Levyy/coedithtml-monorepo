@@ -1,5 +1,7 @@
 import type { WorkerEnv } from "@/lib/env";
+import { withAppSecurityHeaders } from "@/lib/app-headers";
 import { AUTHOR_ASSET_PATH, RUNTIME_ASSET_PATH } from "@/lib/artifact-render";
+import { originFor } from "@/lib/origins";
 import { TUTORIAL_DECK_ASSET_PATH } from "@/lib/tutorial-deck";
 
 const SPA_DOCUMENT_PATH = "/index.html";
@@ -30,18 +32,22 @@ export async function serveAppAsset(
   env: WorkerEnv,
 ): Promise<Response> {
   const url = new URL(request.url);
+  const sandboxOrigin = originFor(request, env.SANDBOX_HOST);
+  const secured = (response: Response): Response =>
+    withAppSecurityHeaders(response, sandboxOrigin);
+
   if (WITHHELD_FROM_APP_ORIGIN.includes(url.pathname)) {
-    return new Response("Not found", { status: 404 });
+    return secured(new Response("Not found", { status: 404 }));
   }
 
   const asset = await fetchAsset(env, url);
   if (asset) {
-    return asset;
+    return secured(asset);
   }
   if (!isClientRoute(url.pathname)) {
-    return new Response("Not found", { status: 404 });
+    return secured(new Response("Not found", { status: 404 }));
   }
 
   const document = await fetchAsset(env, new URL(SPA_DOCUMENT_PATH, url));
-  return document ?? new Response("Not found", { status: 404 });
+  return secured(document ?? new Response("Not found", { status: 404 }));
 }

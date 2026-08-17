@@ -166,26 +166,45 @@ describe("handleUpload", () => {
     const editPut = tokenPuts.find(
       (put) => put.key === `tokens/${body.editToken}`,
     );
-    const siblingTokens = {
-      view: body.viewToken,
-      suggest: body.suggestToken,
-      edit: body.editToken,
-    };
+    // Each record holds its own kind and everything weaker, and nothing
+    // stronger. A view token's record used to contain the edit token.
     expect(viewPut && JSON.parse(viewPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "view",
-      siblingTokens,
+      siblingTokens: { view: body.viewToken },
     });
     expect(suggestPut && JSON.parse(suggestPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "suggest",
-      siblingTokens,
+      siblingTokens: { view: body.viewToken, suggest: body.suggestToken },
     });
     expect(editPut && JSON.parse(editPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "edit",
-      siblingTokens,
+      siblingTokens: {
+        view: body.viewToken,
+        suggest: body.suggestToken,
+        edit: body.editToken,
+      },
     });
+  });
+
+  it("keeps the stronger tokens out of a weaker token's record entirely", async () => {
+    const metadata = recordingArtifactMetadata();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      envWith(recordingArtifactStore().bucket, metadata.kv),
+    );
+    const body = (await response.json()) as {
+      viewToken: string;
+      editToken: string;
+    };
+
+    const viewPut = metadata.puts.find(
+      (put) => put.key === `tokens/${body.viewToken}`,
+    );
+
+    expect(viewPut?.value).not.toContain(body.editToken);
   });
 
   it("omits passwordHash when no password is given", async () => {
