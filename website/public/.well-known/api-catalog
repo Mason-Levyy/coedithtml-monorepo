@@ -1,0 +1,32 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://app.coedithtml.com/api",
+      "service-desc": [
+        {
+          "href": "https://coedithtml.com/openapi.json",
+          "type": "application/openapi+json"
+        },
+        {
+          "href": "https://coedithtml.com/openapi.yaml",
+          "type": "application/yaml"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://coedithtml.com/llms.txt"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://app.coedithtml.com/api/health"
+        }
+      ],
+      "describedby": [
+        {
+          "href": "https://coedithtml.com/auth.md"
+        }
+      ]
+    }
+  ]
+}

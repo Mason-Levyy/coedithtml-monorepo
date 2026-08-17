@@ -61,6 +61,25 @@ describe("handleGetArtifact", () => {
     });
   });
 
+  it("returns markdown when requested with Accept: text/markdown", async () => {
+    const markdownReq = new Request(
+      `https://app.test/api/artifacts/${VIEW_TOKEN}`,
+      { headers: { accept: "text/markdown" } },
+    );
+    const response = await handleGetArtifact(
+      VIEW_TOKEN,
+      markdownReq,
+      envFor(METADATA),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("text/markdown");
+    expect(response.headers.get("x-markdown-tokens")).toBeTruthy();
+    const text = await response.text();
+    expect(text).toContain("# Artifact: deck.html");
+    expect(text).toContain("- **Size**: 42 bytes");
+  });
+
   it("falls back to just its own link when the token predates sibling tokens", async () => {
     const response = await handleGetArtifact(
       VIEW_TOKEN,
@@ -189,6 +208,23 @@ describe("handleGetArtifact", () => {
 
       expect(response.status).toBe(200);
       expect(body).toEqual({ requiresPassword: true });
+    });
+
+    it("returns locked markdown when requested with Accept: text/markdown", async () => {
+      const markdownReq = new Request(
+        `https://app.test/api/artifacts/${VIEW_TOKEN}`,
+        { headers: { accept: "text/markdown" } },
+      );
+      const response = await handleGetArtifact(
+        VIEW_TOKEN,
+        markdownReq,
+        await envWithPassword("hunter2"),
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toContain("text/markdown");
+      const text = await response.text();
+      expect(text).toContain("# Artifact Locked");
     });
 
     it("serves the metadata once a grant for this artifact is presented", async () => {

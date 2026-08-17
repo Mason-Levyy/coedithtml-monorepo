@@ -31,6 +31,13 @@ Price: free while the product is early. No billing, no card.
 - [Privacy](https://coedithtml.com/privacy/): what is collected and kept.
 - [Terms](https://coedithtml.com/terms/): terms of service.
 
+## Agent Resources
+
+- [Auth & Registration Guide](https://coedithtml.com/auth.md): authentication flows and code samples for autonomous agents.
+- [API Catalog (RFC 9727)](https://coedithtml.com/.well-known/api-catalog): machine-readable index of APIs.
+- [A2A Agent Card](https://coedithtml.com/.well-known/agent-card.json): Agent-to-Agent capabilities and skill definitions.
+- [OpenAPI 3.1 Spec](https://coedithtml.com/openapi.json): full REST API contract.
+
 ## Contact
 
 support@coedithtml.com for general questions, abuse@coedithtml.com for

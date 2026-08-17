@@ -1,4 +1,5 @@
 import { cp, mkdir, readdir, rm } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,3 +23,18 @@ await cp(
   path.join(workerDir, "tutorial/deck.html"),
   path.join(publicDir, "tutorial-deck.html"),
 );
+
+const websitePublic = path.join(workerDir, "../website/public");
+for (const asset of [
+  ".well-known",
+  "auth.md",
+  "openapi.json",
+  "openapi.yaml",
+  "llms.txt",
+  "_headers",
+]) {
+  const src = path.join(websitePublic, asset);
+  if (existsSync(src)) {
+    await cp(src, path.join(publicDir, asset), { recursive: true });
+  }
+}

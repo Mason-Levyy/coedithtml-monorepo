@@ -1,0 +1,42 @@
+{
+  "issuer": "https://coedithtml.com",
+  "authorization_endpoint": "https://app.coedithtml.com",
+  "token_endpoint": "https://app.coedithtml.com/api/artifacts",
+  "response_types_supported": ["token"],
+  "grant_types_supported": [
+    "implicit",
+    "urn:ietf:params:oauth:grant-type:token-exchange",
+    "anonymous"
+  ],
+  "scopes_supported": [
+    "artifacts:create",
+    "artifacts:read",
+    "artifacts:edit",
+    "artifacts:delete",
+    "artifacts:settings"
+  ],
+  "agent_auth": {
+    "skill": "https://coedithtml.com/auth.md",
+    "register_uri": "https://app.coedithtml.com/api/artifacts",
+    "identity_types_supported": [
+      "anonymous",
+      "identity_assertion"
+    ],
+    "anonymous": {
+      "credential_types_supported": [
+        "bearer_token"
+      ],
+      "claim_uri": "https://app.coedithtml.com/api/artifacts"
+    },
+    "identity_assertion": {
+      "assertion_types_supported": [
+        "urn:ietf:params:oauth:token-type:id-jag",
+        "verified_email"
+      ],
+      "credential_types_supported": [
+        "bearer_token"
+      ],
+      "claim_uri": "https://app.coedithtml.com/api/artifacts"
+    }
+  }
+}

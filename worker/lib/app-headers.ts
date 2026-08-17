@@ -23,6 +23,15 @@ export function appContentSecurityPolicy(sandboxOrigin: string): string {
   ].join("; ");
 }
 
+export const DISCOVERY_LINK_HEADER = [
+  '</.well-known/api-catalog>; rel="api-catalog"',
+  '</.well-known/agent-card.json>; rel="agent-card"',
+  '</openapi.json>; rel="service-desc"; type="application/openapi+json"',
+  '</llms.txt>; rel="service-doc"',
+  '</auth.md>; rel="describedby"',
+  '</.well-known/oauth-protected-resource>; rel="oauth-protected-resource"',
+].join(", ");
+
 export function appSecurityHeaders(sandboxOrigin: string): Headers {
   return new Headers({
     "content-security-policy": appContentSecurityPolicy(sandboxOrigin),
@@ -30,6 +39,7 @@ export function appSecurityHeaders(sandboxOrigin: string): Headers {
     "referrer-policy": "strict-origin-when-cross-origin",
     "strict-transport-security": "max-age=31536000; includeSubDomains",
     "cross-origin-opener-policy": "same-origin",
+    link: DISCOVERY_LINK_HEADER,
   });
 }
 
