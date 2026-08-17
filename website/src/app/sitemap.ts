@@ -3,7 +3,6 @@ import { SITE_URL } from "@/lib/links";
 
 const PAGES = [
   { path: "/", priority: 1 },
-  { path: "/tutorial/", priority: 0.9 },
   { path: "/report/", priority: 0.3 },
   { path: "/privacy/", priority: 0.2 },
   { path: "/terms/", priority: 0.2 },

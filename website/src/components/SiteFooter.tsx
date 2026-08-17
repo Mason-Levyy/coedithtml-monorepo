@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TutorialLink } from "@/components/TutorialLink";
 import { Wordmark } from "@/components/Wordmark";
 import { APP_URL } from "@/lib/links";
 
@@ -10,8 +11,7 @@ export function SiteFooter() {
           <div>
             <Wordmark />
             <p className="site-footer__blurb">
-              Fast, simple collaboration on standalone HTML files. No accounts
-              or installation needed.
+              Fast, simple collaboration on standalone HTML files.
             </p>
           </div>
 
@@ -22,7 +22,7 @@ export function SiteFooter() {
                 <a href={APP_URL}>Open the app</a>
               </li>
               <li>
-                <Link href="/tutorial/">Take the tutorial</Link>
+                <TutorialLink>Take the tutorial</TutorialLink>
               </li>
             </ul>
           </div>
@@ -53,8 +53,8 @@ export function SiteFooter() {
         </div>
 
         <p className="site-footer__base">
-          coeditHTML is a lightweight collaboration tool for standalone HTML
-          files.
+          © 2026 coeditHTML. All rights reserved. Built by{" "}
+          <a href="https://www.linkedin.com/in/masonalevy/">Mason Levy</a>.
         </p>
       </div>
     </footer>

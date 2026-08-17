@@ -25,7 +25,7 @@ const plexMono = IBM_Plex_Mono({
 const TITLE = "coeditHTML";
 
 const DESCRIPTION =
-  "Share and collaborate on standalone HTML files in real time. Leave comments, drop sticky notes, and edit copy directly in your browser with no accounts or installation required.";
+  "Share and collaborate on standalone HTML files in real time. Leave comments, drop sticky notes, and edit files directly in your browser.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
