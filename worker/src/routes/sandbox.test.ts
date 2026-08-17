@@ -10,6 +10,7 @@ import {
   stubAccessTokens,
   stubArtifactMetadata,
   stubArtifactStore,
+  stubBlobStore,
   stubAssets,
   testWorkerEnv,
 } from "@/lib/fakes";
@@ -309,6 +310,59 @@ describe("handleSandboxRequest", () => {
       );
 
       expect(response.status).toBe(401);
+    });
+
+    // Two artifacts of one owner can share bytes, and must not share the gate
+    // in front of them. The gate is checked against artifact metadata before
+    // R2 is touched, and that order is the whole guarantee.
+    it("gates each artifact separately when they share their bytes", async () => {
+      const owner = "e".repeat(32);
+      const digest = "f".repeat(64);
+      const openToken = "1".repeat(32);
+      const lockedToken = "2".repeat(32);
+      const shared = {
+        ...METADATA,
+        ownerId: owner,
+        blobs: { [REVISION]: digest },
+      };
+      const store = stubBlobStore([
+        { key: `blobs/${owner}/${digest}.html`, body: VALID_HTML },
+      ]);
+      const kv = mergeKv(
+        stubAccessTokens([
+          {
+            token: openToken,
+            record: { artifactId: "a".repeat(32), kind: "view" },
+          },
+          {
+            token: lockedToken,
+            record: { artifactId: "c".repeat(32), kind: "view" },
+          },
+        ]),
+        stubArtifactMetadata([
+          { artifactId: "a".repeat(32), metadata: shared },
+          {
+            artifactId: "c".repeat(32),
+            metadata: {
+              ...shared,
+              passwordHash: await hashArtifactPassword("hunter2"),
+            },
+          },
+        ]),
+        liveKv(),
+      );
+
+      const open = await handleSandboxRequest(
+        request(`/${openToken}`),
+        envWith(store, kv),
+      );
+      const locked = await handleSandboxRequest(
+        request(`/${lockedToken}`),
+        envWith(store, kv),
+      );
+
+      expect(open.status).toBe(200);
+      expect(locked.status).toBe(401);
     });
   });
 });

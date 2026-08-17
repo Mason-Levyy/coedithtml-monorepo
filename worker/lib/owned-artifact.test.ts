@@ -13,6 +13,7 @@ function artifact(ownerId?: string): ArtifactMetadata {
     uploadedAt: "2026-08-16T09:00:00.000Z",
     revision: "aaaa1111bbbb2222",
     previousRevisions: [],
+    blobs: {},
     published: true,
     ownerId,
   };

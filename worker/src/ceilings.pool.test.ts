@@ -1,7 +1,13 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { chargeAttempt, refundAttempt } from "@/lib/rate-limit";
-import { holdSpace, readUsage, releaseSpace } from "@/lib/usage";
+import {
+  attachBlob,
+  detachBlob,
+  holdSpace,
+  readUsage,
+  releaseSpace,
+} from "@/lib/usage";
 
 const ROOMY = { maxBytes: 1_000_000, maxArtifacts: 100 };
 
@@ -137,6 +143,66 @@ describe("a ceiling that holds", () => {
       bytes: 0,
       artifacts: 0,
     });
+  });
+
+  it("charges the second copy of a file nothing to keep", async () => {
+    const twice = { digest: "d1", bytes: 500, ...ROOMY };
+    const first = await attachBlob(env.USAGE_LEDGER, "dedup", {
+      ...twice,
+      artifactId: "a1",
+    });
+    const second = await attachBlob(env.USAGE_LEDGER, "dedup", {
+      ...twice,
+      artifactId: "a2",
+    });
+
+    expect(first.ok && first.store).toBe(true);
+    expect(second.ok && second.store).toBe(false);
+    expect(await readUsage(env.USAGE_LEDGER, "owner:dedup")).toEqual({
+      bytes: 500,
+      artifacts: 2,
+    });
+  });
+
+  // The rule the sweep and the dedup have to be designed against together:
+  // nothing may delete bytes another artifact is still serving.
+  it("keeps the bytes while anything is still holding them", async () => {
+    const shared = { digest: "d2", bytes: 100, ...ROOMY };
+    await attachBlob(env.USAGE_LEDGER, "shared", {
+      ...shared,
+      artifactId: "a1",
+    });
+    await attachBlob(env.USAGE_LEDGER, "shared", {
+      ...shared,
+      artifactId: "a2",
+    });
+
+    const firstGone = await detachBlob(env.USAGE_LEDGER, "shared", "d2", "a1");
+    const secondGone = await detachBlob(env.USAGE_LEDGER, "shared", "d2", "a2");
+
+    expect(firstGone).toBe(false);
+    expect(secondGone).toBe(true);
+    expect(await readUsage(env.USAGE_LEDGER, "owner:shared")).toEqual({
+      bytes: 0,
+      artifacts: 0,
+    });
+  });
+
+  it("counts a re-attach of the same artifact once", async () => {
+    const same = { digest: "d3", bytes: 100, artifactId: "a1", ...ROOMY };
+    await attachBlob(env.USAGE_LEDGER, "repeat", same);
+    await attachBlob(env.USAGE_LEDGER, "repeat", same);
+
+    expect(await detachBlob(env.USAGE_LEDGER, "repeat", "d3", "a1")).toBe(true);
+  });
+
+  it("keeps one owner's blobs out of another owner's ledger", async () => {
+    const file = { digest: "d4", bytes: 100, artifactId: "a1", ...ROOMY };
+    await attachBlob(env.USAGE_LEDGER, "owner-one", file);
+
+    const other = await attachBlob(env.USAGE_LEDGER, "owner-two", file);
+
+    expect(other.ok && other.store).toBe(true);
   });
 
   it("never goes below empty, however many releases arrive", async () => {
