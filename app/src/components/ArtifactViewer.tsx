@@ -26,7 +26,7 @@ import { framePixelHeight, pointInFrame } from "@/lib/frame-geometry";
 import type { LinkPermission } from "@/lib/link-permission";
 import {
   editsAmong,
-  overlayToMarkdown,
+  feedbackHandoffPrompt,
   renderMarksMessage,
   revealMarkMessage,
   setCapabilitiesMessage,
@@ -109,7 +109,7 @@ export function ArtifactViewer({
 
   const feedback = useMemo(
     () =>
-      overlayToMarkdown({
+      feedbackHandoffPrompt({
         fileName,
         entries: room.entries,
         orphaned: bridge.marks.orphaned,
