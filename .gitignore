@@ -9,6 +9,8 @@ out/
 .env
 .env.*
 !.env.example
+.dev.vars
+.dev.vars.*
 *.log
 .DS_Store
 coverage/

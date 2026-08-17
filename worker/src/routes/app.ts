@@ -15,8 +15,6 @@ import {
   handleAppHomeMarkdown,
   handleAuthMd,
   handleHealth,
-  handleOAuthAuthorizationServer,
-  handleOAuthProtectedResource,
   handleTutorialMarkdown,
 } from "./discovery";
 import { handleListMyArtifacts } from "./my-artifacts";
@@ -42,16 +40,14 @@ const ARTIFACT_LINK_REGENERATE_PATH =
   /^\/api\/artifacts\/([^/]+)\/links\/(view|suggest|edit)\/regenerate$/;
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
+const WELL_KNOWN_PREFIX = "/.well-known/";
+
 const DISCOVERY_ROUTES: Record<
   string,
   (req: Request, env: WorkerEnv) => Response
 > = {
   "/.well-known/api-catalog": (req, env) => handleApiCatalog(req, env),
   "/.well-known/agent-card.json": (req, env) => handleAgentCard(req, env),
-  "/.well-known/oauth-protected-resource": (req, env) =>
-    handleOAuthProtectedResource(req, env),
-  "/.well-known/oauth-authorization-server": (req, env) =>
-    handleOAuthAuthorizationServer(req, env),
   "/auth.md": () => handleAuthMd(),
   "/api/health": () => handleHealth(),
 };
@@ -67,6 +63,10 @@ export async function handleAppRequest(
     return request.method === "GET"
       ? discoveryHandler(request, env)
       : new Response("Method not allowed", { status: 405 });
+  }
+
+  if (pathname.startsWith(WELL_KNOWN_PREFIX)) {
+    return jsonError("Not found.", 404);
   }
 
   if (!pathname.startsWith("/api/")) {

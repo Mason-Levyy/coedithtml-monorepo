@@ -10,7 +10,7 @@ const UNAVAILABLE = "Could not open the comment room. Try again.";
 
 function isFromAppOrigin(request: Request, env: WorkerEnv): boolean {
   const declared = request.headers.get("origin");
-  return declared !== null && declared === originFor(request, env.APP_HOST);
+  return declared !== null && declared === originFor(env.APP_HOST);
 }
 
 export async function handleRoomConnect(

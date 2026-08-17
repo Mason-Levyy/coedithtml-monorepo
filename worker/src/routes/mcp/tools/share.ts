@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { createArtifact } from "@/lib/create-artifact";
 import type { WorkerEnv } from "@/lib/env";
 import { TOKEN_KINDS, type TokenKind } from "@/lib/room-capabilities";
@@ -92,7 +92,6 @@ async function run(
   const workspace = await resolveWorkspace(workspaceKey, secret);
   const created = await createArtifact({
     env: context.env,
-    request: context.request,
     upload: accepted.upload,
     ownerId: workspace.ownerId,
   });

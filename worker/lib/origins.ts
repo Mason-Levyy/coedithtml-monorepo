@@ -59,8 +59,10 @@ export function redirectTargetFor(
   return url;
 }
 
-export function originFor(request: Request, host: string): string {
-  return `${new URL(request.url).protocol}//${host}`;
+const LOOPBACK_HOST =
+  /^(?:localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$|\.localhost(?::\d+)?$/;
+export function originFor(host: string): string {
+  return `${LOOPBACK_HOST.test(host) ? "http" : "https"}://${host}`;
 }
 
 export type RequestOrigin = "app" | "sandbox" | "unknown";
