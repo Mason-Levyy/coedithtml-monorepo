@@ -129,41 +129,23 @@ describe("the MCP endpoint", () => {
     expect(body.error).toMatchObject({ code: -32601 });
   });
 
-  it("still shakes hands with a client that speaks the old handshake", async () => {
+  it("tells a client still expecting a handshake which version it speaks", async () => {
     const body = await send(
       legacy("initialize", { protocolVersion: "2025-06-18" }),
     );
 
-    expect(body.status).toBe(200);
-    expect(body.result).toMatchObject({
-      protocolVersion: "2025-06-18",
-      serverInfo: { name: "coedit" },
+    expect(body.status).toBe(400);
+    expect(body.error).toMatchObject({
+      code: -32022,
+      data: { supported: [MODERN_PROTOCOL_VERSION] },
     });
   });
 
-  it("offers a legacy client a version it can speak when it asks for a modern one", async () => {
-    const body = await send(
-      legacy("initialize", { protocolVersion: MODERN_PROTOCOL_VERSION }),
-    );
+  it("refuses a request that declares no protocol version at all", async () => {
+    const body = await send(legacy("tools/list"));
 
-    expect((body.result as Body).protocolVersion).toBe("2025-11-25");
-  });
-
-  it("accepts the notification that follows a handshake", async () => {
-    const response = await handleAppRequest(
-      post({ jsonrpc: "2.0", method: "notifications/initialized" }),
-      testWorkerEnv(),
-    );
-
-    expect(response.status).toBe(202);
-  });
-
-  it("does not put the modern result fields in a legacy answer", async () => {
-    const result = (await send(legacy("tools/list"))).result as Body;
-
-    expect(result.tools).toEqual([]);
-    expect(result).not.toHaveProperty("resultType");
-    expect(result).not.toHaveProperty("ttlMs");
+    expect(body.status).toBe(400);
+    expect(body.error).toMatchObject({ code: -32022 });
   });
 
   it("refuses a body that is not JSON at all", async () => {

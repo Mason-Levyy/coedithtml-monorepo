@@ -19,11 +19,7 @@ import {
   unsupportedVersion,
 } from "./jsonrpc";
 import { toolListing, toolNamed } from "./tools";
-import {
-  MODERN_PROTOCOL_VERSION,
-  isModernVersion,
-  legacyVersionFor,
-} from "./versions";
+import { MODERN_PROTOCOL_VERSION, isModernVersion } from "./versions";
 
 const LIST_TTL_MS = 3_600_000;
 const CAPABILITIES = { tools: { listChanged: false } };
@@ -85,20 +81,11 @@ function discoverResult(): Record<string, unknown> {
   };
 }
 
-async function handleModern(
+async function dispatchMethod(
   message: JsonRpcMessage,
-  declaredVersion: string,
   request: Request,
   env: WorkerEnv,
 ): Promise<Response> {
-  const mismatch = headerMismatchIn(request, message, declaredVersion);
-  if (mismatch !== null) {
-    return rpcError(message.id, HEADER_MISMATCH, mismatch);
-  }
-  if (!isModernVersion(declaredVersion)) {
-    return unsupportedVersion(message.id, declaredVersion);
-  }
-
   const complete = (result: Record<string, unknown>): Response =>
     rpcResult(message.id, { ...result, resultType: "complete" });
 
@@ -119,34 +106,6 @@ async function handleModern(
   return methodNotFound(message.id, message.method);
 }
 
-async function handleLegacy(
-  message: JsonRpcMessage,
-  request: Request,
-  env: WorkerEnv,
-): Promise<Response> {
-  if (message.method === "initialize") {
-    return rpcResult(message.id, {
-      protocolVersion: legacyVersionFor(message.params?.protocolVersion),
-      capabilities: CAPABILITIES,
-      serverInfo: SERVER_INFO,
-    });
-  }
-  if (message.method === "notifications/initialized") {
-    return new Response(null, { status: 202 });
-  }
-  if (message.method === "ping") {
-    return rpcResult(message.id, {});
-  }
-  if (message.method === "tools/list") {
-    return rpcResult(message.id, { tools: toolListing() });
-  }
-  if (message.method === "tools/call") {
-    const called = await callTool(message, request, env);
-    return called instanceof Response ? called : rpcResult(message.id, called);
-  }
-  return methodNotFound(message.id, message.method);
-}
-
 export function mcpEnabled(env: WorkerEnv): boolean {
   return env.MCP_ENABLED === "true";
 }
@@ -163,9 +122,20 @@ export async function handleMcpRequest(
   if (!read.ok) {
     return read.response;
   }
+  const message = read.message;
 
-  const declaredVersion = protocolVersionIn(read.message);
-  return declaredVersion === null
-    ? handleLegacy(read.message, request, env)
-    : handleModern(read.message, declaredVersion, request, env);
+  const declaredVersion = protocolVersionIn(message);
+  if (declaredVersion === null || !isModernVersion(declaredVersion)) {
+    return unsupportedVersion(
+      message.id,
+      declaredVersion ?? request.headers.get("mcp-protocol-version") ?? "",
+    );
+  }
+
+  const mismatch = headerMismatchIn(request, message, declaredVersion);
+  if (mismatch !== null) {
+    return rpcError(message.id, HEADER_MISMATCH, mismatch);
+  }
+
+  return dispatchMethod(message, request, env);
 }
