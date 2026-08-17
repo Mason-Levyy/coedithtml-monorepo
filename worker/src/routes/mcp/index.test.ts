@@ -158,7 +158,7 @@ describe("the MCP endpoint", () => {
   });
 
   it("accepts the notification that follows a handshake", async () => {
-    const response = await handleAppRequest(
+    const response = await mcp(
       post({ jsonrpc: "2.0", method: "notifications/initialized" }),
       testWorkerEnv(),
     );
