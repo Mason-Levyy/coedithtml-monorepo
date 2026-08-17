@@ -3,29 +3,36 @@ import {
   parseReaderPresence,
   type ReaderPresence,
 } from "@coedithtml/protocol";
+import { readerWithinLimits } from "@/lib/entry-limits";
+import { budgetIn, fullBudget, type MessageBudget } from "@/lib/message-budget";
 
 export type RoomAttachment = {
   reader: ReaderPresence | null;
   canWrite: boolean;
   canEdit: boolean;
+  budget: MessageBudget;
 };
 
-const ANONYMOUS_READER: RoomAttachment = {
-  reader: null,
-  canWrite: false,
-  canEdit: false,
-};
-
-export function attachmentOf(socket: WebSocket): RoomAttachment {
+export function attachmentOf(
+  socket: WebSocket,
+  now: number = Date.now(),
+): RoomAttachment {
   const raw: unknown = socket.deserializeAttachment();
   const record = asRecord(raw);
   if (record === null) {
-    return ANONYMOUS_READER;
+    return {
+      reader: null,
+      canWrite: false,
+      canEdit: false,
+      budget: fullBudget(now),
+    };
   }
+  const reader = parseReaderPresence(record.reader);
   return {
-    reader: parseReaderPresence(record.reader),
+    reader: reader !== null && readerWithinLimits(reader) ? reader : null,
     canWrite: record.canWrite === true,
     canEdit: record.canEdit === true,
+    budget: budgetIn(record.budget, now),
   };
 }
 
