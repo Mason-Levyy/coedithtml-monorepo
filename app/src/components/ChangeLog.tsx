@@ -2,7 +2,9 @@ import type { EditEntry } from "@/lib/protocol";
 
 type ChangeLogProps = {
   edits: EditEntry[];
+  canEdit: boolean;
   onReveal: (markId: string) => void;
+  onRemove: (markId: string) => void;
 };
 
 function speakerOf(edit: EditEntry): string {
@@ -10,34 +12,49 @@ function speakerOf(edit: EditEntry): string {
   return named.length > 0 ? named : "Someone";
 }
 
-export function ChangeLog({ edits, onReveal }: ChangeLogProps) {
+function originalOf(edit: EditEntry): string | null {
+  return edit.anchor.kind === "text" ? edit.anchor.quote : null;
+}
+
+export function ChangeLog({
+  edits,
+  canEdit,
+  onReveal,
+  onRemove,
+}: ChangeLogProps) {
   if (edits.length === 0) {
     return null;
   }
 
   return (
-    <section className="flex flex-col gap-1 border-t-2 border-ink pt-3">
-      <h2 className="font-mono text-[10px] tracking-wide text-muted-foreground uppercase">
-        Changes · {edits.length}
-      </h2>
-      <ul className="flex flex-col">
-        {edits.map((edit) => (
-          <li key={edit.id}>
+    <ul className="flex flex-col">
+      {edits.map((edit) => (
+        <li key={edit.id} className="flex items-baseline gap-1">
+          <button
+            type="button"
+            onClick={() => onReveal(edit.id)}
+            className="flex min-w-0 flex-1 items-baseline gap-2 px-1 py-1 text-left text-xs hover:bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <span className="flex-none font-mono text-[10px] text-muted-foreground uppercase">
+              {speakerOf(edit)}
+            </span>
+            <span className="truncate text-foreground">
+              &ldquo;{edit.body.trim()}&rdquo;
+            </span>
+          </button>
+          {canEdit && (
             <button
               type="button"
-              onClick={() => onReveal(edit.id)}
-              className="flex w-full items-baseline gap-2 px-1 py-1 text-left text-xs hover:bg-card focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              aria-label={`Put back “${originalOf(edit) ?? edit.body.trim()}”`}
+              title="Put the original words back"
+              onClick={() => onRemove(edit.id)}
+              className="flex-none cursor-pointer rounded px-1.5 py-1 font-mono text-[10px] text-muted-foreground uppercase transition-colors hover:bg-card hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              <span className="flex-none font-mono text-[10px] text-muted-foreground uppercase">
-                {speakerOf(edit)}
-              </span>
-              <span className="truncate text-foreground">
-                &ldquo;{edit.body.trim()}&rdquo;
-              </span>
+              Put back
             </button>
-          </li>
-        ))}
-      </ul>
-    </section>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }
