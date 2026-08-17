@@ -10,6 +10,8 @@ export const DOWNLOAD_ASSET_PATH = "/download.js";
 
 export const DOWNLOAD_QUERY_PARAM = "download";
 
+export const NO_FEEDBACK_YET = "# No feedback yet\n";
+
 export const DOWNLOAD_CHOICES = ["edits", "everything", "feedback"] as const;
 
 export type DownloadChoice = (typeof DOWNLOAD_CHOICES)[number];

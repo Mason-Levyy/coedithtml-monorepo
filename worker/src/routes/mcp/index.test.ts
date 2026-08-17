@@ -83,7 +83,13 @@ describe("the MCP endpoint", () => {
     const body = await send(modern("tools/list"));
     const result = body.result as Body;
 
-    expect(result.tools).toEqual([]);
+    expect(
+      (result.tools as { name: string }[]).map((tool) => tool.name),
+    ).toEqual([
+      "coedit_share_artifact",
+      "coedit_read_feedback",
+      "coedit_update_artifact",
+    ]);
     expect(result.cacheScope).toBe("public");
     expect(typeof result.ttlMs).toBe("number");
   });
