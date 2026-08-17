@@ -133,8 +133,8 @@ export function feedbackHandoffPrompt(overlay: {
 
   const closing =
     overlay.artifactUrl === undefined
-      ? `When you are done, share the updated ${overlay.fileName} back so the reviewers can see it.`
-      : `The reviewed copy is at ${overlay.artifactUrl}. When you are done, share the updated ${overlay.fileName} back so the reviewers can see it.`;
+      ? `Work from the copy of ${overlay.fileName} you already have, and share the updated file back when you are done so the reviewers can see it.`
+      : `The reviewed copy is at ${overlay.artifactUrl}. Fetch it and work from that, so you are changing the file the reviewers actually read. Share the updated ${overlay.fileName} back when you are done.`;
 
   return `${[
     ...HANDOFF_INSTRUCTIONS,

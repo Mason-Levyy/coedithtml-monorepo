@@ -283,4 +283,10 @@ describe("feedbackHandoffPrompt", () => {
     ).toContain("https://ex.test/a/tok");
     expect(prompt([comment()])).not.toContain("The reviewed copy is at");
   });
+
+  it("tells the model to fetch the file rather than ask for it", () => {
+    expect(
+      prompt([comment()], { artifactUrl: "https://ex.test/a/tok" }),
+    ).toContain("Fetch it");
+  });
 });
