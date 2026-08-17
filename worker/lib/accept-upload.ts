@@ -2,7 +2,7 @@ import { putArtifact } from "@/lib/artifact-store";
 import { readBodyWithinLimit } from "@/lib/capped-body";
 import type { WorkerEnv } from "@/lib/env";
 import { checkHtmlDocument } from "@/lib/html-document";
-import { isWithinRateLimit, recordRateLimitedAttempt } from "@/lib/rate-limit";
+import { chargeAttempt } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
 import { jsonError, SAVE_FAILED } from "@/lib/responses";
 import {
@@ -82,28 +82,17 @@ export async function chargeUploadAttempt(
   request: Request,
   env: WorkerEnv,
 ): Promise<Response | null> {
-  const uploadKey = `upload-attempts:${clientIpOf(request)}`;
-  const rateLimit = await isWithinRateLimit(
-    env.ARTIFACT_METADATA,
-    uploadKey,
-    UPLOAD_LIMIT,
+  const charged = await chargeAttempt(
+    env.RATE_LIMITER,
+    `upload-attempts:${clientIpOf(request)}`,
+    { limit: UPLOAD_LIMIT, windowSeconds: UPLOAD_WINDOW_SECONDS },
   );
-  if (!rateLimit.ok) {
-    console.error("Failed to check the upload rate limit", rateLimit.cause);
+  if (!charged.ok) {
+    console.error("Failed to charge the upload attempt", charged.cause);
     return jsonError(SAVE_FAILED, 500);
   }
-  if (!rateLimit.allowed) {
+  if (!charged.allowed) {
     return jsonError("Too many uploads. Try again later.", 429);
-  }
-
-  const recorded = await recordRateLimitedAttempt(
-    env.ARTIFACT_METADATA,
-    uploadKey,
-    UPLOAD_WINDOW_SECONDS,
-  );
-  if (!recorded.ok) {
-    console.error("Failed to record the upload attempt", recorded.cause);
-    return jsonError(SAVE_FAILED, 500);
   }
   return null;
 }

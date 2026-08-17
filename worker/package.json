@@ -8,7 +8,7 @@
     "deploy": "node assemble-assets.mjs && wrangler deploy --env production",
     "types": "wrangler types",
     "typecheck": "wrangler types && tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "node run-tests.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "0.7.0",

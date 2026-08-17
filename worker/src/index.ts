@@ -4,6 +4,8 @@ import { handleAppRequest } from "@/routes/app";
 import { handleSandboxRequest } from "@/routes/sandbox";
 
 export { DocRoom } from "@/doc-room";
+export { RateLimiter } from "@/rate-limiter";
+export { UsageLedger } from "@/usage-ledger";
 
 export default {
   async fetch(request, env): Promise<Response> {

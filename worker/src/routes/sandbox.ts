@@ -8,7 +8,7 @@ import {
   DOWNLOAD_QUERY_PARAM,
   downloadChoiceIn,
 } from "@/lib/artifact-download";
-import { getArtifact } from "@/lib/artifact-store";
+import { readArtifactBytes } from "@/lib/artifact-cache";
 import { handleArtifactDownload } from "@/routes/download";
 import type { WorkerEnv } from "@/lib/env";
 import { originFor } from "@/lib/origins";
@@ -124,7 +124,7 @@ export async function handleSandboxRequest(
     });
   }
 
-  const result = await getArtifact(
+  const result = await readArtifactBytes(
     env.ARTIFACT_STORE,
     artifactId,
     metadata.revision,
