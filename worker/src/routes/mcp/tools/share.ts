@@ -1,4 +1,5 @@
 ﻿import { z } from "zod";
+import { createArtifact } from "@/lib/create-artifact";
 import type { WorkerEnv } from "@/lib/env";
 import { TOKEN_KINDS, type TokenKind } from "@/lib/room-capabilities";
 import {
@@ -8,7 +9,7 @@ import {
   type ToolResult,
 } from "../tool";
 import { resolveWorkspace } from "../workspace-key";
-import { postArtifact } from "./post-artifact";
+import { acceptArtifact } from "./accept-artifact";
 
 const argumentsSchema = z.object({
   html: z.string().min(1),
@@ -80,31 +81,33 @@ async function run(
     return errorResult("Coedit is not configured to accept this yet.");
   }
 
-  const workspace = await resolveWorkspace(workspaceKey, secret);
-  const uploaded = await postArtifact(
-    {
-      html,
-      fileName,
-      path: "/api/artifacts",
-      ownerId: workspace.ownerId,
-      rateLimitKey: workspace.workspaceKey,
-      expect: 201,
-      refusal:
-        "Coedit would not accept that file. It must be one complete HTML document that runs without a build step.",
-      ...(password === undefined ? {} : { password }),
-    },
+  const accepted = await acceptArtifact(
+    { html, fileName, ...(password === undefined ? {} : { password }) },
     context,
   );
-  if (!uploaded.ok) {
-    return errorResult(uploaded.message);
+  if (!accepted.ok) {
+    return errorResult(accepted.message);
+  }
+
+  const workspace = await resolveWorkspace(workspaceKey, secret);
+  const created = await createArtifact({
+    env: context.env,
+    request: context.request,
+    upload: accepted.upload,
+    ownerId: workspace.ownerId,
+  });
+  if (!created.ok) {
+    return errorResult(
+      "Coedit could not store that file. It may be holding as much as it can right now.",
+    );
   }
 
   return textResult(
     JSON.stringify(
       {
-        shareUrl: uploaded.body[URL_FIELD[permission]],
+        shareUrl: created.body[URL_FIELD[permission]],
         permission,
-        editToken: uploaded.body.editToken,
+        editToken: created.body.editToken,
         workspaceKey: workspace.workspaceKey,
         note: "Send people the shareUrl. Keep the editToken and workspaceKey in this conversation; they are not for sharing.",
       },
