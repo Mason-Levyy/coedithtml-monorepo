@@ -51,6 +51,7 @@ export const workerEnvSchema = z
     RATE_LIMITER: rateLimiterSchema,
     USAGE_LEDGER: usageLedgerSchema,
     MCP_ENABLED: z.string().optional(),
+    MCP_SIGNING_SECRET: z.string().min(32).optional(),
     ...originConfigShape,
   })
   .refine(hostsAreDistinct, {

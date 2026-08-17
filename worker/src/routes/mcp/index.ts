@@ -138,8 +138,22 @@ async function handleLegacy(
   return methodNotFound(message.id, message.method);
 }
 
+export const MCP_PATH = "/mcp";
+
 export function mcpEnabled(env: WorkerEnv): boolean {
   return env.MCP_ENABLED === "true";
+}
+
+export function routeMcp(
+  request: Request,
+  env: WorkerEnv,
+): Promise<Response> | null {
+  if (new URL(request.url).pathname !== MCP_PATH) {
+    return null;
+  }
+  return mcpEnabled(env)
+    ? handleMcpRequest(request, env)
+    : Promise.resolve(new Response("Not found", { status: 404 }));
 }
 
 export async function handleMcpRequest(
