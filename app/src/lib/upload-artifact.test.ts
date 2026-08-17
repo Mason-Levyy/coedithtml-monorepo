@@ -28,19 +28,24 @@ describe("validateArtifactFile", () => {
   });
 
   it("rejects a non-html file", () => {
-    expect(validateArtifactFile(htmlFile("deck.pdf", 100))).toMatch(
+    expect(validateArtifactFile(htmlFile("deck.pdf", 100))?.headline).toMatch(
       /\.html file/,
     );
   });
 
   it("rejects an empty file", () => {
-    expect(validateArtifactFile(htmlFile("deck.html", 0))).toMatch(/empty/);
+    expect(validateArtifactFile(htmlFile("deck.html", 0))?.headline).toMatch(
+      /empty/,
+    );
   });
 
   it("rejects a file larger than the budget", () => {
-    expect(
-      validateArtifactFile(htmlFile("deck.html", MAX_ARTIFACT_BYTES + 1)),
-    ).toMatch(/5MB/);
+    const rejection = validateArtifactFile(
+      htmlFile("deck.html", MAX_ARTIFACT_BYTES + 1),
+    );
+
+    expect(rejection?.headline).toMatch(/5MB/);
+    expect(rejection?.remedy).toMatch(/images/);
   });
 });
 

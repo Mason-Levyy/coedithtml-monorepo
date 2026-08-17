@@ -1,18 +1,16 @@
 import { putArtifact } from "@/lib/artifact-store";
 import { readBodyWithinLimit } from "@/lib/capped-body";
 import type { WorkerEnv } from "@/lib/env";
-import { checkHtmlDocument, describeRejection } from "@/lib/html-document";
+import { checkHtmlDocument } from "@/lib/html-document";
 import { isWithinRateLimit, recordRateLimitedAttempt } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
 import { jsonError, SAVE_FAILED } from "@/lib/responses";
 import {
+  MAX_ARTIFACT_BYTES,
   MAX_UPLOAD_BODY_BYTES,
   uploadFieldName,
-  uploadedArtifactSchema,
 } from "@/lib/schemas/artifact";
-
-export const BAD_FORM = "Upload a single .html file as form data.";
-export const TOO_LARGE = "The file is larger than 5MB.";
+import { rejectionResponse } from "@/lib/upload-rejection";
 
 const UPLOAD_LIMIT = 20;
 const UPLOAD_WINDOW_SECONDS = 3600;
@@ -115,45 +113,33 @@ export async function acceptUpload(
 ): Promise<{ ok: true; upload: AcceptedUpload } | Rejected> {
   const read = await readForm(request);
   if (!read.ok) {
-    return {
-      ok: false,
-      response:
-        read.status === 413
-          ? jsonError(TOO_LARGE, 413)
-          : jsonError(BAD_FORM, 400),
-    };
+    return read.status === 413
+      ? { ok: false, response: rejectionResponse("too-large", 413) }
+      : { ok: false, response: rejectionResponse("not-form", 400) };
   }
 
   const { files, password, draft } = read.form;
   const file = files[0];
-  if (files.length !== 1 || !file) {
-    return {
-      ok: false,
-      response: jsonError(
-        files.length > 1 ? "Upload one file, not several." : BAD_FORM,
-        400,
-      ),
-    };
+  if (files.length > 1) {
+    return { ok: false, response: rejectionResponse("several-files", 400) };
   }
-
-  const parsed = uploadedArtifactSchema.safeParse({
-    fileName: file.name,
-    size: file.size,
-  });
-  if (!parsed.success) {
-    return {
-      ok: false,
-      response: jsonError(parsed.error.issues[0]?.message ?? BAD_FORM, 400),
-    };
+  if (!file) {
+    return { ok: false, response: rejectionResponse("not-form", 400) };
+  }
+  if (!/\.html?$/i.test(file.name)) {
+    return { ok: false, response: rejectionResponse("wrong-extension", 400) };
+  }
+  if (file.size === 0) {
+    return { ok: false, response: rejectionResponse("empty-file", 400) };
+  }
+  if (file.size > MAX_ARTIFACT_BYTES) {
+    return { ok: false, response: rejectionResponse("too-large", 413) };
   }
 
   const bytes = await file.arrayBuffer();
   const document = checkHtmlDocument(new TextDecoder().decode(bytes));
   if (!document.ok) {
-    return {
-      ok: false,
-      response: jsonError(describeRejection(document.reason), 415),
-    };
+    return { ok: false, response: rejectionResponse(document.reason, 415) };
   }
 
   return { ok: true, upload: { fileName: file.name, bytes, password, draft } };

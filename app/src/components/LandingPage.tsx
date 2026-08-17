@@ -9,6 +9,7 @@ import { useUploadArtifact } from "@/hooks/useUploadArtifact";
 import type { LinkPermission } from "@/lib/link-permission";
 import type { MyArtifactItem } from "@/lib/my-artifacts";
 import type { PublishedUploadResult } from "@/lib/upload-artifact";
+import { rejectionOf } from "@/lib/upload-rejection";
 
 type Tab = "upload" | "my-files";
 
@@ -170,7 +171,7 @@ export function LandingPage() {
         <div className="flex flex-col gap-4">
           <UploadDropzone
             disabled={upload.isPending}
-            errorMessage={upload.error?.message ?? null}
+            rejection={rejectionOf(upload.error)}
             onFileSelected={handleFileSelected}
           />
         </div>

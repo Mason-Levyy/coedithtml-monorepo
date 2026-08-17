@@ -3,7 +3,6 @@ import {
   chargeUploadAttempt,
   declaredBodyTooLarge,
   storeRevision,
-  TOO_LARGE,
 } from "@/lib/accept-upload";
 import {
   putArtifactMetadata,
@@ -14,6 +13,7 @@ import { revisionOf } from "@/lib/content-hash";
 import type { WorkerEnv } from "@/lib/env";
 import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { jsonError, jsonResponse, SAVE_FAILED } from "@/lib/responses";
+import { rejectionResponse } from "@/lib/upload-rejection";
 
 const EDIT_ONLY = "This link cannot replace the file.";
 
@@ -23,7 +23,7 @@ export async function handleReplaceArtifact(
   env: WorkerEnv,
 ): Promise<Response> {
   if (declaredBodyTooLarge(request)) {
-    return jsonError(TOO_LARGE, 413);
+    return rejectionResponse("too-large", 413);
   }
 
   const resolved = await resolveArtifactByToken(env.ARTIFACT_METADATA, token);
