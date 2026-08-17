@@ -451,7 +451,7 @@ describe("the comment rail", () => {
       });
       fireEvent.click(screen.getByRole("button", { name: "Share" }));
       fireEvent.click(
-        screen.getByRole("button", { name: "Copy feedback for AI tool" }),
+        screen.getByRole("button", { name: "Copy the changes instead" }),
       );
       return written;
     }
@@ -486,7 +486,7 @@ describe("the comment rail", () => {
       fireEvent.click(screen.getByRole("button", { name: "Share" }));
 
       expect(
-        screen.getByRole("button", { name: "Copy feedback for AI tool" }),
+        screen.getByRole("button", { name: "Copy the changes instead" }),
       ).toHaveProperty("disabled", true);
     });
   });
