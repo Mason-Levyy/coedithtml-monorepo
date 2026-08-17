@@ -13,6 +13,9 @@ export const ownerArtifactItemSchema = z.object({
   uploadedAt: z.string().datetime(),
   published: z.boolean().default(true),
   hasPassword: z.boolean().default(false),
+  // Set once the file is inside the warning window, so the owner is told
+  // before the sweep rather than after it.
+  expiresAt: z.string().optional(),
   viewToken: z.string().optional(),
   suggestToken: z.string().optional(),
   editToken: z.string().optional(),

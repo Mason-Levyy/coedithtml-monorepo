@@ -5,3 +5,5 @@ export const ROOM_REVISION_HEADER = "x-coedit-revision";
 export const ROOM_OVERLAY_PATH = "/overlay";
 
 export const ROOM_SEED_PATH = "/seed";
+
+export const ROOM_WIPE_PATH = "/wipe";

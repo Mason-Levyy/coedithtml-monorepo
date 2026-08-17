@@ -14,6 +14,15 @@ export const artifactMetadataSchema = z.object({
   // key it was written to. There is no migration and no second layout to
   // document, only a lookup that says which of the two an artifact uses.
   blobs: z.record(z.string(), z.string()).default({}),
+  // When the artifact was last served, rounded down to an hour, and how many
+  // of those views were not the uploader checking their own link. Both are
+  // read only to decide which side of an expiry line a file falls on, so a
+  // lost increment costs a sweep that arrives a little later than it could.
+  lastViewedAt: z.string().optional(),
+  meaningfulViews: z.number().int().nonnegative().default(0),
+  // Set when the artifact is inside the warning window, so the owner's own
+  // file list can say so before the sweep rather than after it.
+  expiresAt: z.string().optional(),
   passwordHash: z.string().optional(),
   ownerId: z.string().optional(),
   published: z.boolean().default(true),

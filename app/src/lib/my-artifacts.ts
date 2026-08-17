@@ -9,6 +9,7 @@ export const myArtifactItemSchema = z.object({
   uploadedAt: z.string(),
   published: z.boolean(),
   hasPassword: z.boolean(),
+  expiresAt: z.string().optional(),
   viewToken: z.string().optional(),
   suggestToken: z.string().optional(),
   editToken: z.string().optional(),
