@@ -179,7 +179,7 @@ describe("the MCP endpoint", () => {
   it("does not put the modern result fields in a legacy answer", async () => {
     const result = (await send(legacy("tools/list"))).result as Body;
 
-    expect(result.tools).toEqual([]);
+    expect(result.tools).toHaveLength(3);
     expect(result).not.toHaveProperty("resultType");
     expect(result).not.toHaveProperty("ttlMs");
   });
