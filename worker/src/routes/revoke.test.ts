@@ -38,7 +38,7 @@ describe("handleRevokeToken", () => {
     const request = new Request(
       "https://app.test/api/artifacts/" + VIEW_TOKEN,
       {
-        headers: { cookie: `coedit_owner=${OWNER_ID}` },
+        headers: { cookie: `__Host-coedit_owner=${OWNER_ID}` },
       },
     );
     const response = await handleRevokeToken(
@@ -57,7 +57,9 @@ describe("handleRevokeToken", () => {
     const request = new Request(
       "https://app.test/api/artifacts/" + VIEW_TOKEN,
       {
-        headers: { cookie: "coedit_owner=different-owner0000000000000000" },
+        headers: {
+          cookie: "__Host-coedit_owner=different-owner0000000000000000",
+        },
       },
     );
     const response = await handleRevokeToken(
@@ -76,7 +78,7 @@ describe("handleRevokeToken", () => {
     const request = new Request(
       "https://app.test/api/artifacts/" + VIEW_TOKEN,
       {
-        headers: { cookie: `coedit_owner=${OWNER_ID}` },
+        headers: { cookie: `__Host-coedit_owner=${OWNER_ID}` },
       },
     );
     await handleRevokeToken(

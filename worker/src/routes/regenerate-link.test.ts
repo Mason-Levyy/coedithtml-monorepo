@@ -30,7 +30,7 @@ function seededKv(ownerId = OWNER_ID): KVNamespace {
 function request(kind: string, ownerId = OWNER_ID): Request {
   return new Request(
     `https://app.test/api/artifacts/${ARTIFACT_ID}/links/${kind}/regenerate`,
-    { method: "POST", headers: { cookie: `coedit_owner=${ownerId}` } },
+    { method: "POST", headers: { cookie: `__Host-coedit_owner=${ownerId}` } },
   );
 }
 

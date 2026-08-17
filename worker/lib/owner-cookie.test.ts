@@ -20,7 +20,7 @@ describe("owner-cookie", () => {
     const validId = "1234567890abcdef1234567890abcdef";
     const request = new Request("https://app.test/api/artifacts", {
       headers: {
-        cookie: `other=abc; coedit_owner=${validId}; test=1`,
+        cookie: `other=abc; __Host-coedit_owner=${validId}; test=1`,
       },
     });
 
@@ -32,7 +32,7 @@ describe("owner-cookie", () => {
     expect(ownerIdFrom(req1)).toBeNull();
 
     const req2 = new Request("https://app.test/api/artifacts", {
-      headers: { cookie: "coedit_owner=invalid-id" },
+      headers: { cookie: "__Host-coedit_owner=invalid-id" },
     });
     expect(ownerIdFrom(req2)).toBeNull();
   });
@@ -40,7 +40,7 @@ describe("owner-cookie", () => {
   it("resolves existing owner ID with isNew=false", () => {
     const validId = "1234567890abcdef1234567890abcdef";
     const request = new Request("https://app.test/api/artifacts", {
-      headers: { cookie: `coedit_owner=${validId}` },
+      headers: { cookie: `__Host-coedit_owner=${validId}` },
     });
 
     const result = resolveOwnerId(request);
@@ -59,7 +59,7 @@ describe("owner-cookie", () => {
     const validId = "1234567890abcdef1234567890abcdef";
     const header = ownerCookieHeader(validId);
     expect(header).toBe(
-      `coedit_owner=${validId}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax; Secure`,
+      `__Host-coedit_owner=${validId}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax; Secure`,
     );
   });
 
@@ -72,7 +72,7 @@ describe("owner-cookie", () => {
 
     const modified = withOwnerCookie(initial, validId, true);
     expect(modified.headers.get("Set-Cookie")).toContain(
-      `coedit_owner=${validId}`,
+      `__Host-coedit_owner=${validId}`,
     );
     expect(modified.headers.get("Content-Type")).toBe("application/json");
   });

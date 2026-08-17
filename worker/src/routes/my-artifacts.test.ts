@@ -33,7 +33,7 @@ describe("handleListMyArtifacts", () => {
     });
 
     const request = new Request("https://app.test/api/my-artifacts", {
-      headers: { cookie: `coedit_owner=${OWNER_ID}` },
+      headers: { cookie: `__Host-coedit_owner=${OWNER_ID}` },
     });
 
     const response = await handleListMyArtifacts(request, env);
