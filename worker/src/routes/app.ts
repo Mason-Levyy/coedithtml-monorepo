@@ -15,8 +15,6 @@ import {
   handleAppHomeMarkdown,
   handleAuthMd,
   handleHealth,
-  handleOAuthAuthorizationServer,
-  handleOAuthProtectedResource,
   handleTutorialMarkdown,
 } from "./discovery";
 import { handleListMyArtifacts } from "./my-artifacts";
@@ -48,10 +46,6 @@ const DISCOVERY_ROUTES: Record<
 > = {
   "/.well-known/api-catalog": (req, env) => handleApiCatalog(req, env),
   "/.well-known/agent-card.json": (req, env) => handleAgentCard(req, env),
-  "/.well-known/oauth-protected-resource": (req, env) =>
-    handleOAuthProtectedResource(req, env),
-  "/.well-known/oauth-authorization-server": (req, env) =>
-    handleOAuthAuthorizationServer(req, env),
   "/auth.md": () => handleAuthMd(),
   "/api/health": () => handleHealth(),
 };

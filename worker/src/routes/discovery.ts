@@ -108,66 +108,6 @@ export function buildAgentCard(appOrigin: string, siteOrigin: string) {
   };
 }
 
-export function buildOAuthProtectedResource(
-  appOrigin: string,
-  siteOrigin: string,
-) {
-  return {
-    resource: `${appOrigin}/api`,
-    authorization_servers: [siteOrigin],
-    scopes_supported: [
-      "artifacts:create",
-      "artifacts:read",
-      "artifacts:edit",
-      "artifacts:delete",
-      "artifacts:settings",
-    ],
-    bearer_methods_supported: ["header"],
-    resource_documentation: `${siteOrigin}/auth.md`,
-  };
-}
-
-export function buildOAuthAuthorizationServer(
-  appOrigin: string,
-  siteOrigin: string,
-) {
-  return {
-    issuer: siteOrigin,
-    authorization_endpoint: appOrigin,
-    token_endpoint: `${appOrigin}/api/artifacts`,
-    response_types_supported: ["token"],
-    grant_types_supported: [
-      "implicit",
-      "urn:ietf:params:oauth:grant-type:token-exchange",
-      "anonymous",
-    ],
-    scopes_supported: [
-      "artifacts:create",
-      "artifacts:read",
-      "artifacts:edit",
-      "artifacts:delete",
-      "artifacts:settings",
-    ],
-    agent_auth: {
-      skill: `${siteOrigin}/auth.md`,
-      register_uri: `${appOrigin}/api/artifacts`,
-      identity_types_supported: ["anonymous", "identity_assertion"],
-      anonymous: {
-        credential_types_supported: ["bearer_token"],
-        claim_uri: `${appOrigin}/api/artifacts`,
-      },
-      identity_assertion: {
-        assertion_types_supported: [
-          "urn:ietf:params:oauth:token-type:id-jag",
-          "verified_email",
-        ],
-        credential_types_supported: ["bearer_token"],
-        claim_uri: `${appOrigin}/api/artifacts`,
-      },
-    },
-  };
-}
-
 export const AUTH_MD_DOCUMENT = `# coeditHTML auth.md
 
 Guide for autonomous AI agents, orchestrators, and automated clients interacting with coeditHTML.
@@ -262,30 +202,6 @@ export function handleAgentCard(request: Request, env: WorkerEnv): Response {
   const siteOrigin = "https://coedithtml.com";
   const card = buildAgentCard(appOrigin, siteOrigin);
   return jsonResponse(card, 200, {
-    "access-control-allow-origin": "*",
-  });
-}
-
-export function handleOAuthProtectedResource(
-  request: Request,
-  env: WorkerEnv,
-): Response {
-  const appOrigin = originFor(request, env.APP_HOST);
-  const siteOrigin = "https://coedithtml.com";
-  const prm = buildOAuthProtectedResource(appOrigin, siteOrigin);
-  return jsonResponse(prm, 200, {
-    "access-control-allow-origin": "*",
-  });
-}
-
-export function handleOAuthAuthorizationServer(
-  request: Request,
-  env: WorkerEnv,
-): Response {
-  const appOrigin = originFor(request, env.APP_HOST);
-  const siteOrigin = "https://coedithtml.com";
-  const asMeta = buildOAuthAuthorizationServer(appOrigin, siteOrigin);
-  return jsonResponse(asMeta, 200, {
     "access-control-allow-origin": "*",
   });
 }
