@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArtifactFrame } from "@/components/ArtifactFrame";
 import { CommentRail } from "@/components/CommentRail";
+import { DownloadMenu } from "@/components/DownloadMenu";
 import { EditPen } from "@/components/EditPen";
 import { FinishTour } from "@/components/FinishTour";
 import { RailButton } from "@/components/RailButton";
@@ -356,12 +357,17 @@ export function ArtifactViewer({
               unresolved={unresolvedCount(room.entries)}
               onToggle={() => setRailOpen((shown) => !shown)}
             />
-            <ShareMenu
-              feedback={feedback}
-              fileName={fileName}
-              artifactUrl={src}
-              shareLinks={shareLinks}
-            />
+            {canMarkUp ? (
+              <ShareMenu
+                feedback={feedback}
+                fileName={fileName}
+                artifactUrl={src}
+                canEdit={room.canEdit}
+                shareLinks={shareLinks}
+              />
+            ) : (
+              <DownloadMenu artifactUrl={src} />
+            )}
           </div>
           {canMarkUp && (
             <div className="ml-4 flex items-center pl-4 border-l border-line/60 sm:ml-5 sm:pl-5">

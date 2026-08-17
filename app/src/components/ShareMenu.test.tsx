@@ -36,12 +36,14 @@ const ARTIFACT_URL = "https://sandbox.test/aaaa?r=9f2c";
 function openMenu(
   feedback = FEEDBACK,
   shareLinks: Partial<Record<LinkPermission, string>> = { view: VIEW_LINK },
+  canEdit = true,
 ): void {
   render(
     <ShareMenu
       feedback={feedback}
       fileName="q3-review.html"
       artifactUrl={ARTIFACT_URL}
+      canEdit={canEdit}
       shareLinks={shareLinks}
     />,
   );
@@ -55,6 +57,7 @@ describe("ShareMenu", () => {
         feedback={FEEDBACK}
         fileName="q3-review.html"
         artifactUrl={ARTIFACT_URL}
+        canEdit
         shareLinks={{ view: VIEW_LINK }}
       />,
     );
@@ -165,6 +168,24 @@ describe("ShareMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open ChatGPT" }));
 
     expect(opened[0]).toContain("chatgpt.com/?q=");
+  });
+
+  it("offers no AI handoff to a suggester, who could not publish the result", () => {
+    openMenu(FEEDBACK, { view: VIEW_LINK, suggest: SUGGEST_LINK }, false);
+
+    expect(screen.queryByLabelText("Make changes with")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open Claude" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Copy the changes instead" }),
+    ).toBeNull();
+  });
+
+  it("still lets a suggester copy a link and download the file", () => {
+    openMenu(FEEDBACK, { view: VIEW_LINK, suggest: SUGGEST_LINK }, false);
+
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeTruthy();
+    expect(screen.getByLabelText("Link permission")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Download" })).toBeTruthy();
   });
 
   it("sends the token instead of the review when the reader can edit", () => {
