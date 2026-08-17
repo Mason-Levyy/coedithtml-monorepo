@@ -7,6 +7,12 @@
     "enabled": true
   },
 
+  // Hourly. The sweep takes a bounded bite each run, so the cadence is what
+  // decides how long an expired artifact lingers, not whether it goes.
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+
   "vars": {
     "APP_HOST": "app.localhost:8787",
     "SANDBOX_HOST": "sandbox.localhost:8787",
@@ -71,6 +77,10 @@
         "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev",
         "REDIRECT_HOSTS": "www.coedithtml.com",
         "REDIRECT_TARGET": "coedithtml.com"
+      },
+
+      "triggers": {
+        "crons": ["0 * * * *"]
       },
 
       "workers_dev": true,

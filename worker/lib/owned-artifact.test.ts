@@ -14,6 +14,7 @@ function artifact(ownerId?: string): ArtifactMetadata {
     revision: "aaaa1111bbbb2222",
     previousRevisions: [],
     blobs: {},
+    meaningfulViews: 0,
     published: true,
     ownerId,
   };
