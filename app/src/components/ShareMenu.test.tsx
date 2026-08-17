@@ -63,7 +63,7 @@ describe("ShareMenu", () => {
     );
 
     expect(screen.queryByText("Copy link")).toBeNull();
-    expect(screen.queryByText("Copy the changes instead")).toBeNull();
+    expect(screen.queryByText("Send changes")).toBeNull();
   });
 
   it("copies the sole link when the reader has no choice of permission", async () => {
@@ -116,17 +116,6 @@ describe("ShareMenu", () => {
     await waitFor(() => expect(clipboard.written).toEqual([VIEW_LINK]));
   });
 
-  it("copies the rendered feedback, not the link", async () => {
-    const clipboard = stubClipboard();
-    openMenu();
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "Copy the changes instead" }),
-    );
-
-    await waitFor(() => expect(clipboard.written).toEqual([FEEDBACK]));
-  });
-
   it("reports each copy separately rather than as one state", async () => {
     stubClipboard();
     openMenu();
@@ -134,9 +123,7 @@ describe("ShareMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
 
     await screen.findByRole("button", { name: "Copied" });
-    expect(
-      screen.getByRole("button", { name: "Copy the changes instead" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Send changes" })).toBeTruthy();
   });
 
   it("opens the chosen tool with the changes already in the prompt", () => {
@@ -147,7 +134,7 @@ describe("ShareMenu", () => {
     });
     openMenu();
 
-    fireEvent.click(screen.getByRole("button", { name: "Open Claude" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send changes" }));
 
     expect(opened).toHaveLength(1);
     expect(opened[0]).toContain("claude.ai/new?q=");
@@ -162,10 +149,10 @@ describe("ShareMenu", () => {
     });
     openMenu();
 
-    fireEvent.change(screen.getByLabelText("Make changes with"), {
+    fireEvent.change(screen.getByLabelText("AI tool"), {
       target: { value: "chatgpt" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Open ChatGPT" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send changes" }));
 
     expect(opened[0]).toContain("chatgpt.com/?q=");
   });
@@ -173,11 +160,8 @@ describe("ShareMenu", () => {
   it("offers no AI handoff to a suggester, who could not publish the result", () => {
     openMenu(FEEDBACK, { view: VIEW_LINK, suggest: SUGGEST_LINK }, false);
 
-    expect(screen.queryByLabelText("Make changes with")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Open Claude" })).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: "Copy the changes instead" }),
-    ).toBeNull();
+    expect(screen.queryByLabelText("AI tool")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Send changes" })).toBeNull();
   });
 
   it("still lets a suggester copy a link and download the file", () => {
@@ -196,7 +180,7 @@ describe("ShareMenu", () => {
     });
     openMenu(FEEDBACK, { edit: REAL_EDIT_LINK });
 
-    fireEvent.click(screen.getByRole("button", { name: "Open Claude" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send changes" }));
 
     const sent = new URL(opened[0] ?? "").searchParams.get("q") ?? "";
     expect(sent).toContain(REAL_EDIT_TOKEN);
@@ -213,7 +197,7 @@ describe("ShareMenu", () => {
     });
     openMenu("x".repeat(40_000), { edit: REAL_EDIT_LINK });
 
-    fireEvent.click(screen.getByRole("button", { name: "Open Claude" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send changes" }));
 
     expect(opened[0]).toContain("claude.ai/new?q=");
     await waitFor(() => expect(clipboard.written).toEqual([]));
@@ -229,21 +213,19 @@ describe("ShareMenu", () => {
     const long = "x".repeat(4000);
     openMenu(long);
 
-    fireEvent.click(screen.getByRole("button", { name: "Open Claude" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send changes" }));
 
     await waitFor(() => expect(clipboard.written).toEqual([long]));
     expect(opened[0]).not.toContain("?q=");
     await screen.findByRole("button", { name: "Copied — paste it in" });
   });
 
-  it("refuses to copy an empty document and says why", () => {
+  it("refuses to send an empty document and says why", () => {
     openMenu("");
 
-    const copy = screen.getByRole("button", {
-      name: "Copy the changes instead",
-    });
+    const send = screen.getByRole("button", { name: "Send changes" });
 
-    expect(copy).toHaveProperty("disabled", true);
+    expect(send).toHaveProperty("disabled", true);
     expect(screen.getByText("No changes to send yet.")).toBeTruthy();
   });
 
@@ -260,7 +242,7 @@ describe("ShareMenu", () => {
   it("changes what it promises when a different download is chosen", () => {
     openMenu();
 
-    fireEvent.change(screen.getByLabelText("Download"), {
+    fireEvent.change(screen.getByLabelText("What to download"), {
       target: { value: "everything" },
     });
 
