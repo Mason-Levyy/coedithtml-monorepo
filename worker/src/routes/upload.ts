@@ -31,7 +31,6 @@ export async function handleUpload(
 
   const created = await createArtifact({
     env,
-    request,
     upload: accepted.upload,
     ownerId,
   });

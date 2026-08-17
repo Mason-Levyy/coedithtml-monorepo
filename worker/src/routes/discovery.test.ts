@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { testWorkerEnv } from "@/lib/fakes";
+import { stubAssets, testWorkerEnv } from "@/lib/fakes";
 import { handleAppRequest } from "./app";
-import type {
-  buildAgentCard,
-  buildApiCatalog,
-  buildOAuthAuthorizationServer,
-  buildOAuthProtectedResource,
-} from "./discovery";
+import type { buildAgentCard, buildApiCatalog } from "./discovery";
 import {
   API_CATALOG_CONTENT_TYPE,
   AUTH_MD_DOCUMENT,
@@ -14,8 +9,6 @@ import {
   handleApiCatalog,
   handleAuthMd,
   handleHealth,
-  handleOAuthAuthorizationServer,
-  handleOAuthProtectedResource,
 } from "./discovery";
 
 describe("discovery endpoints & agent readiness", () => {
@@ -58,41 +51,49 @@ describe("discovery endpoints & agent readiness", () => {
     expect(data.skills.map((s) => s.id)).toContain("get_artifact");
   });
 
-  it("serves RFC 9728 OAuth Protected Resource Metadata", async () => {
-    const request = new Request(
-      "https://app.test:8787/.well-known/oauth-protected-resource",
-    );
-    const response = handleOAuthProtectedResource(request, env);
+  it("does not advertise an OAuth authorization server it does not run", async () => {
+    const serving = testWorkerEnv({
+      ASSETS: stubAssets([
+        {
+          path: "/index.html",
+          body: "<!doctype html><title>coeditHTML</title>",
+          contentType: "text/html",
+        },
+      ]),
+    });
 
-    expect(response.status).toBe(200);
-    const data = (await response.json()) as ReturnType<
-      typeof buildOAuthProtectedResource
-    >;
-    expect(data.resource).toBe("https://app.test:8787/api");
-    expect(data.authorization_servers).toContain("https://coedithtml.com");
-    expect(data.bearer_methods_supported).toContain("header");
-    expect(data.scopes_supported).toContain("artifacts:create");
+    for (const path of [
+      "/.well-known/oauth-protected-resource",
+      "/.well-known/oauth-authorization-server",
+      "/.well-known/anything-else",
+    ]) {
+      const response = await handleAppRequest(
+        new Request(`https://app.test:8787${path}`),
+        serving,
+      );
+
+      expect(response.status).toBe(404);
+      expect(response.headers.get("content-type")).not.toContain("text/html");
+    }
   });
 
-  it("serves OAuth Authorization Server metadata with agent_auth block", async () => {
-    const request = new Request(
-      "https://app.test:8787/.well-known/oauth-authorization-server",
+  it("still serves the app shell outside the reserved namespace", async () => {
+    const serving = testWorkerEnv({
+      ASSETS: stubAssets([
+        {
+          path: "/index.html",
+          body: "<!doctype html><title>coeditHTML</title>",
+          contentType: "text/html",
+        },
+      ]),
+    });
+
+    const response = await handleAppRequest(
+      new Request(`https://app.test:8787/a/${"a".repeat(32)}`),
+      serving,
     );
-    const response = handleOAuthAuthorizationServer(request, env);
 
     expect(response.status).toBe(200);
-    const data = (await response.json()) as ReturnType<
-      typeof buildOAuthAuthorizationServer
-    >;
-    expect(data.issuer).toBe("https://coedithtml.com");
-    expect(data.agent_auth.skill).toContain("/auth.md");
-    expect(data.agent_auth.register_uri).toBe(
-      "https://app.test:8787/api/artifacts",
-    );
-    expect(data.agent_auth.identity_types_supported).toContain("anonymous");
-    expect(data.agent_auth.identity_types_supported).toContain(
-      "identity_assertion",
-    );
   });
 
   it("serves /auth.md as markdown with required H1 and token count", async () => {
@@ -120,8 +121,6 @@ describe("discovery endpoints & agent readiness", () => {
       const paths = [
         "/.well-known/api-catalog",
         "/.well-known/agent-card.json",
-        "/.well-known/oauth-protected-resource",
-        "/.well-known/oauth-authorization-server",
         "/auth.md",
         "/api/health",
       ];

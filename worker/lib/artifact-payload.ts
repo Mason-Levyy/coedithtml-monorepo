@@ -13,11 +13,11 @@ function shareLinksFor(
   const visible = siblingsVisibleTo(record.kind, record.siblingTokens ?? {});
   const links = Object.entries(visible).map(([kind, sibling]) => [
     kind,
-    viewerUrl(request, env, sibling),
+    viewerUrl(env, sibling),
   ]);
   return links.length > 0
     ? Object.fromEntries(links)
-    : { [record.kind]: viewerUrl(request, env, token) };
+    : { [record.kind]: viewerUrl(env, token) };
 }
 
 export function unlockedArtifactPayload(
@@ -34,8 +34,8 @@ export function unlockedArtifactPayload(
     uploadedAt: metadata.uploadedAt,
     revision: metadata.revision,
     requiresPassword: false as const,
-    sandboxOrigin: originFor(request, env.SANDBOX_HOST),
-    artifactUrl: artifactUrl(request, env, artifact.token, grant),
+    sandboxOrigin: originFor(env.SANDBOX_HOST),
+    artifactUrl: artifactUrl(env, artifact.token, grant),
     shareLinks: shareLinksFor(request, env, artifact),
   };
 }

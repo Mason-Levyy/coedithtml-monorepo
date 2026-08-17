@@ -6,21 +6,16 @@ export const VIEWER_PATH_PREFIX = "/a/";
 
 export { UNLOCK_QUERY_PARAM };
 
-export function viewerUrl(
-  request: Request,
-  env: WorkerEnv,
-  token: string,
-): string {
-  return `${originFor(request, env.APP_HOST)}${VIEWER_PATH_PREFIX}${token}`;
+export function viewerUrl(env: WorkerEnv, token: string): string {
+  return `${originFor(env.APP_HOST)}${VIEWER_PATH_PREFIX}${token}`;
 }
 
 export function artifactUrl(
-  request: Request,
   env: WorkerEnv,
   token: string,
   grant: string | null = null,
 ): string {
-  const base = `${originFor(request, env.SANDBOX_HOST)}/${token}`;
+  const base = `${originFor(env.SANDBOX_HOST)}/${token}`;
   if (grant === null || grant.length === 0) {
     return base;
   }

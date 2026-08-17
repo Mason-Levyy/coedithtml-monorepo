@@ -92,18 +92,19 @@ describe("redirectTargetFor", () => {
 });
 
 describe("originFor", () => {
-  it("combines the request's protocol with the given host", () => {
-    expect(
-      originFor(
-        new Request("https://app.test/api/artifacts"),
-        FAKE_SANDBOX_HOST,
-      ),
-    ).toBe(`https://${FAKE_SANDBOX_HOST}`);
+  it("gives a real host https", () => {
+    expect(originFor(FAKE_SANDBOX_HOST)).toBe(`https://${FAKE_SANDBOX_HOST}`);
+    expect(originFor("coedithtml.com")).toBe("https://coedithtml.com");
   });
 
-  it("preserves an http request's protocol for local dev", () => {
-    expect(
-      originFor(new Request("http://app.test:8787/"), FAKE_SANDBOX_HOST),
-    ).toBe(`http://${FAKE_SANDBOX_HOST}`);
+  it("keeps local development on http", () => {
+    expect(originFor("app.localhost:8787")).toBe("http://app.localhost:8787");
+    expect(originFor("localhost:8787")).toBe("http://localhost:8787");
+    expect(originFor("127.0.0.1:8787")).toBe("http://127.0.0.1:8787");
+  });
+
+  it("does not let a hostname merely ending in the right letters go plaintext", () => {
+    expect(originFor("notlocalhost.com")).toBe("https://notlocalhost.com");
+    expect(originFor("localhost.evil.com")).toBe("https://localhost.evil.com");
   });
 });

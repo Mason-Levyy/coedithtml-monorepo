@@ -60,7 +60,7 @@ export async function handleStartTutorial(
     return plainText(UNAVAILABLE, 503);
   }
 
-  const location = `${viewerUrl(request, env, session.editToken)}?${TUTORIAL_QUERY_PARAM}=1`;
+  const location = `${viewerUrl(env, session.editToken)}?${TUTORIAL_QUERY_PARAM}=1`;
   return new Response(null, {
     status: 302,
     headers: { ...PRIVATE_HEADERS, location },

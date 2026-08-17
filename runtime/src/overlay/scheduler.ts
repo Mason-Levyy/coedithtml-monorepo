@@ -31,9 +31,21 @@ export function createRepaintScheduler(options: {
   const repaint = (): void => schedule(false);
   const reindex = (): void => schedule(true);
 
-  function onMutation(): void {
-    window.clearTimeout(mutationTimer);
-    mutationTimer = window.setTimeout(reindex, MUTATION_QUIET_MS);
+  function onMutation(mutations: MutationRecord[]): void {
+    let structural = false;
+    for (const mutation of mutations) {
+      if (mutation.type === "childList" || mutation.type === "characterData") {
+        structural = true;
+        break;
+      }
+    }
+
+    if (structural) {
+      window.clearTimeout(mutationTimer);
+      mutationTimer = window.setTimeout(reindex, MUTATION_QUIET_MS);
+    } else {
+      repaint();
+    }
   }
 
   const observer = new MutationObserver(onMutation);
@@ -41,6 +53,8 @@ export function createRepaintScheduler(options: {
     childList: true,
     subtree: true,
     characterData: true,
+    attributes: true,
+    attributeFilter: ["class", "style", "hidden", "aria-hidden"],
   });
 
   window.addEventListener("scroll", repaint, true);
