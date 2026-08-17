@@ -9,9 +9,8 @@ export function Hero() {
         <div>
           <h1>Review and edit HTML together.</h1>
           <p className="lede">
-            Share interactive HTML files with a link. Then explore
-            the page, leave comments, and edit it directly in your
-            browser.
+            Share interactive HTML files with a link. Then explore the page,
+            leave comments, and edit it directly in your browser.
           </p>
           <div className="hero__actions">
             <a className="btn" href={APP_URL}>

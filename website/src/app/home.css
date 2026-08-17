@@ -358,6 +358,23 @@
   margin-bottom: 0;
 }
 
+.walk__frame {
+  overflow: hidden;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  box-shadow: 6px 6px 0 var(--line);
+  line-height: 0;
+}
+
+.walk__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
 @media (max-width: 58rem) {
   .walk__row {
     grid-template-columns: 1fr;

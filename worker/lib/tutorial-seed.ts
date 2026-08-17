@@ -146,7 +146,7 @@ const EM_DASHES: StickySeed = {
   offsetY: -47.52099609375,
   width: null,
   height: null,
-  tail: { x: 56.666656494140625, y: -24.031326293945312 },
+  tail: { x: 56.666656494140625, y: -24.03132629394531 },
   body: "Get rid of these stupid em dashes!",
   author: MASON,
   color: "purple",
