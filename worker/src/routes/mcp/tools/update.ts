@@ -1,5 +1,7 @@
 ﻿import { z } from "zod";
 import type { WorkerEnv } from "@/lib/env";
+import { addRevision } from "@/lib/add-revision";
+import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { accessTokenSchema } from "@/lib/schemas/artifact";
 import {
   errorResult,
@@ -7,7 +9,7 @@ import {
   type McpTool,
   type ToolResult,
 } from "../tool";
-import { postArtifact } from "./post-artifact";
+import { acceptArtifact } from "./accept-artifact";
 
 const argumentsSchema = z.object({
   editToken: accessTokenSchema,
@@ -52,26 +54,39 @@ async function run(
   }
   const { editToken, html, fileName } = parsed.data;
 
-  const replaced = await postArtifact(
-    {
-      html,
-      fileName,
-      path: `/api/artifacts/${editToken}/revisions`,
-      rateLimitKey: editToken,
-      expect: 200,
-      refusal:
-        "Coedit would not take that revision. Only an edit link may replace a file.",
-    },
-    context,
+  const resolved = await resolveArtifactByToken(
+    context.env.ARTIFACT_METADATA,
+    editToken,
+  );
+  if (!resolved.ok) {
+    return errorResult(
+      "That link is gone or the token is wrong. Check it and try again.",
+    );
+  }
+  if (resolved.artifact.record.kind !== "edit") {
+    return errorResult(
+      "That link cannot replace the file. Only an edit link may.",
+    );
+  }
+
+  const accepted = await acceptArtifact({ html, fileName }, context);
+  if (!accepted.ok) {
+    return errorResult(accepted.message);
+  }
+
+  const replaced = await addRevision(
+    context.env,
+    resolved.artifact,
+    accepted.upload,
   );
   if (!replaced.ok) {
-    return errorResult(replaced.message);
+    return errorResult("Coedit could not store that revision. Try again.");
   }
 
   return textResult(
     JSON.stringify(
       {
-        revision: replaced.body.revision,
+        revision: replaced.revision,
         note: "The link people already have now serves this version. Call coedit_read_feedback to see which comments still line up with it.",
       },
       null,

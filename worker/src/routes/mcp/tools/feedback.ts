@@ -1,10 +1,10 @@
-﻿import { wrapHandoff } from "@coedithtml/protocol";
+import { wrapHandoff } from "@coedithtml/protocol";
 import { z } from "zod";
 import type { WorkerEnv } from "@/lib/env";
 import { NO_FEEDBACK_YET } from "@/lib/artifact-download";
 import { accessTokenSchema } from "@/lib/schemas/artifact";
 import { chargeMcpRead } from "../ceilings";
-import { callApp, callSandbox, jsonOf } from "../dispatch";
+import { jsonOf, readFromApp, readFromSandbox } from "../dispatch";
 import {
   errorResult,
   textResult,
@@ -51,12 +51,8 @@ async function run(
   }
 
   const [described, review] = await Promise.all([
-    callApp(context.env, {
-      path: `/api/artifacts/${token}`,
-      method: "GET",
-      rateLimitKey: token,
-    }),
-    callSandbox(context.env, `/${token}?download=feedback`),
+    readFromApp(context.env, `/api/artifacts/${token}`),
+    readFromSandbox(context.env, `/${token}?download=feedback`),
   ]);
 
   const artifact = jsonOf(described);
