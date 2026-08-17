@@ -4,6 +4,7 @@ import { ArtifactViewer } from "@/components/ArtifactViewer";
 import { FakeWebSocket, renderWithQueryClient } from "@/lib/fakes";
 import type {
   CommentEntry,
+  EditEntry,
   OverlayEntry,
   StickyEntry,
   ViewportRect,
@@ -78,7 +79,11 @@ function room(): FakeWebSocket {
   return socket;
 }
 
-function openRoomWith(entries: OverlayEntry[], canWrite = true): void {
+function openRoomWith(
+  entries: OverlayEntry[],
+  canWrite = true,
+  canEdit = false,
+): void {
   act(() => {
     room().accept();
   });
@@ -89,6 +94,7 @@ function openRoomWith(entries: OverlayEntry[], canWrite = true): void {
       overlay: { version: 1, artifactRevision: "r1", entries },
       readers: [],
       canWrite,
+      canEdit,
     });
   });
 }
@@ -119,6 +125,22 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
     tail: null,
     ...overrides,
   };
+}
+
+function edit(overrides: Partial<EditEntry> = {}): EditEntry {
+  return {
+    ...comment(),
+    kind: "edit",
+    id: "e1",
+    parentId: null,
+    body: "Revenue grew 22%",
+    rev: 0,
+    ...overrides,
+  };
+}
+
+function frameSrc(): string {
+  return screen.getByTitle("q3-review.html").getAttribute("src") ?? "";
 }
 
 function watchRuntimeMessages(): { type: unknown }[] {
@@ -768,6 +790,100 @@ describe("the comment rail", () => {
       selectText();
 
       expect(screen.getByLabelText("Comment")).toBeTruthy();
+    });
+  });
+
+  describe("what the rail is holding, grouped", () => {
+    it("counts stickies, comments, and direct edits apart", () => {
+      renderViewer();
+      openRoomWith([comment(), sticky(), edit()], true, true);
+
+      expect(screen.getByText("Comments")).toBeTruthy();
+      expect(screen.getByText("Stickies")).toBeTruthy();
+      expect(screen.getByText("Direct edits")).toBeTruthy();
+      expect(screen.getAllByText("· 1")).toHaveLength(3);
+    });
+
+    it("leaves out a bucket with nothing in it", () => {
+      renderViewer();
+      openRoomWith([comment()]);
+
+      expect(screen.queryByText("Stickies")).toBeNull();
+      expect(screen.queryByText("Direct edits")).toBeNull();
+    });
+
+    it("folds a bucket away without losing its count", () => {
+      renderViewer();
+      openRoomWith([comment()]);
+
+      fireEvent.click(screen.getByRole("button", { name: /Comments/ }));
+
+      expect(screen.queryByText("Net or gross?")).toBeNull();
+      expect(screen.getByText("· 1")).toBeTruthy();
+    });
+  });
+
+  describe("putting a change back", () => {
+    it("drops the entry and reloads the artifact onto the original bytes", () => {
+      renderViewer();
+      openRoomWith([edit()], true, true);
+      const before = frameSrc();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Put back “Revenue grew 18%”" }),
+      );
+
+      expect(lastSentOfType("remove-entry")).toMatchObject({ id: "e1" });
+      expect(frameSrc()).not.toBe(before);
+      expect(frameSrc()).toContain("reset=1");
+    });
+
+    it("offers nothing to put back on a link that may only comment", () => {
+      renderViewer();
+      openRoomWith([edit()], true, false);
+
+      expect(screen.queryByRole("button", { name: /Put back/ })).toBeNull();
+      expect(screen.getByText("Direct edits")).toBeTruthy();
+    });
+
+    it("names the count before putting every change back", () => {
+      renderViewer();
+      openRoomWith([edit(), edit({ id: "e2" })], true, true);
+
+      fireEvent.click(screen.getByRole("button", { name: "Put all back" }));
+
+      expect(screen.getByText("Put back 2 changes?")).toBeTruthy();
+      expect(lastSentOfType("remove-entry")).toBeUndefined();
+    });
+
+    it("puts every change back once the count is confirmed", () => {
+      renderViewer();
+      openRoomWith([edit(), edit({ id: "e2" })], true, true);
+      fireEvent.click(screen.getByRole("button", { name: "Put all back" }));
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Put back 2 changes" }),
+      );
+
+      const removed = room()
+        .parsedSends()
+        .filter(
+          (message) => (message as { type: unknown }).type === "remove-entry",
+        )
+        .map((message) => (message as { id: string }).id);
+      expect(removed).toEqual(["e1", "e2"]);
+      expect(frameSrc()).toContain("reset=1");
+    });
+
+    it("keeps the changes when the confirmation is refused", () => {
+      renderViewer();
+      openRoomWith([edit()], true, true);
+      fireEvent.click(screen.getByRole("button", { name: "Put all back" }));
+
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+      expect(lastSentOfType("remove-entry")).toBeUndefined();
+      expect(frameSrc()).not.toContain("reset=");
     });
   });
 
