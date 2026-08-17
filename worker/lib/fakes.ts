@@ -515,6 +515,7 @@ export function fakeWorkerEnv(): Record<string, unknown> {
     SANDBOX_HOST: FAKE_SANDBOX_HOST,
     REDIRECT_HOSTS: FAKE_REDIRECT_HOST,
     REDIRECT_TARGET: FAKE_REDIRECT_TARGET,
+    MCP_ENABLED: "true",
   };
 }
 
