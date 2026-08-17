@@ -4,7 +4,6 @@ export function ClosingCta() {
   return (
     <section className="closing">
       <div className="shell">
-        <p className="eyebrow">Get started in seconds</p>
         <h2>Ready to collaborate on your HTML file?</h2>
         <p>
           Free to use with nothing to install or configure. Upload your file and
