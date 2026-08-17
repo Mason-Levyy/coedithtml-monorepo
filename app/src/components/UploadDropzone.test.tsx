@@ -25,7 +25,7 @@ describe("UploadDropzone", () => {
     expect(onFileSelected).toHaveBeenCalledWith(file);
   });
 
-  it("rejects a non-html file with a validation message instead of calling onFileSelected", () => {
+  it("refuses a non-html file without sending anything", () => {
     const onFileSelected = vi.fn();
     render(<UploadDropzone onFileSelected={onFileSelected} />);
 
@@ -34,22 +34,43 @@ describe("UploadDropzone", () => {
     });
 
     expect(onFileSelected).not.toHaveBeenCalled();
-    expect(() =>
-      screen.getByText("Only a single .html file can be uploaded."),
-    ).not.toThrow();
+    expect(screen.getByText("Only a single .html file")).toBeTruthy();
   });
 
-  it("shows a server-provided error message", () => {
+  it("gives a refusal from the server its own headline and next step", () => {
     render(
       <UploadDropzone
         onFileSelected={() => {}}
-        errorMessage="Too many uploads. Try again later."
+        rejection={{
+          headline: "This is source, not a page",
+          detail: "It has imports in it.",
+          remedy: "Build it first, then upload the .html.",
+        }}
       />,
     );
 
-    expect(() =>
-      screen.getByText("Too many uploads. Try again later."),
-    ).not.toThrow();
+    expect(screen.getByText("This is source, not a page")).toBeTruthy();
+    expect(screen.getByText("It has imports in it.")).toBeTruthy();
+    expect(
+      screen.getByText("Build it first, then upload the .html."),
+    ).toBeTruthy();
+  });
+
+  it("says nothing extra when there is no next step to give", () => {
+    render(
+      <UploadDropzone
+        onFileSelected={() => {}}
+        rejection={{
+          headline: "This file is empty",
+          detail: "There are no bytes in it at all.",
+          remedy: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole("alert").textContent).toBe(
+      "This file is emptyThere are no bytes in it at all.",
+    );
   });
 
   it("accepts a dropped file", () => {
