@@ -11,7 +11,7 @@
   },
   "supportedInterfaces": [
     {
-      "url": "https://app.coedithtml.com/api",
+      "url": "https://app.coedithtml.com/mcp",
       "protocolBinding": "HTTP+JSON",
       "protocolVersion": "1.0"
     }

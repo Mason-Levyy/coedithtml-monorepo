@@ -78,7 +78,7 @@
         "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev",
         "REDIRECT_HOSTS": "www.coedithtml.com",
         "REDIRECT_TARGET": "coedithtml.com",
-        "MCP_ENABLED": "false"
+        "MCP_ENABLED": "true"
       },
 
       "triggers": {
