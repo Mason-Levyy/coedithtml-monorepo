@@ -15,11 +15,16 @@ import {
   applyLocalPatch,
   applyLocalRemove,
   applyRoomMessage,
+  saveStateOf,
+  writeSent,
+  writesAbandoned,
   type RoomContents,
+  type SaveState,
 } from "@/lib/room-state";
 
 export type DocRoom = RoomContents & {
   status: RoomStatus;
+  saveState: SaveState;
   addEntry: (entry: OverlayEntry) => void;
   patchEntry: (id: string, patch: EntryPatch) => void;
   removeEntry: (id: string) => void;
@@ -63,7 +68,12 @@ export function useDocRoom(
         setStatus(next);
         if (next === "open") {
           socket.send(helloMessage(readerRef.current));
+          return;
         }
+        // A socket that went away with writes still in flight took them with
+        // it. Saying "saved" here would be the one lie that costs somebody
+        // their words.
+        setContents(writesAbandoned);
       },
     });
     socketRef.current = socket;
@@ -87,6 +97,7 @@ export function useDocRoom(
   const addEntry = useCallback(
     (entry: OverlayEntry) => {
       dismissRejection();
+      setContents((previous) => writeSent(previous, entry.id));
       send(addEntryMessage(entry));
     },
     [dismissRejection, send],
@@ -94,7 +105,9 @@ export function useDocRoom(
   const patchEntry = useCallback(
     (id: string, patch: EntryPatch) => {
       dismissRejection();
-      setContents((previous) => applyLocalPatch(previous, id, patch));
+      setContents((previous) =>
+        writeSent(applyLocalPatch(previous, id, patch), id),
+      );
       send(patchEntryMessage(id, patch));
     },
     [dismissRejection, send],
@@ -102,7 +115,7 @@ export function useDocRoom(
   const removeEntry = useCallback(
     (id: string) => {
       dismissRejection();
-      setContents((previous) => applyLocalRemove(previous, id));
+      setContents((previous) => writeSent(applyLocalRemove(previous, id), id));
       send(removeEntryMessage(id));
     },
     [dismissRejection, send],
@@ -111,6 +124,7 @@ export function useDocRoom(
   return {
     ...contents,
     status,
+    saveState: saveStateOf(contents),
     addEntry,
     patchEntry,
     removeEntry,

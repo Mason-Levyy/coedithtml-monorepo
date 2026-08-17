@@ -64,6 +64,10 @@ export type RuntimeTextEditedMessage = Versioned & {
   type: "text-edited";
   anchor: TextAnchor;
   replacement: string;
+  // One caret visit, however many times it autosaves. Without it the app would
+  // match a repeat commit by quoted text, and a caret that widens its span
+  // between saves quotes words the first save already replaced.
+  sessionId: string;
 };
 
 export type RuntimeToAppMessage =
@@ -223,11 +227,13 @@ export function removeMarkMessage(markId: string): RuntimeRemoveMarkMessage {
 export function textEditedMessage(
   anchor: TextAnchor,
   replacement: string,
+  sessionId: string,
 ): RuntimeTextEditedMessage {
   return {
     version: BRIDGE_VERSION,
     type: "text-edited",
     anchor,
     replacement,
+    sessionId,
   };
 }

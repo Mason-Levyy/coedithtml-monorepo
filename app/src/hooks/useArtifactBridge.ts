@@ -99,7 +99,11 @@ export type PatchMark = (markId: string, patch: EntryPatch) => void;
 
 export type RemoveMark = (markId: string) => void;
 
-export type TextEdited = (anchor: TextAnchor, replacement: string) => void;
+export type TextEdited = (
+  anchor: TextAnchor,
+  replacement: string,
+  sessionId: string,
+) => void;
 
 export function useArtifactBridge(options: {
   sandboxOrigin: string;
@@ -138,7 +142,11 @@ export function useArtifactBridge(options: {
         return;
       }
       if (message.type === "text-edited") {
-        acted.current.onTextEdited(message.anchor, message.replacement);
+        acted.current.onTextEdited(
+          message.anchor,
+          message.replacement,
+          message.sessionId,
+        );
         return;
       }
       setState((previous) => applyMessage(previous, message));
