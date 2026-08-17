@@ -67,6 +67,26 @@ describe("handleAppRequest asset serving", () => {
     expect(response.headers.get("content-type")).toContain("application/json");
   });
 
+  it("guards the page that holds the owner cookie and the revoke button", async () => {
+    const response = await handleAppRequest(get("/"), envWithApp());
+    const policy = response.headers.get("content-security-policy") ?? "";
+
+    expect(policy).toContain("frame-ancestors 'none'");
+    expect(policy).toContain(`frame-src https://${FAKE_SANDBOX_HOST}`);
+    expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  });
+
+  it("guards a 404 as carefully as a page", async () => {
+    const response = await handleAppRequest(
+      get("/assets/gone.js"),
+      envWithApp(),
+    );
+
+    expect(response.headers.get("content-security-policy")).toContain(
+      "frame-ancestors 'none'",
+    );
+  });
+
   it("rejects a write method on a document route", async () => {
     const response = await handleAppRequest(
       new Request(`https://${FAKE_APP_HOST}/`, { method: "DELETE" }),

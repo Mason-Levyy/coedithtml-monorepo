@@ -51,6 +51,20 @@ async function readRuntimeBundle(
   return response.ok ? response.text() : null;
 }
 
+// A header value is a ByteString, so any code point above U+00FF makes
+// Headers.set throw -- every download of a file named in Chinese, Japanese, or
+// with an emoji in it was a 500. RFC 6266 is the answer: an ASCII filename any
+// client can read, and the real one beside it, percent-encoded.
+export function contentDisposition(fileName: string): string {
+  const ascii = fileName.replace(/[^\x20-\x7e]/gu, "_").replace(/["\\]/g, "");
+  const encoded = encodeURIComponent(fileName).replace(
+    /['()*!]/g,
+    (character) =>
+      `%${character.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`,
+  );
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
+
 function attachment(
   body: BodyInit,
   fileName: string,
@@ -58,10 +72,7 @@ function attachment(
 ): Response {
   const merged = new Headers(headers);
   merged.set("content-type", "application/octet-stream");
-  merged.set(
-    "content-disposition",
-    `attachment; filename="${fileName.replace(/["\\]/g, "")}"`,
-  );
+  merged.set("content-disposition", contentDisposition(fileName));
   return new Response(body, { status: 200, headers: merged });
 }
 
