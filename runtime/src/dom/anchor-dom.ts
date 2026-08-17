@@ -110,6 +110,7 @@ export function regionAnchorAtPoint(
     fractionX: clampFraction((x - box.left) / box.width),
     fractionY: clampFraction((y - box.top) / box.height),
     revision,
+    excerpt: element.textContent ?? "",
   });
 }
 

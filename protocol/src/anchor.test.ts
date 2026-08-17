@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   anchorFromText,
   CONTEXT_LENGTH,
+  EXCERPT_LENGTH,
   normalizeAnchorText,
   regionAnchor,
   resolveAnchorInText,
@@ -115,6 +116,41 @@ describe("regionAnchor", () => {
     expect(
       regionAnchor({ ...base, path: "", fractionX: 0.5, fractionY: 0.5 }),
     ).toBeNull();
+  });
+
+  it("carries an excerpt of what the note was dropped on", () => {
+    const anchor = regionAnchor({
+      ...base,
+      fractionX: 0.5,
+      fractionY: 0.5,
+      excerpt: "  Revenue\n  grew 18%  ",
+    });
+
+    expect(anchor?.excerpt).toBe("Revenue grew 18%");
+  });
+
+  it("caps the excerpt so an anchor cannot grow with its document", () => {
+    const anchor = regionAnchor({
+      ...base,
+      fractionX: 0.5,
+      fractionY: 0.5,
+      excerpt: "word ".repeat(200),
+    });
+
+    expect(anchor?.excerpt?.length).toBeLessThanOrEqual(EXCERPT_LENGTH + 1);
+    expect(anchor?.excerpt?.endsWith("…")).toBe(true);
+  });
+
+  it("omits the excerpt for an element with no text of its own", () => {
+    const anchor = regionAnchor({
+      ...base,
+      fractionX: 0.5,
+      fractionY: 0.5,
+      excerpt: "   \n  ",
+    });
+
+    expect(anchor).not.toBeNull();
+    expect(anchor).not.toHaveProperty("excerpt");
   });
 });
 
