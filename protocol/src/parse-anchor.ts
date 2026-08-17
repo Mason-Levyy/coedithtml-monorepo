@@ -34,7 +34,15 @@ function parseRegionAnchor(
   ) {
     return null;
   }
-  return { kind: "region", path, fractionX, fractionY, revision };
+  const anchor: RegionAnchor = {
+    kind: "region",
+    path,
+    fractionX,
+    fractionY,
+    revision,
+  };
+  const excerpt = asFilledString(record.excerpt);
+  return excerpt === null ? anchor : { ...anchor, excerpt };
 }
 
 export function parseAnchor(value: unknown): Anchor | null {

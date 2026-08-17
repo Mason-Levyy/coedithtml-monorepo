@@ -420,6 +420,19 @@ describe("parseAnchor", () => {
   it("rejects a region point outside its element", () => {
     expect(parseAnchor({ ...chartAnchor(), fractionX: 1.2 })).toBeNull();
   });
+
+  it("round-trips a region excerpt", () => {
+    expect(
+      parseAnchor({ ...chartAnchor(), excerpt: "Q3 revenue by cohort" }),
+    ).toMatchObject({ kind: "region", excerpt: "Q3 revenue by cohort" });
+  });
+
+  it("accepts a region anchor written before excerpts existed", () => {
+    const anchor = parseAnchor(chartAnchor());
+
+    expect(anchor).not.toBeNull();
+    expect(anchor).not.toHaveProperty("excerpt");
+  });
 });
 
 describe("parseOverlayDocument", () => {

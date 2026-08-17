@@ -128,6 +128,16 @@ describe("overlayToMarkdown", () => {
     );
   });
 
+  it("says where a sticky sits when its anchor carries an excerpt", () => {
+    const markdown = render([
+      sticky({
+        anchor: { ...REGION_ANCHOR, excerpt: "Q3 revenue by cohort" },
+      }),
+    ]);
+
+    expect(markdown).toContain('## Sticky note on "Q3 revenue by cohort"');
+  });
+
   it("marks a resolved thread rather than dropping it", () => {
     const markdown = render([comment({ status: "resolved" })]);
 
