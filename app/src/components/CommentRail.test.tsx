@@ -451,14 +451,14 @@ describe("the comment rail", () => {
       });
       fireEvent.click(screen.getByRole("button", { name: "Share" }));
       fireEvent.click(
-        screen.getByRole("button", { name: "Copy feedback for AI tool" }),
+        screen.getByRole("button", { name: "Copy the changes instead" }),
       );
       return written;
     }
 
     it("renders what the room is actually holding", async () => {
       renderViewer();
-      openRoomWith([comment()]);
+      openRoomWith([comment()], true, true);
 
       const written = copyFeedback();
 
@@ -470,7 +470,7 @@ describe("the comment rail", () => {
 
     it("separates threads the runtime reported as orphaned", async () => {
       renderViewer();
-      openRoomWith([comment()]);
+      openRoomWith([comment()], true, true);
       reportPlaced({ orphaned: ["c1"] });
 
       const written = copyFeedback();
@@ -481,12 +481,12 @@ describe("the comment rail", () => {
 
     it("cannot be copied when the room is empty", () => {
       renderViewer();
-      openRoomWith([]);
+      openRoomWith([], true, true);
 
       fireEvent.click(screen.getByRole("button", { name: "Share" }));
 
       expect(
-        screen.getByRole("button", { name: "Copy feedback for AI tool" }),
+        screen.getByRole("button", { name: "Copy the changes instead" }),
       ).toHaveProperty("disabled", true);
     });
   });

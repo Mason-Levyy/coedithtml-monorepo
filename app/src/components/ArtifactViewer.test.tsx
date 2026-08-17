@@ -99,7 +99,14 @@ describe("ArtifactViewer", () => {
         .map(
           (button) => button.getAttribute("aria-label") ?? button.textContent,
         ),
-    ).toEqual(["Hide comments", "Share", "Close comments"]);
+    ).toEqual(["Hide comments", "Download", "Close comments"]);
+  });
+
+  it("offers a view-only reader the file but never a way to share it", () => {
+    renderViewer();
+
+    expect(screen.getByRole("button", { name: "Download" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Share" })).toBeNull();
   });
 
   it("fills the frame until the artifact says how it wants to be sized", () => {
