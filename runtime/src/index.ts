@@ -3,7 +3,10 @@ import { startMarks } from "./marks";
 import { sendToApp } from "./transport/bridge";
 import { readyMessage } from "./transport/messages";
 
-export const VERSION = "1.0.0";
+// Published as window.__coedit__.version inside somebody else's document, and
+// the only version number this product has anywhere. It said 1.0.0 from the
+// first commit, through five versions of a thing that has not shipped.
+export const VERSION = "0.6.0";
 
 function guard(what: string, run: () => void): void {
   try {
