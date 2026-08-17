@@ -14,10 +14,10 @@ no answer.
 | --- | --- | --- |
 | v0.1 | Serve | done, deployed |
 | v0.2 | Mark | done, one ship item carried to v1.0 |
-| v0.3 | Edit | built; autosave, undo/redo, and the rail's revert controls open |
-| v0.4 | Site | built and live at the apex, on a stale build |
-| v0.5 | Share on purpose | landed 2026-08-16, one task and a deploy open |
-| v0.6 | Hold the line | not started |
+| v0.3 | Edit | done 2026-08-16 |
+| v0.4 | Site | done in git, open on a redeploy |
+| v0.5 | Share on purpose | done 2026-08-16 |
+| v0.6 | Hold the line | done 2026-08-16, open on a deploy |
 | v1.0 | Ship | not started |
 
 The first three were originally written as numbered phases and are renamed here,
@@ -28,31 +28,37 @@ and is left as it was, apart from corrections marked **Audit 2026-08-13** and
 `Deploy`, at the end, is not a version. It is the thing every version has to
 survive.
 
-## The route to v0.5
+## The route to v0.6, and what is left after it
 
 Written 2026-08-16, after an audit that found `main` red, one version checked off
-without being built, and another built without being merged. Each version's own
-delivery stack has the detail; this is the order, and who holds each step.
+without being built, and another built without being merged. Every code step is
+done; what remains cannot be done from a terminal.
 
-1. ~~**`42-green-the-trunk`**~~ — done 2026-08-16, and smaller than written. Two
-   of the three failures fixed themselves when v0.5's stack landed an hour later;
-   what was left was Prettier wanting to reformat `worker/tutorial/deck.html`,
-   which is an artifact and is now ignored for the reason artifacts always are
-2. ~~**v0.5's seven**~~ — landed 2026-08-16 as PRs #41–#44, out of the order
-   written here and none the worse for it. `46-upload-rejection-copy` is the one
-   task in that version nobody has written yet
-3. **v0.3's three branches** — `43-rail-buckets`, then `44-edit-autosave`, then
-   `45-undo-redo`. `43` is the version's exit criterion and goes first. This is
-   now the only unbuilt work between here and v0.6
-4. **Deploy, twice — yours.** The website, which is stale at the apex, and the
-   app, which is now four merged PRs ahead of what is live
-5. **Two checks nobody can do from a terminal — yours.** Two real devices in one
+1. ~~**`42-green-the-trunk`**~~ — done, and smaller than written. Two of the
+   three failures fixed themselves when v0.5's stack landed an hour later; what
+   was left was Prettier wanting to reformat `worker/tutorial/deck.html`, which
+   is an artifact and is now ignored for the reason artifacts always are
+2. ~~**v0.5's seven**~~ — landed as PRs #41–#44, out of the order written here
+   and none the worse for it
+3. ~~**v0.3's three branches**~~ — `43-rail-buckets`, `44-edit-autosave`,
+   `45-undo-redo`. Done, in that order, and `43` first because it was the
+   version's exit criterion rather than its last item
+4. ~~**v0.5's last task and the two reviews it never got**~~ —
+   `46-upload-rejection-copy`, and `47-close-the-ownership-bypass`, which is the
+   reviews. Both found something; the ownership one found a real bypass
+5. ~~**v0.6, in five branches**~~ — `48-room-ceilings`,
+   `49-close-the-audit-gaps`, `50-ceilings-that-hold`,
+   `51-store-identical-bytes-once`, `52-expire-and-sweep`
+6. **Deploy, twice — yours.** The website, which is stale at the apex, and the
+   app, which is now a long way ahead of what is live. **The Worker deploy
+   carries a `v2` Durable Object migration and an hourly cron**, neither of
+   which existed the last time it shipped
+7. **Two checks nobody can do from a terminal — yours.** Two real devices in one
    room, which is all v0.2 is still waiting on, and one mail to
    `team@coedithtml.com` to prove the abuse contact is reachable
 
-That closes v0.2, v0.3, v0.4, and v0.5. v0.6 is untouched and is the whole
-remaining risk: every ceiling that makes a wide send defensible rather than brave
-is still unwritten.
+That closes v0.2 through v0.6. What is left is v1.0, which is a language pass,
+the export's handoff to an AI tool, and proving all of it on the real thing.
 
 ---
 
@@ -665,7 +671,11 @@ finally disagree at the same moment, and where the complexity genuinely spikes.
 **Exit criteria:** someone who is not the owner can fix a typo in a shared
 artifact, and the owner can see exactly what changed and put it back.
 
-- [ ] **v0.3 complete**
+- [x] **v0.3 complete** — 2026-08-16. The exit criterion holds: somebody who is
+      not the owner can fix a typo in a shared artifact, and the owner can see
+      exactly what changed and put it back. The two Ship items below are the
+      same kind of thing v0.1's ten-artifact study was, and are recorded there
+      rather than gating the version
 
 **Audit 2026-08-13: this version was written as untouched and is roughly
 two-fifths built.** `contenteditable` shipped in `38-edit-surface` and is on
@@ -699,8 +709,13 @@ replacement on screen. That is the exit criterion of this whole version: *the
 owner can see exactly what changed and put it back.* It is now the largest piece
 of v0.3, not a finished one.
 
-**Still open at v0.3:** the rail's revert controls, debounced autosave with an
-honest state, and local undo/redo. Everything else is built and tested.
+**Closed 2026-08-16.** The rail's revert controls, debounced autosave with an
+honest state, and local undo/redo all landed. One thing changed shape on the way
+in: autosave needed a session id on `text-edited` after all, because a caret
+that widens its span between saves quotes words its own first save replaced, and
+matching a repeat save by quoted text fails exactly then. One caret visit owns
+one entry; the scope note below said no protocol change and was wrong by one
+optional field.
 
 **Touch is answered, not deferred. Decided 2026-08-16: accepted as desktop-only.**
 There is no long-press fallback and there will not be one before v1. On a phone
@@ -737,26 +752,34 @@ artifact in exactly the way the whole design forbids.
       tab, and the literal string `</html>` inside a script — applies three
       edits through `applyClientMessage`, re-fetches, and compares bytes. It also
       asserts exactly one appended script survives the session
-- [ ] Debounced autosave with an explicit saved / saving / failed state, never
-      silent. Today the commit is synchronous on blur or Cmd+Enter, failure
-      arrives as a generic rail banner, and there is no success state at all.
-      **Scope, decided 2026-08-16:** the surface gains an idle timer that commits
-      without ending the session, and the room learns to say when a write landed.
-      The anchor is measured against the text as it stood when the caret arrived
-      and stays fixed for the session, so every autosave of one session patches
-      one entry rather than piling up new ones — `useTextEditing.ts` already
-      matches an existing edit on quote and path. No protocol change: an entry is
-      *saving* from the moment it is sent, *saved* when the room echoes it back,
-      and *failed* on a rejection or a socket that closed with writes pending
-- [ ] Local undo and redo stack. **Scope, decided 2026-08-16: it lives in the
-      app, not the runtime, and costs the injected bundle nothing.** Every edit
-      is already an overlay entry, so undo is the inverse of a room message —
-      remove what was added, re-add what was removed, patch back what was
-      patched. Bound at the viewer and deliberately inert while
-      `surface.isEditing()`, because inside a live caret the browser's own undo
-      is the right one and stealing the key would be worse than not binding it.
-      Session-scoped and self-scoped: you can undo what you did, not what someone
-      else did
+- [x] Debounced autosave with an explicit saved / saving / failed state, never
+      silent — `44-edit-autosave`. The surface commits on an idle timer without
+      ending the session, and every save of one caret visit diffs against the
+      block as it stood when the caret arrived rather than against the last save,
+      so the anchor keeps quoting the author's original words instead of
+      resolving onto its own output. **That is why the "no protocol change" in
+      the scope note did not survive contact**: the quoted span can widen between
+      saves, so matching a repeat save by quote and path fails exactly when it
+      matters, and `text-edited` carries a session id. One caret visit owns one
+      entry. The state is derived, not asserted — *saving* from the moment a
+      write is sent, *saved* when the room echoes it back, *failed* on a
+      rejection or on a socket that closed with writes still in flight, which is
+      the one case where claiming "saved" costs somebody their words.
+      `author.js` 18.8KB to 19.2KB of 22KB
+- [x] Local undo and redo stack — `45-undo-redo`, app-side, and the injected
+      bundle did not grow by a byte. Undo is the inverse of a room message, an
+      inverse patch restores only the fields the original touched, and `ifRev` is
+      dropped from it: optimistic concurrency exists to catch two people typing
+      over each other in the same second, and refusing a deliberate undo minutes
+      later as stale would tell the reader their own key did nothing.
+      **Inert while a caret is live, for free** — those keystrokes never leave
+      the artifact's own document, so a listener at the viewer cannot hear them,
+      which is exactly the behaviour that was wanted. The same courtesy is
+      extended to the rail's own inputs, and buttons in the bar cover the case
+      where focus is somewhere that never sees the key at all. Undoing anything
+      that touched the artifact's text reloads the frame, reusing `43`'s path.
+      Session-scoped and self-scoped by construction: the stack only ever holds
+      what this reader did on this connection
 
 ### Two ways into an edit
 
@@ -817,32 +840,26 @@ feature is grouping, a delete control, and one honest confirmation.
 
 **Audit 2026-08-16: this section was checked off and never built.** The four
 boxes below were marked done while describing, in the present tense, exactly the
-code that is still there. They are corrected to open.
+code that was still there. They were corrected to open, and then built on
+`43-rail-buckets`.
 
-- [ ] The rail splits into three buckets, each collapsible and each carrying its
-      own count: **stickies**, **comments**, **direct edits**. Today
-      `threadsIn()` (`protocol/src/overlay.ts`) hands back comments and stickies
-      as one undifferentiated list and `ChangeLog` hangs off the bottom of
-      `CommentRail.tsx`, which is still true as written.
-      `isFloating()` and `editsAmong()` already do the separating, so this is
-      grouping in `CommentRail.tsx`, not new protocol
-- [ ] Deleting an edit in the rail puts the text back. **This is not what
-      deleting an entry does today.** `applyEdits` wrote the replacement over
-      the original and the original wording is gone from the DOM, so dropping
-      the entry leaves the changed text on screen. `replayEdits`
-      (`runtime/src/marks.ts:78`) only ever moves forward — it applies edits it
-      has not seen and remembers them in `replayed`; nothing walks one back.
-      Because the stored bytes are never modified, the correct reset is to reload
-      the frame and let `replayEdits` re-apply the surviving edits in order —
-      correct by construction, and it costs only whatever slide the artifact was
-      on. `artifact-src.ts` already keys the frame on the revision, so the
-      mechanism is a nonce in that key rather than new machinery
-- [ ] A remove control on each row in `ChangeLog.tsx`, shown only when `canEdit`.
-      `CommentThread` has one and `ChangeLog` does not, so a comment can be
-      withdrawn today and a change to somebody's words cannot
-- [ ] **Remove all changes** on the direct-edits bucket, behind a confirmation
+- [x] The rail splits into three buckets, each collapsible and each carrying its
+      own count: **stickies**, **comments**, **direct edits**. An empty bucket
+      does not appear at all. `isFloating()` and `editsAmong()` did the
+      separating, so this was grouping in `CommentRail.tsx` and no new protocol
+- [x] Deleting an edit in the rail puts the text back. `replayEdits`
+      (`runtime/src/marks.ts`) only ever moves forward, so nothing can walk an
+      applied edit back in place — and because the stored bytes were never
+      modified, the reset is a reload of the frame, letting the surviving edits
+      replay onto the original text in order. Correct by construction, and it
+      costs only whatever slide the artifact was on. `frameSrcFor` carries a
+      reset nonce, so only the iframe URL changes: the room URL and the share
+      links are built from the artifact URL and stay as they were
+- [x] A remove control on each row in `ChangeLog.tsx`, shown only when `canEdit`.
+      It says **Put back**, because that is what it does
+- [x] **Remove all changes** on the direct-edits bucket, behind a confirmation
       that names the count. Deleting one edit is small; deleting every edit
-      somebody made is not, and it should not be a single unguarded click
+      somebody made is not, and it is not a single unguarded click
 - [x] Removing a sticky or a comment keeps working as it does now — those never
       touched the artifact, so there is nothing to put back
 
@@ -905,19 +922,16 @@ none needs the one after it.
       seeded notes anchored into it by quoted text and `nth-of-type` path. We do
       not rewrite artifacts, including our own. 77 test files, lint, and
       typecheck all pass on the result
-- [ ] `43-rail-buckets` — **Reversibility lives in the rail**, all four boxes.
-      Buckets with counts in `CommentRail.tsx`, a remove control per row in
-      `ChangeLog.tsx` gated on `canEdit`, **Remove all changes** behind a
-      confirmation naming the count, and the frame-reload reset that makes
-      deleting an edit actually put the text back. This is the version's exit
-      criterion, which is why it is the first real branch rather than the last
-- [ ] `44-edit-autosave` — the idle commit in `runtime/src/edits/surface.ts`, and
+- [x] `43-rail-buckets` — **Reversibility lives in the rail**, all four boxes.
+      This was the version's exit criterion, which is why it went first rather
+      than last
+- [x] `44-edit-autosave` — the idle commit in `runtime/src/edits/surface.ts`, and
       saving / saved / failed derived in `useDocRoom.ts` from what the room has
-      echoed back. `author.js` is at 18.8KB of 22KB, so the timer fits; if it
-      does not, the state is app-side and only the timer is runtime
-- [ ] `45-undo-redo` — the inverse-message stack described above, app-side,
+      echoed back. The timer fit; `author.js` went 18.8KB to 19.2KB of 22KB
+- [x] `45-undo-redo` — the inverse-message stack described above, app-side,
       inert while a caret is live. Reuses `43`'s reload path when the thing being
-      undone is an edit
+      undone is an edit. `RoomContents.undo`, which was never user-facing undo
+      but the rollback held for a rejected write, is renamed `rollback`
 
 ### Ship
 
@@ -933,7 +947,8 @@ none needs the one after it.
 **Exit criteria:** somebody who has never heard of this lands on the apex,
 understands what it does, and gets to the app without asking anyone.
 
-- [ ] **v0.4 complete**
+- [ ] **v0.4 complete** — everything in this version is written and merged. It
+      stays open on one command nobody but the user can run: the redeploy below
 
 Built 2026-08-14. `website/` had not been touched since the workspace was
 scaffolded — the entire site was `<main>Coedit</main>`, and the app's own
@@ -987,7 +1002,10 @@ stack, rather than twice.
 whether it needs a password, publish, and later change your mind or take it
 down — without uploading it again.
 
-- [ ] **v0.5 complete**
+- [x] **v0.5 complete** — 2026-08-16, once the rejection copy and the two
+      reviews landed. The exit criterion holds: you can upload a file, decide who
+      may do what to it and whether it needs a password, publish, and later
+      change your mind or take it down, without uploading it again
 
 On `main`, choosing a file *is* publishing three links. `handleUpload` mints
 view, suggest, and edit in one go and the landing page picks which one to show
@@ -1003,8 +1021,7 @@ included. The paragraph above describes `main` as it was that morning and is
 kept because the shape of what changed is the point: choosing a file used to be
 publishing three links, and now it is not.
 
-**Still open here:** the upload-rejection copy, and a deploy — the app in
-production is four merged PRs behind.
+**Still open here: nothing but the deploy**, which is tracked once, at the end.
 
 - [x] Upload and publish become two steps. Upload stores the file and hands back
       a draft; publishing is something you choose — built on
@@ -1042,10 +1059,15 @@ production is four merged PRs behind.
       nothing to leave standing. What made the screen unmissed is `reimport` —
       re-uploading a Coedit download now carries its stickies into the new room,
       which is the case the re-anchor report was written to explain
-- [ ] Rejected uploads get room to explain themselves. The words are already
-      right (`worker/lib/html-document.ts` — needs a build step, sets its own
-      CSP, has no closing tag); they arrive as one red line under the dropzone,
-      which makes "wrong file" and "nearly right file" look identical
+- [x] Rejected uploads get room to explain themselves — `46-upload-rejection-copy`.
+      A rejection is three pieces now: a headline, what is actually wrong, and
+      the one thing to change. The refusals that never had words at all got them
+      too — several files, wrong extension, empty, over the size ceiling. The
+      worker owns every word, because a refusal explained in two places drifts
+      into two explanations and the one the reader sees is the one the server
+      never checked; the response carries the reason as a code alongside the
+      prose, so the tests assert on the code rather than the copy, which is what
+      made the copy safe to rewrite
 
 ### Delivery stack
 
@@ -1064,20 +1086,34 @@ was.
 - [x] `app-share-ui-primitives` — modal, confirm dialog, permission control,
       PR #43
 - [x] `app-publish-and-my-files` — the publish step and the file list, PR #44
-- [ ] `46-upload-rejection-copy` — the one item on this list nobody has written
-      yet: give a refused upload the room to say which of the three things went
-      wrong, and what to do about it
+- [x] `46-upload-rejection-copy` — give a refused upload the room to say which
+      thing went wrong, and what to do about it
 
 **Two reviews this stack was supposed to get and did not, because it landed
-while the audit that asked for them was being written.** Neither blocks v0.3;
-both block calling v0.5 done:
+while the audit that asked for them was being written.** Both were done on
+`47-close-the-ownership-bypass`, and both found something.
 
-- [ ] **The owner cookie against the two-origin rule.** It is the first cookie in
-      the product, and it must never be settable or readable from the sandbox
-      origin. `security-reviewer` exists for exactly this
-- [ ] **`requireOwnedArtifact`, and how it treats pre-v0.5 artifacts with no
-      recorded owner.** That fallback is the seam where a permissive default
-      hands every artifact uploaded before today to whoever asks first
+- [x] **The owner cookie against the two-origin rule.** The cookie itself holds
+      up: `HttpOnly`, host-only on the app origin, and never set anywhere on the
+      sandbox — which matters more than it looks, because every artifact shares
+      that origin and would therefore share its cookie jar. What it did not have
+      was a guard on who could ask for one. A script inside an artifact could
+      POST an upload cross-site and, because `SameSite=Lax` withholds the
+      existing cookie, be issued a brand new owner id, silently rotating the
+      reader's identity and orphaning their file list. **Fixed**: every
+      state-changing `/api` request now needs an `Origin` that is the app's, at
+      one chokepoint. The cookie also took the `__Host-` prefix while nothing
+      was deployed carrying the old name
+- [x] **`requireOwnedArtifact`, and how it treats artifacts with no recorded
+      owner.** Worse than the note guessed. `ownsArtifact` read a missing
+      `ownerId` as "anyone may manage this", and the viewer payload hands the
+      artifact id to anyone holding any link — a view-only one included. So on
+      every artifact predating the cookie, a stranger with a read link could
+      delete the file for everyone, change or clear its password, and regenerate
+      the links out from under fifty other readers. Not "whoever asks first".
+      Everyone. **Fixed**: it fails closed. Those artifacts lose nothing that
+      worked — their owner never had a cookie to prove anything with either,
+      their links keep serving, and v0.6's sweep is what collects them
 
 ---
 
@@ -1089,31 +1125,48 @@ defensible rather than brave.
 **Exit criteria:** you can answer an abuse report in minutes, and no one person
 can run up your bill at will.
 
-- [ ] **v0.6 complete**
+- [x] **v0.6 complete** — 2026-08-16, in five branches: `48-room-ceilings`,
+      `49-close-the-audit-gaps`, `50-ceilings-that-hold`,
+      `51-store-identical-bytes-once`, `52-expire-and-sweep`. The exit criterion
+      holds in code and is untested in production, which is the deploy below
 
 ### Take it down, and let it go
 
-- [~] **Delete, for real.** `DELETE /api/artifacts/:token` removes a token
-      record and nothing else — the bytes, the metadata, and the Durable Object
-      all survive. Revoking every token today makes an artifact permanently
-      unreachable *and* permanently stored. One route that clears every
-      revision from R2, the metadata from KV, all sibling tokens, and the room.
-      **Audit 2026-08-16: built early, and on `main` as of PR #42.** It landed
-      there because deleting a file is something you do from a file list, and it
-      lives at `DELETE /api/my-artifacts/:id` rather than overloading the token
-      path — an artifact id and a share token are indistinguishable 32-hex
-      strings, and guessing wrong about which one you were handed is how you
-      delete the wrong thing. Verify it against R2 and the room when v0.6 opens
-- [ ] **Expire on inactivity: 30 days without a view.** Needs a `lastViewedAt`
-      the serve path maintains cheaply, a `triggers.crons` block — there is no
-      scheduled handler in the Worker at all today — and a warning to the owner
-      before the sweep, not after
-- [ ] **Sweep the never-used sooner.** No comments, no edits, and no meaningful
-      views seven days after upload, and it goes. Define "meaningful" once, in
-      one place, and write the definition down next to the code
-- [ ] Nothing above may delete bytes another artifact is still serving — see the
-      dedup rules below. Design the two together or the sweep will take a
-      document out from under somebody
+- [x] **Delete, for real.** **Audit 2026-08-16: built early, and on `main` as of
+      PR #42.** It landed there because deleting a file is something you do from
+      a file list, and it lives at `DELETE /api/my-artifacts/:id` rather than
+      overloading the token path — an artifact id and a share token are
+      indistinguishable 32-hex strings, and guessing wrong about which one you
+      were handed is how you delete the wrong thing.
+      **Verified and completed on `52`, where it turned out to be half a
+      delete**: the room survived every one of them, holding every comment,
+      sticky, and edit for ever in a document nobody could reach. Deleting now
+      takes the bytes, the metadata, the tokens, the owner's row, the ledger's
+      count, and the room, from one function that the sweep and the delete
+      button both call so they cannot come to disagree about what deleting means
+- [x] **Expire on inactivity: 30 days without a view.** The serve path writes
+      down when an artifact was last read, at most once an hour, because a
+      document read by fifty people should not cost fifty writes and the only
+      question ever asked of that value is which side of a thirty-day line it
+      falls on. Recording a view is best effort: a document that would not load
+      because we could not write down that it loaded is the wrong trade.
+      The Worker gained its first `scheduled` handler and an hourly cron.
+      **The warning reaches the owner on the file itself**, in their own list —
+      there is no email in this product, so that is the only channel an
+      anonymous owner has, and the notice says that opening the file is what
+      stops it
+- [x] **Sweep the never-used sooner.** Seven days after upload with no
+      meaningful view, and it goes — but only once the room confirms it holds
+      nothing, because the uploader marking up their own file in the first hour
+      is the one case a view count cannot see. The room is asked only about the
+      artifacts already headed for the bin.
+      **"Meaningful" is defined once**, in `worker/lib/expiry.ts`: a view that
+      did not happen in the hour after upload. The uploader opening their own
+      link to check it worked is not use, and counting it would keep every
+      abandoned file alive for ever
+- [x] Nothing above may delete bytes another artifact is still serving. Every
+      deletion goes through the ledger's refcount, which is why the dedup below
+      had to exist first — the two were designed together, in that order
 
 ### Store identical bytes once
 
@@ -1122,84 +1175,180 @@ mints a new artifact, new tokens, and an empty overlay — a fresh canvas on the
 same bytes. Not the same thing as `POST /revisions`, which already short-circuits
 identical bytes *within* one artifact; this is across artifacts.
 
-- [ ] Blobs get their own key space, and metadata points at a digest instead of
-      the R2 key being derived from the artifact id. `artifactObjectKey()` in
-      `worker/lib/storage-keys.ts` is the seam
-- [ ] **Key on the full SHA-256, not `revisionOf()`.** That helper truncates to
+- [x] Blobs get their own key space: `blobs/<ownerId>/<digest>.html`. Metadata's
+      `blobs` map points a revision at its digest, and `objectKeyFor()` is the
+      one lookup that turns a revision into a key
+- [x] **Key on the full SHA-256, not `revisionOf()`.** That helper truncates to
       16 hex characters — 64 bits — which is fine for naming a revision inside
       one artifact, whose bytes its own owner chose, and not fine as an address
-      shared between strangers: a 64-bit truncation is birthday-attackable at
+      shared between files: a 64-bit truncation is birthday-attackable at
       roughly 2³² work, and a crafted pair would let one artifact serve
       another's bytes. The truncated value stays as the revision *name* in URLs,
       where it is only a name
-- [ ] **Scope dedup to the owner.** Global dedup leaks: an uploader could learn
-      whether a given file already exists in the system, and this product hosts
-      other people's unreleased work. Owner-scoped closes that, keeps the
-      reference set small, and still covers the case actually being asked for —
-      the same person uploading the same file twice. Global stays available
-      later, as its own decision with a reason attached
-- [ ] Reference counting is not KV's job. The same non-atomic read-then-write
-      that breaks the rate limiter breaks a refcount, and here the failure mode
-      is deleting bytes that are still being served
-- [ ] Blobs are never addressable from outside; only artifact ids and tokens
-      are. Two artifacts sharing bytes must not share a password gate — the gate
-      is checked against artifact metadata before R2 is read, and that order has
-      to survive the refactor. Worth a test that tries it
-- [ ] Decide once whether existing objects migrate into the blob space or dedup
-      applies only to new uploads, and write the answer down rather than leaving
-      two layouts undocumented
+- [x] **Scope dedup to the owner.** Global dedup is an oracle: an uploader could
+      learn whether a given file already exists in the system, and this product
+      hosts other people's unreleased work. Owner-scoped closes that, keeps the
+      reference set small enough to live in that owner's own ledger, and still
+      covers the case actually being asked for. Global stays available later, as
+      its own decision with a reason attached
+- [x] Reference counting is not KV's job. It lives in the `UsageLedger` beside
+      the quota it makes honest, and charging and referencing are one call
+      because they are one fact: this owner now holds these bytes, whether or not
+      they had to be written
+- [x] Blobs are never addressable from outside; only artifact ids and tokens
+      are. **Two artifacts sharing bytes do not share a password gate** — the
+      gate is checked against artifact metadata before R2 is touched, and a test
+      hands one open artifact and one locked one the same blob and expects 200
+      and 401
+- [x] **Decided: dedup applies to new uploads only.** The `blobs` map is where
+      the decision lives — a revision listed there is read from the blob space,
+      one that is not is read from the key it was written to. No migration, and
+      no undocumented second layout: one lookup that says which of the two an
+      artifact uses
 
 ### Ceilings that hold
 
-- [ ] **Per-owner quota**, keyed on the v0.5 cookie, with IP as the backstop
-      rather than the whole defence
-- [ ] **Replace the rate-limit primitive.** `worker/lib/rate-limit.ts` reads,
-      then writes, non-atomically, on eventually-consistent KV. A burst of
-      parallel uploads all read the same count and all pass a limit of 20, and
-      each colo keeps its own counter. A Durable Object or Cloudflare's rate
-      limiting binding
-- [ ] **A global ceiling** on stored bytes and artifact count that refuses new
-      uploads, so the limit is a policy rather than an invoice. R2 gives 10GB
-      free; today's per-IP ceiling permits 100MB an hour, kept forever
-- [ ] **Cap every string the Durable Object stores.** Only `body` is capped, at
-      4000. `anchor.quote`, `prefix`, `suffix`, `path`, `entry.id`, and
-      `author.displayName` are unbounded, so a one-megabyte quote with an empty
-      body passes every check — 500 entries a room, in rooms nothing reclaims
-- [ ] **Rate-limit websocket messages.** Nothing counts or throttles them, and
-      each one broadcasts to up to 64 sockets. `hello` is handled before the
-      write check, so the least privileged connection in the room can flood it
-- [ ] **Cache artifact responses.** No `cache-control` on artifact HTML and no
-      use of the Cache API anywhere, so every view is a fresh R2 read and every
-      download additionally wakes the room
+- [x] **Per-owner quota**, keyed on the v0.5 cookie: 200MB and 100 artifacts.
+      The IP ceiling stays as the backstop for somebody who clears their cookie,
+      and it is a backstop rather than the defence — an IP is shared by an office
+      and changed by a phone
+- [x] **Replace the rate-limit primitive.** It is a Durable Object now, one
+      instance per key, and one call rather than two — the gap between asking
+      and recording was most of why the old one never limited anything. A pool
+      test fires twenty requests at once against a limit of five and expects
+      five through. The password gate still charges only wrong guesses, but does
+      it by charging every attempt and refunding the right one, because checking
+      and spending as separate calls is the same gap again
+- [x] **A global ceiling** on stored bytes and artifact count that refuses new
+      uploads with a 507. 8GB against R2's free 10GB, and 20,000 artifacts.
+      The owner's ledger is consulted first because it is the one that knows
+      whether the bytes are new: charging the product for a copy of a file it
+      already holds would bring the global ceiling forward for everybody
+- [x] **Cap every string the Durable Object stores.** The anchor's quote,
+      prefix, suffix, path and revision, the entry and author ids, the display
+      name, and the fill colour. A patch is measured on its result rather than on
+      the patch, because a patch carries an anchor and a body of its own and the
+      entry is what keeps them
+- [x] **Rate-limit websocket messages.** A token bucket per socket, carried in
+      the socket's own attachment rather than a map on the instance, so
+      hibernation cannot hand a flooder a fresh budget by forgetting about them.
+      A frame past 32KB is refused before it is parsed. `too-fast` joins the
+      rejection reasons and the rail has words for it
+- [x] **Cache artifact responses**, through the edge cache rather than the
+      browser. What is cached is the bytes and never the authorization: the key
+      is the artifact id and revision rather than the token, so a revoked link is
+      still resolved and a password gate still checked on every single request.
+      Only the trip to R2 is skipped, and two artifacts sharing bytes share the
+      entry as well
 
 ### Close the gaps the audit found
 
-- [ ] **Security headers on the app origin.** `serveAppAsset` returns the raw
-      asset response: no CSP, no framing protection, no HSTS, no `nosniff`, no
-      referrer policy. It matters more once that origin holds an owner cookie
-      and a revoke button
-- [ ] **Decide how far to tighten the artifact CSP.** It sets `frame-ancestors`,
-      `object-src`, `base-uri`, and `form-action`, but no `default-src`,
-      `script-src`, or `connect-src`, so an uploaded script can send anywhere.
-      Artifacts legitimately fetch from CDNs, so this is a trade to make
-      deliberately, not a free win
-- [ ] **CSRF on `POST /revisions`.** It takes `multipart/form-data`, which
-      browsers send without a preflight, making it the one state-changing route
-      any origin can fire
-- [ ] PBKDF2 from 100k to 600k iterations, current OWASP guidance
-- [ ] The download filename crash: any code point above U+00FF makes
-      `Headers.set` throw, so every download of a file named in Chinese,
-      Japanese, or with an emoji returns a 500
-- [ ] The catastrophic-backtracking risk in `worker/lib/html-document.ts`, run
-      against five megabytes of someone else's text
-- [ ] Stop storing the full sibling-token triple in every token record. A view
-      token's record contains the edit token today. It is filtered on the way
-      out, so one careless future handler is a privilege escalation
-- [ ] Turnstile on upload — decide it, do not drift into it
-- [ ] **Write the assessment down in this file.** What an artifact script can
-      and cannot reach; what the shared `workers.dev` sandbox origin means, given
-      that isolation between two artifacts is one unguessable string rather than
-      an origin boundary; and what is accepted risk rather than an open task
+- [x] **Security headers on the app origin.** A strict CSP, `nosniff`, HSTS, a
+      referrer policy, and `Cross-Origin-Opener-Policy`. The policy can be strict
+      because this origin serves our own build and nobody else's markup, and
+      `frame-src` keeps the relationship one-directional: the app may frame the
+      sandbox, and `frame-ancestors 'none'` means nothing may frame the app
+- [x] **Decided: the artifact CSP is not tightened.** It keeps
+      `frame-ancestors`, `object-src`, `base-uri`, and `form-action`, and gains
+      no `default-src`, `script-src`, or `connect-src`. An artifact is somebody
+      else's application: it legitimately loads from CDNs and calls APIs, and a
+      policy that broke some files and not others, with no way to tell which in
+      advance, is the same mistake the segmentation engine was. **The isolation
+      that matters is the origin boundary, and that holds.** Recorded as
+      accepted risk in the assessment below rather than carried as an open task
+- [x] **CSRF on `POST /revisions`.** Closed by the origin check on `47`, which
+      covers every state-changing `/api` route rather than this one
+- [x] PBKDF2 from 100k to 600k iterations, current OWASP guidance. The count is
+      stored in the hash, so this is a floor for what gets set next rather than
+      a migration
+- [x] The download filename crash. RFC 6266: an ASCII fallback any client can
+      read, and the real name beside it, percent-encoded
+- [x] The catastrophic-backtracking risk in `worker/lib/html-document.ts`. The
+      import marker is line-scoped, and the script stripper and the CSP meta
+      check walk the document once with `indexOf` instead of restarting a
+      bounded scan at every `<script` or `<meta`. Three tests hand the checker
+      200,000 unterminated tags and expect it back inside a second
+- [x] Stop storing the full sibling-token triple in every token record. Each
+      record holds its own kind and everything weaker, so the escalation is not
+      in the record to filter
+- [x] **Decided: no Turnstile before v1.** It costs a third-party script on the
+      upload page and a dependency on a service, and the defence that actually
+      caps cost is the per-owner quota and the durable rate limiter, both of
+      which now exist. It returns as its own decision if a real flood arrives
+- [x] **The assessment is written down** — the section below
+
+### What an artifact can and cannot reach
+
+Written 2026-08-16, at the end of v0.6. This is the honest account, including
+the parts that are accepted risk rather than open work.
+
+**An artifact runs as somebody else's application, on an origin of its own.** It
+is served from `coedit.coedithtml-worker.workers.dev`, framed by the app at
+`app.coedithtml.com`. `workers.dev` is on the public suffix list, so those are
+not merely different origins but different *sites*: no cookie set on one can be
+made to ride a request to the other, and `SameSite=Lax` on the owner cookie means
+even a top-level POST from an artifact carries nothing.
+
+**What it cannot reach.** The owner cookie, which is `HttpOnly`, host-only on the
+app origin, and never set anywhere on the sandbox. The app's DOM, because
+`frame-ancestors 'none'` on the app origin means an artifact cannot frame the app
+and read it back. Any state-changing API route, because every one of them
+requires an `Origin` that is the app's, and a browser cannot be talked out of
+sending `Origin` on a cross-site write. The room: the upgrade route refuses any
+`Origin` that is not the app, and an artifact script that could open the room
+would read and write every reader's comments.
+
+**What it can reach, deliberately.** The network, in any direction. The artifact
+CSP sets no `script-src` and no `connect-src`, so an uploaded file can load from
+a CDN and call whatever API it was written to call. That is the product: we host
+the thing its author built and it runs as they built it. **Accepted risk**, and
+the reason it is acceptable is that everything above is enforced somewhere the
+artifact cannot influence.
+
+**The one that is genuinely uncomfortable: every artifact shares the sandbox
+origin.** Isolation between two artifacts is one unguessable 32-hex token in a
+path, not an origin boundary. Two artifacts therefore share `localStorage`,
+`sessionStorage`, IndexedDB, and a cookie jar, and a script in one can read what
+a script in another left behind. Nothing sensitive is put there by us — the
+runtime keeps its state in the frame and speaks over `postMessage` — but a
+*reader* who typed something into artifact A's own form has no guarantee about
+artifact B.
+
+The fix is not `sandbox="allow-scripts"` without `allow-same-origin`: an opaque
+origin makes `event.origin` read `"null"` on every bridge message, and the
+origin check is what makes the bridge trustworthy. Trading a real guarantee for
+a theoretical one is the wrong way round. **The actual fix is a second
+registrable domain, one artifact per subdomain of it** — and it is Post-v1 work,
+listed there under custom domains, because it is DNS and certificate plumbing
+rather than a code change. Until then this is written down rather than fixed.
+
+**Accepted, with reasons, rather than open:** the artifact CSP above; the shared
+sandbox origin above; no Turnstile; the owner index and the artifact view
+counter both being read-modify-write on KV, where a lost write costs a row in
+somebody's own file list or a sweep that arrives later than it could, and never
+anybody else's data.
+
+### Delivery stack
+
+Five branches, in dependency order. The order was forced rather than chosen:
+the sweep may not delete bytes another artifact is serving, so refcounting had
+to exist before anything could sweep, and refcounting belongs to the ledger that
+holds the quota.
+
+- [x] `48-room-ceilings` — cap every string the room stores, and a token bucket
+      per socket. `too-fast` joins the rejection reasons
+- [x] `49-close-the-audit-gaps` — security headers on the app origin, the
+      download filename crash, the backtracking patterns, PBKDF2 at 600k, and
+      the sibling-token triple
+- [x] `50-ceilings-that-hold` — `RateLimiter` and `UsageLedger` as Durable
+      Objects, the per-owner quota, the global ceiling, and the edge cache in
+      front of R2. Also the Windows test-harness wrapper, recorded under
+      **Deploy**
+- [x] `51-store-identical-bytes-once` — the blob space, owner-scoped, keyed on
+      the full digest, refcounted in the ledger
+- [x] `52-expire-and-sweep` — one erase path for the delete button and the
+      sweep, the view clock, the scheduled handler, and the warning that reaches
+      the owner in their own file list
 
 ---
 
@@ -1301,7 +1450,12 @@ dead product.
       document produces a real complaint, and not before.
 - [ ] **Custom domains and white label.** Serve artifacts from a client's own
       domain. Mostly DNS and certificate plumbing, plus a second sandbox origin
-      strategy — think it through before promising it.
+      strategy — think it through before promising it. **This is also where the
+      one uncomfortable thing in v0.6's assessment gets fixed**: every artifact
+      shares the sandbox origin today, so isolation between two of them is an
+      unguessable token rather than an origin boundary, and the answer is a
+      second registrable domain with one artifact per subdomain of it. Worth
+      selecting for that reason alone, whatever a paying user asks for.
 - [ ] **Offline editing.** Requires the CRDT above. Do not select independently.
 
 - [ ] **Post-v1 complete** — meaning the two selected items shipped, not the list
@@ -1333,7 +1487,24 @@ are behind `main`, both a deploy rather than a task:
 - The **website** at the apex is an older build. Its nav offers a page this repo
   no longer has, `/tutorial` and `/sitemap.xml` 404, and the SEO work is live in
   git only
-- Nothing from v0.5's stack is deployed, because nothing from it is merged
+- The **Worker** is a long way behind: v0.3, v0.5, and the whole of v0.6
+
+**What this Worker deploy carries that no previous one did.** Worth reading
+before running it, because two of these are not code:
+
+- **A `v2` Durable Object migration**, declaring `RateLimiter` and `UsageLedger`
+  as `new_sqlite_classes`. `v1` applied cleanly and there is no reason to expect
+  otherwise, but this is the first migration since the first deploy
+- **An hourly cron**, and with it the Worker's first `scheduled` handler. On its
+  first run it examines every artifact in production and deletes the ones
+  uploaded long ago that nobody has opened. **That is the intended behaviour and
+  it is not reversible**, so it is better known before the deploy than
+  discovered on the hour after it
+- **The owner cookie's name changed** to `__Host-coedit_owner`. Nothing in
+  production carries the old name, because v0.5 was never deployed
+- **Artifacts uploaded from now on are stored under `blobs/`.** Everything
+  already in R2 keeps serving from where it is, and the metadata is what says
+  which of the two an artifact uses
 
 Checked live: upload → link → fetch, with the stored bytes byte-identical and
 exactly one appended script; the revision path `/__coedit/<revision>/runtime.js`
@@ -1381,7 +1552,18 @@ of this one.
       two things that run did not prove: the pool pins an older workerd that
       falls back from the `2026-07-01` compatibility date, and storage isolation
       is off because Windows will not unlink the room's SQLite file mid-run, so
-      tests are kept apart by naming a room each instead
+      tests are kept apart by naming a room each instead.
+      **2026-08-16:** the same Windows file lock bites again at the *end* of a
+      run. The pool deletes its own temporary directory when the process exits,
+      the runtime has not let go by then, and the `EBUSY` arrives in the parent
+      as an unhandled rejection — so a suite where every test passed exits 1,
+      about half the time. Neither `durableObjectsPersist` nor
+      `defaultPersistRoot` moves that directory, and
+      `dangerouslyIgnoreUnhandledErrors` silences the report without changing the
+      exit code. `worker/run-tests.mjs` recognises that one failure and nothing
+      else: an unlink that could not get at a file, with no failing test
+      reported. Checked in both directions — a deliberately broken test still
+      exits 1. It is a harness bug on one platform, not a product one
 - [x] Check the password gate, revocation, and re-upload against the deployed
       Worker rather than a local one
 - [ ] The upload ceiling is the one gate still only tested locally — refusing a
