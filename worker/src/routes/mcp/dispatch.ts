@@ -1,4 +1,5 @@
 import type { WorkerEnv } from "@/lib/env";
+import { originFor } from "@/lib/origins";
 import { handleAppRequest } from "@/routes/app";
 import { handleSandboxRequest } from "@/routes/sandbox";
 
@@ -13,7 +14,10 @@ export async function readFromApp(
   path: string,
 ): Promise<Dispatched> {
   return dispatched(
-    await handleAppRequest(new Request(`https://${env.APP_HOST}${path}`), env),
+    await handleAppRequest(
+      new Request(`${originFor(env.APP_HOST)}${path}`),
+      env,
+    ),
   );
 }
 
@@ -23,7 +27,7 @@ export async function readFromSandbox(
 ): Promise<Dispatched> {
   return dispatched(
     await handleSandboxRequest(
-      new Request(`https://${env.SANDBOX_HOST}${path}`),
+      new Request(`${originFor(env.SANDBOX_HOST)}${path}`),
       env,
     ),
   );

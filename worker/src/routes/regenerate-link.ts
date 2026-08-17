@@ -56,7 +56,7 @@ export async function handleRegenerateLink(
     {
       kind,
       token: regenerated.token,
-      url: viewerUrl(request, env, regenerated.token),
+      url: viewerUrl(env, regenerated.token),
     },
     200,
   );
