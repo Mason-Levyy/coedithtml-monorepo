@@ -34,6 +34,8 @@ describe("parseWorkerEnv", () => {
       "ARTIFACT_METADATA",
       "ASSETS",
       "DOC_ROOM",
+      "RATE_LIMITER",
+      "USAGE_LEDGER",
       "APP_HOST",
       "SANDBOX_HOST",
       "REDIRECT_HOSTS",
