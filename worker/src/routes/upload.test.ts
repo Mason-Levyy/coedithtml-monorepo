@@ -65,6 +65,9 @@ async function upload(
     editUrl?: string;
     restoredComments?: number;
     error?: string;
+    reason?: string;
+    headline?: string;
+    remedy?: string | null;
   };
   return { response, body, store };
 }
@@ -231,7 +234,8 @@ describe("handleUpload", () => {
     ]);
 
     expect(response.status).toBe(415);
-    expect(body.error).toMatch(/Content-Security-Policy/i);
+    expect(body.reason).toBe("has-own-csp");
+    expect(body.remedy).toMatch(/Content-Security-Policy/i);
   });
 
   it("reports a metadata write failure without leaking the cause", async () => {
@@ -274,7 +278,7 @@ describe("handleUpload", () => {
     ]);
 
     expect(response.status).toBe(400);
-    expect(body.error).toMatch(/one file/i);
+    expect(body.reason).toBe("several-files");
     expect(store.puts).toHaveLength(0);
   });
 
@@ -291,7 +295,7 @@ describe("handleUpload", () => {
     ]);
 
     expect(response.status).toBe(415);
-    expect(body.error).toMatch(/not an HTML document/i);
+    expect(body.reason).toBe("not-html");
     expect(store.puts).toHaveLength(0);
   });
 
@@ -304,7 +308,8 @@ describe("handleUpload", () => {
     ]);
 
     expect(response.status).toBe(415);
-    expect(body.error).toMatch(/build step/i);
+    expect(body.reason).toBe("needs-build-step");
+    expect(body.remedy).toMatch(/build/i);
   });
 
   it("rate-limits repeated uploads from the same client", async () => {
