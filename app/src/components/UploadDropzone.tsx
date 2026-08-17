@@ -1,25 +1,26 @@
 import { useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 import { validateArtifactFile } from "@/lib/upload-artifact";
+import type { UploadRejection } from "@/lib/upload-rejection";
 import { cn } from "@/lib/utils";
 
 type UploadDropzoneProps = {
   onFileSelected: (file: File) => void;
   disabled?: boolean;
-  errorMessage?: string | null;
+  rejection?: UploadRejection | null;
 };
 
 export function UploadDropzone({
   onFileSelected,
   disabled = false,
-  errorMessage = null,
+  rejection = null,
 }: UploadDropzoneProps) {
   const [isDraggedOver, setIsDraggedOver] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [refused, setRefused] = useState<UploadRejection | null>(null);
 
   function acceptIfValid(file: File): void {
     const invalidReason = validateArtifactFile(file);
-    setValidationError(invalidReason);
+    setRefused(invalidReason);
     if (invalidReason === null) {
       onFileSelected(file);
     }
@@ -43,7 +44,7 @@ export function UploadDropzone({
     }
   }
 
-  const shownError = validationError ?? errorMessage;
+  const shown = refused ?? rejection;
 
   return (
     <div>
@@ -71,10 +72,10 @@ export function UploadDropzone({
           onChange={handleInputChange}
         />
       </label>
-      {shownError !== null && (
+      {shown !== null && (
         <div
           role="alert"
-          className="mt-3 flex flex-col gap-1.5 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-left"
+          className="mt-3 flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-left"
         >
           <div className="flex items-center gap-2 text-destructive font-semibold text-xs font-mono uppercase tracking-wide">
             <svg
@@ -92,9 +93,14 @@ export function UploadDropzone({
               <line x1="12" y1="8" x2="12" y2="12" />
               <line x1="12" y1="16" x2="12.01" y2="16" />
             </svg>
-            <span>Upload rejected</span>
+            <span>{shown.headline}</span>
           </div>
-          <p className="text-sm text-foreground">{shownError}</p>
+          <p className="text-sm text-foreground">{shown.detail}</p>
+          {shown.remedy !== null && (
+            <p className="border-t border-destructive/20 pt-2 text-sm text-muted-foreground">
+              {shown.remedy}
+            </p>
+          )}
         </div>
       )}
     </div>

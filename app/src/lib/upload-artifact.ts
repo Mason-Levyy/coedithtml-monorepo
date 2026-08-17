@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { readErrorMessage } from "@/lib/api-error";
+import {
+  readRejection,
+  UploadRejected,
+  type UploadRejection,
+} from "@/lib/upload-rejection";
 
 export const MAX_ARTIFACT_BYTES = 5 * 1024 * 1024;
 
@@ -36,15 +40,33 @@ function isHtmlFile(file: File): boolean {
   return /\.html?$/i.test(file.name);
 }
 
-export function validateArtifactFile(file: File): string | null {
+// The three things a browser can see without sending anything. The worker
+// checks all three again and is the authority; this exists so nobody pushes
+// five megabytes up the wire to be told the extension was wrong.
+export function validateArtifactFile(file: File): UploadRejection | null {
   if (!isHtmlFile(file)) {
-    return "Only a single .html file can be uploaded.";
+    return {
+      headline: "Only a single .html file",
+      detail:
+        "Coedit hosts one self-contained HTML file — the kind an AI tool hands you when you ask for a page.",
+      remedy: null,
+    };
   }
   if (file.size === 0) {
-    return "The file is empty.";
+    return {
+      headline: "This file is empty",
+      detail: "There are no bytes in it at all.",
+      remedy: null,
+    };
   }
   if (file.size > MAX_ARTIFACT_BYTES) {
-    return "The file is larger than 5MB.";
+    return {
+      headline: "This file is over 5MB",
+      detail:
+        "The ceiling is there so one upload cannot run up the bill for everyone else.",
+      remedy:
+        "Large embedded images are usually the cause. Link them instead of inlining them, and the file will be a fraction of the size.",
+    };
   }
   return null;
 }
@@ -75,8 +97,8 @@ export async function uploadArtifact({
   });
 
   if (!response.ok) {
-    throw new Error(
-      await readErrorMessage(response, "Could not upload the file. Try again."),
+    throw new UploadRejected(
+      await readRejection(response, "Could not upload the file. Try again."),
     );
   }
 

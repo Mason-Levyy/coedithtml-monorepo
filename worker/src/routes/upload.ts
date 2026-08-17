@@ -3,7 +3,6 @@ import {
   chargeUploadAttempt,
   declaredBodyTooLarge,
   storeRevision,
-  TOO_LARGE,
   type AcceptedUpload,
 } from "@/lib/accept-upload";
 import {
@@ -17,6 +16,7 @@ import { addOwnerArtifact } from "@/lib/owner-artifacts";
 import { resolveOwnerId, withOwnerCookie } from "@/lib/owner-cookie";
 import { hashArtifactPassword } from "@/lib/password";
 import { jsonError, jsonResponse, SAVE_FAILED } from "@/lib/responses";
+import { rejectionResponse } from "@/lib/upload-rejection";
 import { seedRoomWithEntries } from "@/lib/room-seed";
 import { mintShareTokens, type ShareTokens } from "@/lib/share-tokens";
 import { viewerUrl } from "@/lib/share-links";
@@ -79,7 +79,7 @@ export async function handleUpload(
   env: WorkerEnv,
 ): Promise<Response> {
   if (declaredBodyTooLarge(request)) {
-    return jsonError(TOO_LARGE, 413);
+    return rejectionResponse("too-large", 413);
   }
 
   const overLimit = await chargeUploadAttempt(request, env);

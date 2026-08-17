@@ -39,16 +39,3 @@ export function checkHtmlDocument(source: string): HtmlDocumentCheck {
   }
   return { ok: true };
 }
-
-export function describeRejection(reason: HtmlDocumentRejection): string {
-  switch (reason) {
-    case "needs-build-step":
-      return "This file needs a build step. Upload the HTML a browser would run, not its source.";
-    case "not-html":
-      return "This file is not an HTML document.";
-    case "no-closing-html-tag":
-      return "This HTML document is incomplete — it has no closing </html> tag.";
-    case "has-own-csp":
-      return "This file sets its own Content-Security-Policy, which can silently block the editor. Remove the <meta> CSP tag and re-upload.";
-  }
-}
