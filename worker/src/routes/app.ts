@@ -1,3 +1,4 @@
+import { wantsMarkdown } from "@/lib/agent-markdown";
 import { serveAppAsset } from "@/lib/app-assets";
 import type { WorkerEnv } from "@/lib/env";
 import { isCrossOriginWrite } from "@/lib/request-origin";
@@ -8,6 +9,16 @@ import {
   handleDeleteArtifact,
   handleUpdateArtifactSettings,
 } from "./artifact-settings";
+import {
+  handleAgentCard,
+  handleApiCatalog,
+  handleAppHomeMarkdown,
+  handleAuthMd,
+  handleHealth,
+  handleOAuthAuthorizationServer,
+  handleOAuthProtectedResource,
+  handleTutorialMarkdown,
+} from "./discovery";
 import { handleListMyArtifacts } from "./my-artifacts";
 import { handlePublishArtifact } from "./publish";
 import { handleRegenerateLink } from "./regenerate-link";
@@ -31,17 +42,46 @@ const ARTIFACT_LINK_REGENERATE_PATH =
   /^\/api\/artifacts\/([^/]+)\/links\/(view|suggest|edit)\/regenerate$/;
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
+const DISCOVERY_ROUTES: Record<
+  string,
+  (req: Request, env: WorkerEnv) => Response
+> = {
+  "/.well-known/api-catalog": (req, env) => handleApiCatalog(req, env),
+  "/.well-known/agent-card.json": (req, env) => handleAgentCard(req, env),
+  "/.well-known/oauth-protected-resource": (req, env) =>
+    handleOAuthProtectedResource(req, env),
+  "/.well-known/oauth-authorization-server": (req, env) =>
+    handleOAuthAuthorizationServer(req, env),
+  "/auth.md": () => handleAuthMd(),
+  "/api/health": () => handleHealth(),
+};
+
 export async function handleAppRequest(
   request: Request,
   env: WorkerEnv,
 ): Promise<Response> {
   const { pathname } = new URL(request.url);
 
+  const discoveryHandler = DISCOVERY_ROUTES[pathname];
+  if (discoveryHandler) {
+    return request.method === "GET"
+      ? discoveryHandler(request, env)
+      : new Response("Method not allowed", { status: 405 });
+  }
+
   if (!pathname.startsWith("/api/")) {
+    if (pathname === "/" || pathname === "") {
+      if (request.method === "GET" && wantsMarkdown(request)) {
+        return handleAppHomeMarkdown();
+      }
+    }
     if (pathname === TUTORIAL_PATH || pathname === `${TUTORIAL_PATH}/`) {
-      return request.method === "GET"
-        ? handleStartTutorial(request, env)
-        : new Response("Method not allowed", { status: 405 });
+      if (request.method !== "GET") {
+        return new Response("Method not allowed", { status: 405 });
+      }
+      return wantsMarkdown(request)
+        ? handleTutorialMarkdown()
+        : handleStartTutorial(request, env);
     }
     if (!READ_METHODS.has(request.method)) {
       return new Response("Method not allowed", { status: 405 });

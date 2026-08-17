@@ -1,0 +1,17 @@
+{
+  "resource": "https://app.coedithtml.com/api",
+  "authorization_servers": [
+    "https://coedithtml.com"
+  ],
+  "scopes_supported": [
+    "artifacts:create",
+    "artifacts:read",
+    "artifacts:edit",
+    "artifacts:delete",
+    "artifacts:settings"
+  ],
+  "bearer_methods_supported": [
+    "header"
+  ],
+  "resource_documentation": "https://coedithtml.com/auth.md"
+}
