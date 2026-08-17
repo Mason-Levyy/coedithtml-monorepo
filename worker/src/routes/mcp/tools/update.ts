@@ -1,14 +1,13 @@
 ﻿import { z } from "zod";
 import type { WorkerEnv } from "@/lib/env";
 import { accessTokenSchema } from "@/lib/schemas/artifact";
-import { MCP_MAX_ARTIFACT_BYTES, chargeMcpUpload } from "../ceilings";
-import { callApp, jsonOf } from "../dispatch";
 import {
   errorResult,
   textResult,
   type McpTool,
   type ToolResult,
 } from "../tool";
+import { postArtifact } from "./post-artifact";
 
 const argumentsSchema = z.object({
   editToken: accessTokenSchema,
@@ -53,41 +52,26 @@ async function run(
   }
   const { editToken, html, fileName } = parsed.data;
 
-  if (new TextEncoder().encode(html).byteLength > MCP_MAX_ARTIFACT_BYTES) {
-    return errorResult(
-      "That file is over 1MB, which is more than this connector will carry.",
-    );
-  }
-
-  const refused = await chargeMcpUpload(context.request, context.env);
-  if (refused !== null) {
-    return errorResult(refused);
-  }
-
-  const form = new FormData();
-  form.append("file", new File([html], fileName, { type: "text/html" }));
-
-  const replaced = await callApp(context.env, {
-    path: `/api/artifacts/${editToken}/revisions`,
-    method: "POST",
-    rateLimitKey: editToken,
-    body: form,
-  });
-
-  const body = jsonOf(replaced);
-  if (replaced.status !== 200 || body === null) {
-    const reason = body?.error;
-    return errorResult(
-      typeof reason === "string"
-        ? reason
-        : "Coedit would not take that revision. Only an edit link may replace a file.",
-    );
+  const replaced = await postArtifact(
+    {
+      html,
+      fileName,
+      path: `/api/artifacts/${editToken}/revisions`,
+      rateLimitKey: editToken,
+      expect: 200,
+      refusal:
+        "Coedit would not take that revision. Only an edit link may replace a file.",
+    },
+    context,
+  );
+  if (!replaced.ok) {
+    return errorResult(replaced.message);
   }
 
   return textResult(
     JSON.stringify(
       {
-        revision: body.revision,
+        revision: replaced.body.revision,
         note: "The link people already have now serves this version. Call coedit_read_feedback to see which comments still line up with it.",
       },
       null,

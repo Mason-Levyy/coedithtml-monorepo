@@ -67,6 +67,9 @@ export async function resolveWorkspace(
   secret: string,
 ): Promise<{ ownerId: string; workspaceKey: string }> {
   const known = await ownerIdFromWorkspaceKey(key, secret);
-  const ownerId = known ?? newOwnerId();
+  if (known !== null && typeof key === "string") {
+    return { ownerId: known, workspaceKey: key };
+  }
+  const ownerId = newOwnerId();
   return { ownerId, workspaceKey: await workspaceKeyFor(ownerId, secret) };
 }
