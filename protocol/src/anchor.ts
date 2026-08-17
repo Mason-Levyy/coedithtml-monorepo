@@ -1,5 +1,7 @@
 export const CONTEXT_LENGTH = 32;
 
+export const EXCERPT_LENGTH = 80;
+
 export type TextAnchor = {
   kind: "text";
   quote: string;
@@ -15,6 +17,7 @@ export type RegionAnchor = {
   fractionX: number;
   fractionY: number;
   revision: string;
+  excerpt?: string;
 };
 
 export type Anchor = TextAnchor | RegionAnchor;
@@ -52,17 +55,33 @@ function isFraction(value: number): boolean {
   return Number.isFinite(value) && value >= 0 && value <= 1;
 }
 
+export function excerptFrom(text: string): string {
+  const collapsed = normalizeAnchorText(text);
+  return collapsed.length > EXCERPT_LENGTH
+    ? `${collapsed.slice(0, EXCERPT_LENGTH).trimEnd()}…`
+    : collapsed;
+}
+
 export function regionAnchor(options: {
   path: string;
   fractionX: number;
   fractionY: number;
   revision: string;
+  excerpt?: string;
 }): RegionAnchor | null {
   const { path, fractionX, fractionY, revision } = options;
   if (path.length === 0 || !isFraction(fractionX) || !isFraction(fractionY)) {
     return null;
   }
-  return { kind: "region", path, fractionX, fractionY, revision };
+  const anchor: RegionAnchor = {
+    kind: "region",
+    path,
+    fractionX,
+    fractionY,
+    revision,
+  };
+  const excerpt = excerptFrom(options.excerpt ?? "");
+  return excerpt.length === 0 ? anchor : { ...anchor, excerpt };
 }
 
 export type AnchorResolution =

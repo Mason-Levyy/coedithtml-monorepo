@@ -215,4 +215,25 @@ describe("region anchors", () => {
 
     expect(regionAnchorAtPoint(5, 5, REVISION)).toBeNull();
   });
+
+  it("carries an excerpt of the text it was dropped on", () => {
+    document.body.innerHTML = `<figure><figcaption>Q3 revenue by cohort</figcaption></figure>`;
+    const caption = document.querySelector("figcaption");
+    if (caption === null) {
+      throw new Error("no caption");
+    }
+    vi.spyOn(caption, "getBoundingClientRect").mockReturnValue({
+      ...box,
+      right: box.left + box.width,
+      bottom: box.top + box.height,
+      x: box.left,
+      y: box.top,
+      toJSON: () => ({}),
+    });
+    stubStack(caption);
+
+    expect(regionAnchorAtPoint(150, 100, REVISION)?.excerpt).toBe(
+      "Q3 revenue by cohort",
+    );
+  });
 });
