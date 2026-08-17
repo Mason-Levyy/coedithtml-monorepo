@@ -17,5 +17,5 @@ export function isCrossOriginWrite(
   if (origin === null) {
     return false;
   }
-  return origin !== originFor(request, config.APP_HOST);
+  return origin !== originFor(config.APP_HOST);
 }

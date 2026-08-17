@@ -28,7 +28,7 @@ export async function handleListMyArtifacts(
         const token = item[TOKEN_FIELD[kind]];
         return token === undefined
           ? []
-          : [[URL_FIELD[kind], viewerUrl(request, env, token)]];
+          : [[URL_FIELD[kind], viewerUrl(env, token)]];
       }),
     ),
   }));

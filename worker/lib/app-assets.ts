@@ -32,7 +32,7 @@ export async function serveAppAsset(
   env: WorkerEnv,
 ): Promise<Response> {
   const url = new URL(request.url);
-  const sandboxOrigin = originFor(request, env.SANDBOX_HOST);
+  const sandboxOrigin = originFor(env.SANDBOX_HOST);
   const secured = (response: Response): Response =>
     withAppSecurityHeaders(response, sandboxOrigin);
 

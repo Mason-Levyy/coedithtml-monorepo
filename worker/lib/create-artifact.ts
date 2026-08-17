@@ -144,11 +144,10 @@ export type CreatedArtifact =
 
 export async function createArtifact(options: {
   env: WorkerEnv;
-  request: Request;
   upload: AcceptedUpload;
   ownerId: string;
 }): Promise<CreatedArtifact> {
-  const { env, request, ownerId } = options;
+  const { env, ownerId } = options;
 
   const originalHtml = new TextDecoder().decode(options.upload.bytes);
   const cleanedHtml = withoutCoeditPayload(originalHtml);
@@ -220,9 +219,9 @@ export async function createArtifact(options: {
       ? {
           artifactId,
           ...tokens,
-          viewUrl: viewerUrl(request, env, tokens.viewToken),
-          suggestUrl: viewerUrl(request, env, tokens.suggestToken),
-          editUrl: viewerUrl(request, env, tokens.editToken),
+          viewUrl: viewerUrl(env, tokens.viewToken),
+          suggestUrl: viewerUrl(env, tokens.suggestToken),
+          editUrl: viewerUrl(env, tokens.editToken),
           published: true,
           restoredComments: restoredStickies.length,
         }

@@ -186,7 +186,7 @@ To start an interactive browser session, visit \`/tutorial\` in a web browser.
 `;
 
 export function handleApiCatalog(request: Request, env: WorkerEnv): Response {
-  const appOrigin = originFor(request, env.APP_HOST);
+  const appOrigin = originFor(env.APP_HOST);
   const siteOrigin = "https://coedithtml.com";
   const catalog = buildApiCatalog(appOrigin, siteOrigin);
   return new Response(JSON.stringify(catalog, null, 2), {
@@ -198,7 +198,7 @@ export function handleApiCatalog(request: Request, env: WorkerEnv): Response {
 }
 
 export function handleAgentCard(request: Request, env: WorkerEnv): Response {
-  const appOrigin = originFor(request, env.APP_HOST);
+  const appOrigin = originFor(env.APP_HOST);
   const siteOrigin = "https://coedithtml.com";
   const card = buildAgentCard(appOrigin, siteOrigin);
   return jsonResponse(card, 200, {

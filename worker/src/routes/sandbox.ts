@@ -47,7 +47,7 @@ async function serveSandboxScript(
   }
 
   const body = await assetResponse.text();
-  const appOrigin = originFor(request, env.APP_HOST);
+  const appOrigin = originFor(env.APP_HOST);
   const configured =
     script.assetPath === RUNTIME_ASSET_PATH
       ? `"use strict";\nwindow.__coedit__=${JSON.stringify({ config: { appOrigin, revision: script.revision } })};\n${body}`
