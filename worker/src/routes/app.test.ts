@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { FAKE_APP_HOST, stubAssets, testWorkerEnv } from "@/lib/fakes";
+import {
+  FAKE_APP_HOST,
+  FAKE_SANDBOX_HOST,
+  stubAssets,
+  testWorkerEnv,
+} from "@/lib/fakes";
 import { handleAppRequest } from "./app";
 
 const INDEX_HTML = "<!doctype html><title>Coedit</title>";
@@ -67,6 +72,64 @@ describe("handleAppRequest asset serving", () => {
       new Request(`https://${FAKE_APP_HOST}/`, { method: "DELETE" }),
       envWithApp(),
     );
+    expect(response.status).toBe(405);
+  });
+});
+
+describe("writes arriving from another origin", () => {
+  function write(method: string, path: string, origin: string | null): Request {
+    return new Request(`https://${FAKE_APP_HOST}${path}`, {
+      method,
+      headers: origin === null ? {} : { origin },
+    });
+  }
+
+  const FROM_SANDBOX = `https://${FAKE_SANDBOX_HOST}`;
+
+  it("refuses an upload driven by a script inside an artifact", async () => {
+    const response = await handleAppRequest(
+      write("POST", "/api/artifacts", FROM_SANDBOX),
+      envWithApp(),
+    );
+
+    expect(response.status).toBe(403);
+  });
+
+  it("refuses a delete, whatever else the request carries", async () => {
+    const response = await handleAppRequest(
+      write("DELETE", `/api/my-artifacts/${"a".repeat(32)}`, FROM_SANDBOX),
+      envWithApp(),
+    );
+
+    expect(response.status).toBe(403);
+  });
+
+  // Multipart form data is sent without a preflight, which is what made this
+  // the one state-changing route any origin could fire.
+  it("refuses a replacement upload posted from anywhere else", async () => {
+    const response = await handleAppRequest(
+      write("POST", `/api/artifacts/${"a".repeat(32)}/revisions`, FROM_SANDBOX),
+      envWithApp(),
+    );
+
+    expect(response.status).toBe(403);
+  });
+
+  it("leaves reading alone, since the artifact frame has to read", async () => {
+    const response = await handleAppRequest(
+      write("GET", "/api/nope", FROM_SANDBOX),
+      envWithApp(),
+    );
+
+    expect(response.status).toBe(404);
+  });
+
+  it("lets the app's own origin write", async () => {
+    const response = await handleAppRequest(
+      write("PUT", "/api/artifacts", `https://${FAKE_APP_HOST}`),
+      envWithApp(),
+    );
+
     expect(response.status).toBe(405);
   });
 });

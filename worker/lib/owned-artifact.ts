@@ -8,11 +8,24 @@ import { jsonError, SAVE_FAILED } from "@/lib/responses";
 export type OwnedArtifactResult =
   { ok: true; metadata: ArtifactMetadata } | { ok: false; response: Response };
 
+// An artifact with no recorded owner has no owner, and nobody may manage it.
+// The permissive reading -- no owner means anyone -- handed every artifact
+// uploaded before the owner cookie existed to any reader of any link,
+// including a view-only one, since the viewer payload carries the artifact id.
+// That was delete, password change, and link revocation for strangers.
+//
+// Failing closed costs those artifacts nothing that worked: their owner never
+// had a cookie to prove anything with either. Their links keep serving, and
+// v0.6's sweep is what eventually collects them.
 export function ownsArtifact(
   metadata: ArtifactMetadata,
   request: Request,
 ): boolean {
-  return !metadata.ownerId || metadata.ownerId === ownerIdFrom(request);
+  const owner = metadata.ownerId;
+  if (owner === undefined || owner.length === 0) {
+    return false;
+  }
+  return owner === ownerIdFrom(request);
 }
 
 export async function requireOwnedArtifact(

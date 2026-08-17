@@ -46,7 +46,7 @@ describe("artifact-settings", () => {
         {
           method: "PATCH",
           headers: {
-            cookie: `coedit_owner=${OWNER_ID}`,
+            cookie: `__Host-coedit_owner=${OWNER_ID}`,
             "content-type": "application/json",
           },
           body: JSON.stringify({ password: "new-password" }),
@@ -75,7 +75,7 @@ describe("artifact-settings", () => {
         {
           method: "PATCH",
           headers: {
-            cookie: `coedit_owner=${OWNER_ID}`,
+            cookie: `__Host-coedit_owner=${OWNER_ID}`,
             "content-type": "application/json",
           },
           body: JSON.stringify({ password: "" }),
@@ -100,7 +100,7 @@ describe("artifact-settings", () => {
         `https://app.test/api/artifacts/${ARTIFACT_ID}/settings`,
         {
           method: "PATCH",
-          headers: { cookie: `coedit_owner=${"c".repeat(32)}` },
+          headers: { cookie: `__Host-coedit_owner=${"c".repeat(32)}` },
           body: JSON.stringify({ password: "test" }),
         },
       );
@@ -135,7 +135,7 @@ describe("artifact-settings", () => {
         `https://app.test/api/my-artifacts/${ARTIFACT_ID}`,
         {
           method: "DELETE",
-          headers: { cookie: `coedit_owner=${OWNER_ID}` },
+          headers: { cookie: `__Host-coedit_owner=${OWNER_ID}` },
         },
       );
 
@@ -156,7 +156,7 @@ describe("artifact-settings", () => {
         `https://app.test/api/artifacts/${ARTIFACT_ID}`,
         {
           method: "DELETE",
-          headers: { cookie: `coedit_owner=${"c".repeat(32)}` },
+          headers: { cookie: `__Host-coedit_owner=${"c".repeat(32)}` },
         },
       );
 
