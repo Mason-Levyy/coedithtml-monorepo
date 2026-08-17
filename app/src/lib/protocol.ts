@@ -23,6 +23,7 @@ export {
   patchEntryMessage,
   removeEntryMessage,
   renderMarksMessage,
+  feedbackHandoffPrompt,
   overlayToMarkdown,
   repliesTo,
   revealMarkMessage,
