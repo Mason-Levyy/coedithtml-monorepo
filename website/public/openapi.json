@@ -1,0 +1,506 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "coeditHTML API",
+    "version": "1.0.0",
+    "description": "API for uploading, co-editing, sharing, and managing single-file HTML artifacts in real time.",
+    "contact": {
+      "name": "coeditHTML Support",
+      "email": "support@coedithtml.com",
+      "url": "https://coedithtml.com"
+    },
+    "license": {
+      "name": "Proprietary",
+      "url": "https://coedithtml.com/terms"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://app.coedithtml.com",
+      "description": "Production API Server"
+    },
+    {
+      "url": "http://app.localhost:8787",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/api/health": {
+      "get": {
+        "summary": "Service Health Check",
+        "description": "Returns operational status of the worker service.",
+        "operationId": "getHealth",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" },
+                    "service": { "type": "string", "example": "coedit-worker" }
+                  },
+                  "required": ["status"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/artifacts": {
+      "post": {
+        "summary": "Upload and Publish HTML Artifact",
+        "description": "Uploads a single-file HTML document (up to 5MB) and creates share tokens.",
+        "operationId": "uploadArtifact",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The standalone HTML file."
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "Optional password for password-gating the artifact."
+                  },
+                  "draft": {
+                    "type": "string",
+                    "description": "Set to 'true' to save without generating share links immediately."
+                  }
+                },
+                "required": ["file"]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "html": {
+                    "type": "string",
+                    "description": "Raw HTML string content of the artifact."
+                  },
+                  "fileName": {
+                    "type": "string",
+                    "default": "index.html"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "draft": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["html"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Artifact created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "artifactId": { "type": "string" },
+                    "viewToken": { "type": "string" },
+                    "suggestToken": { "type": "string" },
+                    "editToken": { "type": "string" },
+                    "viewUrl": { "type": "string" },
+                    "suggestUrl": { "type": "string" },
+                    "editUrl": { "type": "string" },
+                    "published": { "type": "boolean" },
+                    "restoredComments": { "type": "integer" }
+                  },
+                  "required": ["artifactId", "published"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid upload format or non-HTML content",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "413": {
+            "description": "File exceeds size ceiling (5MB)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/artifacts/{token}": {
+      "get": {
+        "summary": "Get Artifact Details",
+        "description": "Retrieves metadata and current client permissions associated with a share token.",
+        "operationId": "getArtifact",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Share token (view, suggest, or edit)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artifact metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fileName": { "type": "string" },
+                    "size": { "type": "integer" },
+                    "uploadedAt": { "type": "string", "format": "date-time" },
+                    "tokenKind": {
+                      "type": "string",
+                      "enum": ["view", "suggest", "edit"]
+                    },
+                    "canWrite": { "type": "boolean" },
+                    "canSuggest": { "type": "boolean" },
+                    "hasPassword": { "type": "boolean" },
+                    "isUnlocked": { "type": "boolean" },
+                    "isPublished": { "type": "boolean" },
+                    "viewUrl": { "type": "string" },
+                    "suggestUrl": { "type": "string" },
+                    "editUrl": { "type": "string" }
+                  },
+                  "required": [
+                    "fileName",
+                    "size",
+                    "uploadedAt",
+                    "tokenKind",
+                    "canWrite",
+                    "canSuggest",
+                    "hasPassword",
+                    "isUnlocked",
+                    "isPublished",
+                    "viewUrl"
+                  ]
+                }
+              },
+              "text/markdown": {
+                "schema": { "type": "string" }
+              }
+            }
+          },
+          "404": {
+            "description": "Artifact or token not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Revoke Token",
+        "description": "Revokes the given share token, disabling future access through it.",
+        "operationId": "revokeToken",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "revoked": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Token not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/artifacts/{token}/publish": {
+      "post": {
+        "summary": "Publish Draft Artifact",
+        "description": "Mints public share tokens for a previously unpublished draft artifact.",
+        "operationId": "publishArtifact",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artifact published",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "artifactId": { "type": "string" },
+                    "viewToken": { "type": "string" },
+                    "suggestToken": { "type": "string" },
+                    "editToken": { "type": "string" },
+                    "viewUrl": { "type": "string" },
+                    "suggestUrl": { "type": "string" },
+                    "editUrl": { "type": "string" },
+                    "published": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/artifacts/{token}/settings": {
+      "patch": {
+        "summary": "Update Artifact Settings",
+        "description": "Updates password protection or settings on an artifact (requires edit token or owner session).",
+        "operationId": "updateSettings",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "New password string or null to remove password protection."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasPassword": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/artifacts/{token}/revisions": {
+      "post": {
+        "summary": "Upload New Artifact Revision",
+        "description": "Replaces artifact HTML with a updated version (requires edit capability).",
+        "operationId": "replaceRevision",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Revision uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "artifactId": { "type": "string" },
+                    "revision": { "type": "string" },
+                    "size": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/artifacts/{token}/unlock": {
+      "post": {
+        "summary": "Unlock Password-Protected Artifact",
+        "description": "Validates password and issues unlock grant cookie/session for the token.",
+        "operationId": "unlockArtifact",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": { "type": "string" }
+                },
+                "required": ["password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Artifact unlocked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "unlocked": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Incorrect password",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/my-artifacts": {
+      "get": {
+        "summary": "List My Artifacts",
+        "description": "Lists all artifacts created by the caller's session.",
+        "operationId": "listMyArtifacts",
+        "responses": {
+          "200": {
+            "description": "List of artifacts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "artifacts": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "artifactId": { "type": "string" },
+                          "fileName": { "type": "string" },
+                          "size": { "type": "integer" },
+                          "uploadedAt": { "type": "string" },
+                          "published": { "type": "boolean" },
+                          "hasPassword": { "type": "boolean" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tutorial": {
+      "get": {
+        "summary": "Start Interactive Tutorial",
+        "description": "Creates a temporary interactive tutorial artifact for guided exploration.",
+        "operationId": "startTutorial",
+        "responses": {
+          "302": {
+            "description": "Redirects to interactive tutorial sandbox session"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable error description"
+          }
+        },
+        "required": ["error"]
+      }
+    }
+  }
+}

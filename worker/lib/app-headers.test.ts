@@ -40,5 +40,7 @@ describe("what the app origin says about itself", () => {
     );
     expect(headers.get("strict-transport-security")).toContain("max-age=");
     expect(headers.get("cross-origin-opener-policy")).toBe("same-origin");
+    expect(headers.get("link")).toContain('rel="api-catalog"');
+    expect(headers.get("link")).toContain('rel="agent-card"');
   });
 });
