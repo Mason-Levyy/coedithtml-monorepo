@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { testWorkerEnv } from "@/lib/fakes";
+import { stubAssets, testWorkerEnv } from "@/lib/fakes";
 import { handleAppRequest } from "./app";
 import type { buildAgentCard, buildApiCatalog } from "./discovery";
 import {
@@ -52,17 +52,48 @@ describe("discovery endpoints & agent readiness", () => {
   });
 
   it("does not advertise an OAuth authorization server it does not run", async () => {
+    const serving = testWorkerEnv({
+      ASSETS: stubAssets([
+        {
+          path: "/index.html",
+          body: "<!doctype html><title>coeditHTML</title>",
+          contentType: "text/html",
+        },
+      ]),
+    });
+
     for (const path of [
       "/.well-known/oauth-protected-resource",
       "/.well-known/oauth-authorization-server",
+      "/.well-known/anything-else",
     ]) {
       const response = await handleAppRequest(
         new Request(`https://app.test:8787${path}`),
-        env,
+        serving,
       );
 
       expect(response.status).toBe(404);
+      expect(response.headers.get("content-type")).not.toContain("text/html");
     }
+  });
+
+  it("still serves the app shell outside the reserved namespace", async () => {
+    const serving = testWorkerEnv({
+      ASSETS: stubAssets([
+        {
+          path: "/index.html",
+          body: "<!doctype html><title>coeditHTML</title>",
+          contentType: "text/html",
+        },
+      ]),
+    });
+
+    const response = await handleAppRequest(
+      new Request(`https://app.test:8787/a/${"a".repeat(32)}`),
+      serving,
+    );
+
+    expect(response.status).toBe(200);
   });
 
   it("serves /auth.md as markdown with required H1 and token count", async () => {

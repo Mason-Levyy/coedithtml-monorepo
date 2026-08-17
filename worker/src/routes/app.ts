@@ -40,6 +40,8 @@ const ARTIFACT_LINK_REGENERATE_PATH =
   /^\/api\/artifacts\/([^/]+)\/links\/(view|suggest|edit)\/regenerate$/;
 const READ_METHODS = new Set(["GET", "HEAD"]);
 
+const WELL_KNOWN_PREFIX = "/.well-known/";
+
 const DISCOVERY_ROUTES: Record<
   string,
   (req: Request, env: WorkerEnv) => Response
@@ -61,6 +63,10 @@ export async function handleAppRequest(
     return request.method === "GET"
       ? discoveryHandler(request, env)
       : new Response("Method not allowed", { status: 405 });
+  }
+
+  if (pathname.startsWith(WELL_KNOWN_PREFIX)) {
+    return jsonError("Not found.", 404);
   }
 
   if (!pathname.startsWith("/api/")) {
