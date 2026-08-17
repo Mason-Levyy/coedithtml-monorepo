@@ -11,7 +11,7 @@ import {
   feedbackSection,
   type DownloadChoice,
 } from "@/lib/artifact-download";
-import { getArtifact } from "@/lib/artifact-store";
+import { readArtifactBytes } from "@/lib/artifact-cache";
 import type { WorkerEnv } from "@/lib/env";
 import type { ResolvedArtifact } from "@/lib/resolve-artifact";
 import { ROOM_OVERLAY_PATH, ROOM_REVISION_HEADER } from "@/lib/room-headers";
@@ -102,7 +102,7 @@ export async function handleArtifactDownload(options: {
     );
   }
 
-  const stored = await getArtifact(
+  const stored = await readArtifactBytes(
     env.ARTIFACT_STORE,
     artifactId,
     metadata.revision,

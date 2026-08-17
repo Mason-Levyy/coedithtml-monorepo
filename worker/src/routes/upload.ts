@@ -21,6 +21,17 @@ import { seedRoomWithEntries } from "@/lib/room-seed";
 import { mintShareTokens, type ShareTokens } from "@/lib/share-tokens";
 import { viewerUrl } from "@/lib/share-links";
 import { newArtifactId } from "@/lib/storage-keys";
+import {
+  GLOBAL_LEDGER,
+  GLOBAL_MAX_ARTIFACTS,
+  GLOBAL_MAX_BYTES,
+  holdSpace,
+  ownerLedger,
+  OWNER_MAX_ARTIFACTS,
+  OWNER_MAX_BYTES,
+  releaseClaim,
+  releaseSpace,
+} from "@/lib/usage";
 
 type StoredUpload =
   { ok: true; revision: string } | { ok: false; response: Response };
@@ -74,6 +85,50 @@ async function storeUpload(
   return { ok: true, revision };
 }
 
+// The global ceiling is taken first, so a single owner cannot walk past it by
+// being under their own. Anything held and then not stored is given back before
+// the request ends -- a ceiling that only ever counts up stops being a ceiling
+// and becomes a countdown.
+async function claimSpace(
+  env: WorkerEnv,
+  ownerId: string,
+  bytes: number,
+): Promise<Response | null> {
+  const global = await holdSpace(env.USAGE_LEDGER, GLOBAL_LEDGER, {
+    bytes,
+    maxBytes: GLOBAL_MAX_BYTES,
+    maxArtifacts: GLOBAL_MAX_ARTIFACTS,
+  });
+  if (!global.ok) {
+    console.error("Failed to read the global ceiling", global.cause);
+    return jsonError(SAVE_FAILED, 500);
+  }
+  if (!global.allowed) {
+    return jsonError(
+      "Coedit is holding as much as it can right now. Try again later.",
+      507,
+    );
+  }
+
+  const owner = await holdSpace(env.USAGE_LEDGER, ownerLedger(ownerId), {
+    bytes,
+    maxBytes: OWNER_MAX_BYTES,
+    maxArtifacts: OWNER_MAX_ARTIFACTS,
+  });
+  if (!owner.ok || !owner.allowed) {
+    await releaseSpace(env.USAGE_LEDGER, GLOBAL_LEDGER, bytes);
+    if (!owner.ok) {
+      console.error("Failed to read the owner quota", owner.cause);
+      return jsonError(SAVE_FAILED, 500);
+    }
+    return jsonError(
+      "You are storing as much as one person can. Delete a file to make room.",
+      507,
+    );
+  }
+  return null;
+}
+
 export async function handleUpload(
   request: Request,
   env: WorkerEnv,
@@ -101,6 +156,11 @@ export async function handleUpload(
       ? accepted.upload
       : { ...accepted.upload, bytes: bytesOf(cleanedHtml) };
 
+  const room = await claimSpace(env, ownerId, upload.bytes.byteLength);
+  if (room !== null) {
+    return room;
+  }
+
   const artifactId = newArtifactId();
   const uploadedAt = new Date().toISOString();
 
@@ -121,6 +181,7 @@ export async function handleUpload(
     tokens,
   );
   if (!stored.ok) {
+    await releaseClaim(env, ownerId, upload.bytes.byteLength);
     return stored.response;
   }
 

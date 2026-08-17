@@ -1,7 +1,7 @@
 import { unlockedArtifactPayload } from "@/lib/artifact-payload";
 import type { WorkerEnv } from "@/lib/env";
 import { verifyArtifactPassword } from "@/lib/password";
-import { isWithinRateLimit, recordRateLimitedAttempt } from "@/lib/rate-limit";
+import { chargeAttempt, refundAttempt } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
 import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { jsonError, jsonResponse } from "@/lib/responses";
@@ -38,16 +38,15 @@ export async function handleUnlockArtifact(
   }
 
   const attemptKey = `password-attempts:${artifactId}:${clientIpOf(request)}`;
-  const rateLimit = await isWithinRateLimit(
-    env.ARTIFACT_METADATA,
-    attemptKey,
-    ATTEMPT_LIMIT,
-  );
-  if (!rateLimit.ok) {
-    console.error("Failed to check the password rate limit", rateLimit.cause);
+  const charged = await chargeAttempt(env.RATE_LIMITER, attemptKey, {
+    limit: ATTEMPT_LIMIT,
+    windowSeconds: ATTEMPT_WINDOW_SECONDS,
+  });
+  if (!charged.ok) {
+    console.error("Failed to charge the password attempt", charged.cause);
     return jsonError(UNAVAILABLE, 500);
   }
-  if (!rateLimit.allowed) {
+  if (!charged.allowed) {
     return jsonError("Too many attempts. Try again later.", 429);
   }
 
@@ -56,17 +55,11 @@ export async function handleUnlockArtifact(
     metadata.passwordHash,
   );
   if (!valid) {
-    const recorded = await recordRateLimitedAttempt(
-      env.ARTIFACT_METADATA,
-      attemptKey,
-      ATTEMPT_WINDOW_SECONDS,
-    );
-    if (!recorded.ok) {
-      console.error("Failed to record the password attempt", recorded.cause);
-      return jsonError(UNAVAILABLE, 500);
-    }
     return jsonError("Incorrect password.", 401);
   }
+  // Charged up front so parallel guesses cannot all pass the same check, and
+  // given back here so reading a document five times does not lock you out.
+  await refundAttempt(env.RATE_LIMITER, attemptKey);
 
   const minted = await mintUnlockGrant(env.ARTIFACT_METADATA, artifactId);
   if (!minted.ok) {

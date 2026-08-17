@@ -32,12 +32,24 @@ const docRoomSchema = z.custom<DurableObjectNamespace>(
   { message: "DOC_ROOM is not bound to a Durable Object namespace" },
 );
 
+const rateLimiterSchema = z.custom<DurableObjectNamespace>(
+  (value) => exposes(value, ["get", "idFromName"]),
+  { message: "RATE_LIMITER is not bound to a Durable Object namespace" },
+);
+
+const usageLedgerSchema = z.custom<DurableObjectNamespace>(
+  (value) => exposes(value, ["get", "idFromName"]),
+  { message: "USAGE_LEDGER is not bound to a Durable Object namespace" },
+);
+
 export const workerEnvSchema = z
   .object({
     ARTIFACT_STORE: artifactStoreSchema,
     ARTIFACT_METADATA: artifactMetadataSchema,
     ASSETS: assetsSchema,
     DOC_ROOM: docRoomSchema,
+    RATE_LIMITER: rateLimiterSchema,
+    USAGE_LEDGER: usageLedgerSchema,
     ...originConfigShape,
   })
   .refine(hostsAreDistinct, {
