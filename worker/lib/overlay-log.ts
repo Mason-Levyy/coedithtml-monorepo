@@ -9,10 +9,11 @@ import {
   type RejectionReason,
   type RoomToClientMessage,
 } from "@coedithtml/protocol";
+import { entryWithinLimits, MAX_ID_LENGTH } from "@/lib/entry-limits";
+
+export { MAX_BODY_LENGTH } from "@/lib/entry-limits";
 
 export const MAX_ENTRIES_PER_ROOM = 500;
-
-export const MAX_BODY_LENGTH = 4000;
 
 export type EntryStore = {
   list(): OverlayEntry[];
@@ -35,12 +36,12 @@ function addEntry(
   entry: OverlayEntry,
   now: string,
 ): LogOutcome {
+  if (!entryWithinLimits(entry)) {
+    return rejected("too-long", entry.id.slice(0, MAX_ID_LENGTH));
+  }
   const existing = store.get(entry.id);
   if (existing !== null) {
     return { ok: true, broadcast: entryAddedMessage(existing) };
-  }
-  if (entry.body.length > MAX_BODY_LENGTH) {
-    return rejected("too-long", entry.id);
   }
   if (isEdit(entry) && entry.rev !== 0) {
     return rejected("malformed", entry.id);
@@ -62,15 +63,12 @@ function patchStoredEntry(
   id: string,
   message: Extract<ClientToRoomMessage, { type: "patch-entry" }>,
 ): LogOutcome {
+  if (id.length > MAX_ID_LENGTH) {
+    return rejected("too-long", id.slice(0, MAX_ID_LENGTH));
+  }
   const existing = store.get(id);
   if (existing === null) {
     return rejected("unknown-entry", id);
-  }
-  if (
-    message.patch.body !== undefined &&
-    message.patch.body.length > MAX_BODY_LENGTH
-  ) {
-    return rejected("too-long", id);
   }
   if (
     message.patch.ifRev !== undefined &&
@@ -82,6 +80,12 @@ function patchStoredEntry(
   const patched = patchEntry(existing, message.patch);
   if (patched === null) {
     return rejected("malformed", id);
+  }
+  // A patch can carry an anchor and a body of its own, so the result is what
+  // has to be measured -- checking the patch alone would let a quote through
+  // that the entry then keeps.
+  if (!entryWithinLimits(patched)) {
+    return rejected("too-long", id);
   }
   store.put(patched);
   return { ok: true, broadcast: entryPatchedMessage(patched) };

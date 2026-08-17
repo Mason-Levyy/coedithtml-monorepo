@@ -10,6 +10,7 @@ import {
   type OverlayEntry,
   type RoomToClientMessage,
 } from "@coedithtml/protocol";
+import { MESSAGE_BURST } from "@/lib/message-budget";
 import { ROOM_KIND_HEADER, ROOM_REVISION_HEADER } from "@/lib/room-headers";
 import type { TokenKind } from "@/lib/room-capabilities";
 
@@ -388,4 +389,70 @@ describe("a live DocRoom", () => {
       reason: "malformed",
     });
   });
+
+  it("refuses to store a quote nobody could have selected", async () => {
+    const writer = await connect("huge-quote-room", "edit");
+    await writer.next();
+
+    send(
+      writer,
+      addEntryMessage(
+        comment({
+          body: "",
+          anchor: { ...ANCHOR, quote: "x".repeat(20_000) },
+        }),
+      ),
+    );
+
+    expect(await writer.next()).toMatchObject({
+      type: "rejected",
+      reason: "too-long",
+    });
+  });
+
+  // hello is answered before the write check, so a view-only link was the
+  // cheapest way to make the room shout at all 64 sockets at once.
+  it("stops the least privileged connection in the room flooding it", async () => {
+    const reader = await connect("flood-room", "view");
+    await reader.next();
+
+    for (let sent = 0; sent < MESSAGE_BURST + 10; sent += 1) {
+      send(reader, helloMessage({ id: "reader-1", displayName: "Priya" }));
+    }
+
+    const refusals = await refusalsAmong(reader, MESSAGE_BURST + 10);
+    expect(refusals).toContain("too-fast");
+  });
+
+  it("refuses a name being used as storage", async () => {
+    const reader = await connect("huge-name-room", "view");
+    await reader.next();
+
+    send(
+      reader,
+      helloMessage({ id: "reader-1", displayName: "x".repeat(5_000) }),
+    );
+
+    expect(await reader.next()).toMatchObject({
+      type: "rejected",
+      reason: "too-long",
+    });
+  });
 });
+
+async function refusalsAmong(
+  connection: Connection,
+  attempts: number,
+): Promise<string[]> {
+  const reasons: string[] = [];
+  for (let seen = 0; seen < attempts; seen += 1) {
+    const message = await connection.next().catch(() => null);
+    if (message === null) {
+      break;
+    }
+    if (message.type === "rejected") {
+      reasons.push(message.reason);
+    }
+  }
+  return reasons;
+}

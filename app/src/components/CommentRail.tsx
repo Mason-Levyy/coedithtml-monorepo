@@ -26,6 +26,7 @@ const REJECTION_LABEL: Record<RejectionReason, string> = {
   "too-long": "That comment is too long.",
   "not-editable": "This link can mark the file up but not change its text.",
   stale: "Someone else changed that text while you were typing.",
+  "too-fast": "That arrived faster than the room can take it. Slow down.",
 };
 
 type CommentRailProps = {
