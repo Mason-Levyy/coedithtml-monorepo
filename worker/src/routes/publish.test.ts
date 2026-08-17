@@ -32,7 +32,7 @@ describe("handlePublishArtifact", () => {
       {
         method: "POST",
         headers: {
-          cookie: `coedit_owner=${OWNER_ID}`,
+          cookie: `__Host-coedit_owner=${OWNER_ID}`,
           "content-type": "application/json",
         },
         body: JSON.stringify({ password: "secret-password" }),
@@ -68,7 +68,7 @@ describe("handlePublishArtifact", () => {
       {
         method: "POST",
         headers: {
-          cookie: `coedit_owner=${"c".repeat(32)}`,
+          cookie: `__Host-coedit_owner=${"c".repeat(32)}`,
         },
       },
     );
@@ -84,7 +84,7 @@ describe("handlePublishArtifact", () => {
       `https://app.test/api/artifacts/${ARTIFACT_ID}/publish`,
       {
         method: "POST",
-        headers: { cookie: `coedit_owner=${OWNER_ID}` },
+        headers: { cookie: `__Host-coedit_owner=${OWNER_ID}` },
       },
     );
 

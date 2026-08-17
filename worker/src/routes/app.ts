@@ -1,5 +1,6 @@
 import { serveAppAsset } from "@/lib/app-assets";
 import type { WorkerEnv } from "@/lib/env";
+import { isCrossOriginWrite } from "@/lib/request-origin";
 import { jsonError } from "@/lib/responses";
 import type { TokenKind } from "@/lib/room-capabilities";
 import { handleGetArtifact } from "./artifact";
@@ -46,6 +47,10 @@ export async function handleAppRequest(
       return new Response("Method not allowed", { status: 405 });
     }
     return serveAppAsset(request, env);
+  }
+
+  if (!READ_METHODS.has(request.method) && isCrossOriginWrite(request, env)) {
+    return jsonError("This request did not come from the app.", 403);
   }
 
   if (pathname === "/api/artifacts") {
