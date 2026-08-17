@@ -9,6 +9,7 @@ import { SaveIndicator } from "@/components/SaveIndicator";
 import { SelectionAction } from "@/components/SelectionAction";
 import { ShareMenu } from "@/components/ShareMenu";
 import { StickyPad, type PadPoint } from "@/components/StickyPad";
+import { UndoRedo } from "@/components/UndoRedo";
 
 import { ViewerBar } from "@/components/ViewerBar";
 import { useArmedTool } from "@/hooks/useArmedTool";
@@ -57,6 +58,7 @@ export function ArtifactViewer({
 }: ArtifactViewerProps) {
   void revision;
   const frame = useRef<HTMLIFrameElement>(null);
+  const stepping = useRef({ back: () => {}, forward: () => {} });
   const [resetCount, setResetCount] = useState(0);
   const frameSrc = useMemo(
     () => frameSrcFor(src, resetCount),
@@ -134,6 +136,34 @@ export function ArtifactViewer({
       setActiveMarkId(bridge.activatedMarkId);
     }
   }, [bridge.activatedMarkId]);
+
+  // A caret inside the artifact keeps its keystrokes in the artifact's own
+  // document, so this listener is already silent while somebody is typing
+  // there — which is right, because inside a live caret the browser's undo is
+  // the one they mean. The same courtesy is owed to the rail's own fields.
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent): void {
+      const inField =
+        event.target instanceof HTMLElement &&
+        (event.target.isContentEditable ||
+          ["INPUT", "TEXTAREA"].includes(event.target.tagName));
+      if (inField || !(event.metaKey || event.ctrlKey)) {
+        return;
+      }
+      if (event.key.toLowerCase() !== "z") {
+        return;
+      }
+      event.preventDefault();
+      if (event.shiftKey) {
+        stepping.current.forward();
+        return;
+      }
+      stepping.current.back();
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const authoring = useMarkAuthoring({
     entries: room.entries,
@@ -249,6 +279,20 @@ export function ArtifactViewer({
     setResetCount((count) => count + 1);
   }
 
+  function stepBack(): void {
+    if (room.undo()) {
+      setResetCount((count) => count + 1);
+    }
+  }
+
+  function stepForward(): void {
+    if (room.redo()) {
+      setResetCount((count) => count + 1);
+    }
+  }
+
+  stepping.current = { back: stepBack, forward: stepForward };
+
   function removeEveryEdit(): void {
     for (const edit of editsAmong(room.entries)) {
       room.removeEntry(edit.id);
@@ -281,6 +325,14 @@ export function ArtifactViewer({
       <header className="sticky top-0 z-30 w-full flex-none">
         <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
           <div className="flex items-center gap-2.5 sm:gap-3">
+            {canMarkUp && (
+              <UndoRedo
+                canUndo={room.canUndo}
+                canRedo={room.canRedo}
+                onUndo={stepBack}
+                onRedo={stepForward}
+              />
+            )}
             {canMarkUp && <SaveIndicator state={room.saveState} />}
             {tutorial && <FinishTour />}
             {canMarkUp && (
