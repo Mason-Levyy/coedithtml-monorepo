@@ -17,7 +17,8 @@
     "APP_HOST": "app.localhost:8787",
     "SANDBOX_HOST": "sandbox.localhost:8787",
     "REDIRECT_HOSTS": "www.localhost:8787",
-    "REDIRECT_TARGET": "app.localhost:8787"
+    "REDIRECT_TARGET": "app.localhost:8787",
+    "MCP_ENABLED": "true"
   },
 
   "r2_buckets": [
@@ -76,7 +77,8 @@
         "APP_HOST": "app.coedithtml.com",
         "SANDBOX_HOST": "coedit.coedithtml-worker.workers.dev",
         "REDIRECT_HOSTS": "www.coedithtml.com",
-        "REDIRECT_TARGET": "coedithtml.com"
+        "REDIRECT_TARGET": "coedithtml.com",
+        "MCP_ENABLED": "false"
       },
 
       "triggers": {

@@ -19,6 +19,7 @@ import {
   handleOAuthProtectedResource,
   handleTutorialMarkdown,
 } from "./discovery";
+import { handleMcpRequest, mcpEnabled } from "./mcp";
 import { handleListMyArtifacts } from "./my-artifacts";
 import { handlePublishArtifact } from "./publish";
 import { handleRegenerateLink } from "./regenerate-link";
@@ -29,6 +30,7 @@ import { handleStartTutorial } from "./tutorial";
 import { handleUnlockArtifact } from "./unlock";
 import { handleUpload } from "./upload";
 
+const MCP_PATH = "/mcp";
 const TUTORIAL_PATH = "/tutorial";
 const MY_ARTIFACTS_PATH = "/api/my-artifacts";
 const MY_ARTIFACT_PATH = /^\/api\/my-artifacts\/([^/]+)$/;
@@ -67,6 +69,12 @@ export async function handleAppRequest(
     return request.method === "GET"
       ? discoveryHandler(request, env)
       : new Response("Method not allowed", { status: 405 });
+  }
+
+  if (pathname === MCP_PATH) {
+    return mcpEnabled(env)
+      ? handleMcpRequest(request, env)
+      : jsonError("Not found.", 404);
   }
 
   if (!pathname.startsWith("/api/")) {
