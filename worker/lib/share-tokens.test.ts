@@ -7,7 +7,7 @@ import { regenerateShareToken } from "./share-tokens";
 const ARTIFACT_ID = "a".repeat(32);
 
 describe("regenerateShareToken", () => {
-  it("mints a token when none existed, with no sibling links", async () => {
+  it("mints a token when none existed, naming only itself", async () => {
     const kv = liveKv();
     const env = testWorkerEnv({ ARTIFACT_METADATA: kv });
 
@@ -17,7 +17,9 @@ describe("regenerateShareToken", () => {
 
     expect(result.tokens.viewToken).toBe(result.token);
     const resolved = await resolveAccessToken(kv, result.token);
-    expect(resolved.ok && resolved.record?.siblingTokens).toBeUndefined();
+    expect(resolved.ok && resolved.record?.siblingTokens).toEqual({
+      view: result.token,
+    });
   });
 
   it("revokes the old token and keeps siblings in sync when all three exist", async () => {

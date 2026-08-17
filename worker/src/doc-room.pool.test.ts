@@ -391,7 +391,7 @@ describe("a live DocRoom", () => {
   });
 
   it("refuses to store a quote nobody could have selected", async () => {
-    const writer = await connect("huge-quote-room", "edit");
+    const writer = await connect("limits-room", "edit");
     await writer.next();
 
     send(
@@ -413,7 +413,7 @@ describe("a live DocRoom", () => {
   // hello is answered before the write check, so a view-only link was the
   // cheapest way to make the room shout at all 64 sockets at once.
   it("stops the least privileged connection in the room flooding it", async () => {
-    const reader = await connect("flood-room", "view");
+    const reader = await connect("limits-room", "view");
     await reader.next();
 
     for (let sent = 0; sent < MESSAGE_BURST + 10; sent += 1) {
@@ -425,7 +425,7 @@ describe("a live DocRoom", () => {
   });
 
   it("refuses a name being used as storage", async () => {
-    const reader = await connect("huge-name-room", "view");
+    const reader = await connect("limits-room", "view");
     await reader.next();
 
     send(

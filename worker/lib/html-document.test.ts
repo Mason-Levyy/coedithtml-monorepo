@@ -104,3 +104,50 @@ export default function Deck() {
     expect(reasonFor(source)).toBe("has-own-csp");
   });
 });
+
+// The uploader chooses the document, so every pattern here runs against five
+// megabytes of somebody else's text. These are the shapes that used to make
+// one of them re-scan the rest of the file for every position it started at.
+describe("a document written to make the checker work", () => {
+  function withinASecond(source: string): number {
+    const started = Date.now();
+    checkHtmlDocument(source);
+    return Date.now() - started;
+  }
+
+  it("finishes on an import that never says from", () => {
+    const source = `<html><body>${"import a\n".repeat(200_000)}</body></html>`;
+
+    expect(withinASecond(source)).toBeLessThan(1000);
+  });
+
+  it("finishes on a script tag that is never closed", () => {
+    const source = `<html><body>${"<script ".repeat(200_000)}</body></html>`;
+
+    expect(withinASecond(source)).toBeLessThan(1000);
+  });
+
+  it("finishes on a meta tag that is never closed", () => {
+    const source = `<html><head>${"<meta ".repeat(200_000)}</head><body>hi</body></html>`;
+
+    expect(withinASecond(source)).toBeLessThan(1000);
+  });
+
+  it("still finds a real import once the padding is out of the way", () => {
+    const source = `<html><body>${"x".repeat(500_000)}\nimport React from "react";\n</body></html>`;
+
+    expect(reasonFor(source)).toBe("needs-build-step");
+  });
+
+  it("still ignores markers that only appear inside a script", () => {
+    const source = `<html><body><script>\nimport thing from "./thing.js";\n</script><p>hi</p></body></html>`;
+
+    expect(checkHtmlDocument(source).ok).toBe(true);
+  });
+
+  it("ignores markers inside several scripts, not just the first", () => {
+    const source = `<html><body><script>const a = 1;</script><p>hi</p><script>\nimport x from "y";\n</script></body></html>`;
+
+    expect(checkHtmlDocument(source).ok).toBe(true);
+  });
+});

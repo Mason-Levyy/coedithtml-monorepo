@@ -2,8 +2,10 @@ import { putAccessToken, revokeAccessToken } from "@/lib/access-tokens";
 import type { WorkerEnv } from "@/lib/env";
 import { jsonError } from "@/lib/responses";
 import {
+  siblingsVisibleTo,
   TOKEN_FIELD,
   TOKEN_KINDS,
+  type SiblingTokens,
   type TokenKind,
 } from "@/lib/room-capabilities";
 import { newToken } from "@/lib/storage-keys";
@@ -29,7 +31,7 @@ export async function mintShareTokens(
     suggestToken: newToken(),
     editToken: newToken(),
   };
-  const siblingTokens = {
+  const allTokens: SiblingTokens = {
     view: tokens.viewToken,
     suggest: tokens.suggestToken,
     edit: tokens.editToken,
@@ -38,8 +40,12 @@ export async function mintShareTokens(
     TOKEN_KINDS.map((kind) =>
       putAccessToken(
         env.ARTIFACT_METADATA,
-        siblingTokens[kind],
-        { artifactId, kind, siblingTokens },
+        allTokens[kind] ?? "",
+        {
+          artifactId,
+          kind,
+          siblingTokens: siblingsVisibleTo(kind, allTokens),
+        },
         options,
       ),
     ),
@@ -69,16 +75,11 @@ export async function regenerateShareToken(
     [TOKEN_FIELD[kind]]: freshToken,
   };
 
-  const siblingTokens =
-    updatedTokens.viewToken &&
-    updatedTokens.suggestToken &&
-    updatedTokens.editToken
-      ? {
-          view: updatedTokens.viewToken,
-          suggest: updatedTokens.suggestToken,
-          edit: updatedTokens.editToken,
-        }
-      : undefined;
+  const allTokens: SiblingTokens = {
+    view: updatedTokens.viewToken,
+    suggest: updatedTokens.suggestToken,
+    edit: updatedTokens.editToken,
+  };
 
   const results = await Promise.all(
     TOKEN_KINDS.map((k) => {
@@ -89,7 +90,7 @@ export async function regenerateShareToken(
       return putAccessToken(env.ARTIFACT_METADATA, token, {
         artifactId,
         kind: k,
-        siblingTokens,
+        siblingTokens: siblingsVisibleTo(k, allTokens),
       });
     }),
   );
