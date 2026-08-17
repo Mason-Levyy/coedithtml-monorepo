@@ -15,6 +15,9 @@ const VIEW_LINK = "https://coedit.example/a/view-token";
 const SUGGEST_LINK = "https://coedit.example/a/suggest-token";
 const EDIT_LINK = "https://coedit.example/a/edit-token";
 
+const REAL_EDIT_TOKEN = "e".repeat(32);
+const REAL_EDIT_LINK = `https://coedit.example/a/${REAL_EDIT_TOKEN}`;
+
 function stubClipboard(): { written: string[] } {
   const written: string[] = [];
   vi.stubGlobal("navigator", {
@@ -37,6 +40,7 @@ function openMenu(
   render(
     <ShareMenu
       feedback={feedback}
+      fileName="q3-review.html"
       artifactUrl={ARTIFACT_URL}
       shareLinks={shareLinks}
     />,
@@ -49,6 +53,7 @@ describe("ShareMenu", () => {
     render(
       <ShareMenu
         feedback={FEEDBACK}
+        fileName="q3-review.html"
         artifactUrl={ARTIFACT_URL}
         shareLinks={{ view: VIEW_LINK }}
       />,
@@ -160,6 +165,37 @@ describe("ShareMenu", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open ChatGPT" }));
 
     expect(opened[0]).toContain("chatgpt.com/?q=");
+  });
+
+  it("sends the token instead of the review when the reader can edit", () => {
+    const opened: string[] = [];
+    vi.stubGlobal("open", (url: string) => {
+      opened.push(url);
+      return null;
+    });
+    openMenu(FEEDBACK, { edit: REAL_EDIT_LINK });
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Claude" }));
+
+    const sent = new URL(opened[0] ?? "").searchParams.get("q") ?? "";
+    expect(sent).toContain(REAL_EDIT_TOKEN);
+    expect(sent).toContain("coedit_update_artifact");
+    expect(sent).not.toContain("1 thread, 1 still open.");
+  });
+
+  it("still opens in one click when the review is far too long for a URL", async () => {
+    const clipboard = stubClipboard();
+    const opened: string[] = [];
+    vi.stubGlobal("open", (url: string) => {
+      opened.push(url);
+      return null;
+    });
+    openMenu("x".repeat(40_000), { edit: REAL_EDIT_LINK });
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Claude" }));
+
+    expect(opened[0]).toContain("claude.ai/new?q=");
+    await waitFor(() => expect(clipboard.written).toEqual([]));
   });
 
   it("copies a review too long for a URL rather than truncating it", async () => {

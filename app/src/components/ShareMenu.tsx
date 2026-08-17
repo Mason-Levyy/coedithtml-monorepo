@@ -9,6 +9,7 @@ import {
   PROMPT_BASE_URL,
   type AiTool,
 } from "@/lib/ai-handoff";
+import { withoutUnlockGrant } from "@/lib/artifact-src";
 import {
   DOWNLOAD_CHOICES,
   DOWNLOAD_LABEL,
@@ -16,12 +17,19 @@ import {
   downloadUrlFor,
   type DownloadChoice,
 } from "@/lib/download-artifact";
-import { LINK_PERMISSIONS, type LinkPermission } from "@/lib/link-permission";
+import {
+  editTokenIn,
+  LINK_PERMISSIONS,
+  type LinkPermission,
+} from "@/lib/link-permission";
 
 const NOTHING_TO_COPY = "No changes to send yet.";
 
 const SENDS_THE_CHANGES =
   "Opens a new chat with the comments, notes, and edits people left, and asks for exactly those changes.";
+
+const SENDS_THE_LINK =
+  "Opens a new chat and asks for exactly the changes people left. With Coedit connected there, the new version publishes straight back to this link.";
 
 const LAST_TOOL_KEY = "coedit:ai-tool";
 
@@ -38,12 +46,14 @@ const PERMISSION_LABEL: Record<LinkPermission, string> = {
 
 type ShareMenuProps = {
   feedback: string;
+  fileName: string;
   artifactUrl: string;
   shareLinks: Partial<Record<LinkPermission, string>>;
 };
 
 export function ShareMenu({
   feedback,
+  fileName,
   artifactUrl,
   shareLinks,
 }: ShareMenuProps) {
@@ -55,9 +65,22 @@ export function ShareMenu({
   const notes = useCopyToClipboard();
   const hasFeedback = feedback.length > 0;
 
+  const editToken = editTokenIn(shareLinks);
+
   function handOff(): void {
     window.localStorage.setItem(LAST_TOOL_KEY, tool);
-    const handoff = handoffFor({ tool, feedback });
+    const handoff = handoffFor({
+      tool,
+      feedback,
+      connector:
+        editToken === null
+          ? null
+          : {
+              editToken,
+              fileName,
+              artifactUrl: withoutUnlockGrant(artifactUrl),
+            },
+    });
     if (handoff.kind === "open") {
       setHandedOff(false);
       window.open(handoff.url, "_blank", "noopener,noreferrer");
@@ -171,7 +194,9 @@ export function ShareMenu({
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          {hasFeedback ? SENDS_THE_CHANGES : NOTHING_TO_COPY}
+          {!hasFeedback && NOTHING_TO_COPY}
+          {hasFeedback &&
+            (editToken === null ? SENDS_THE_CHANGES : SENDS_THE_LINK)}
         </p>
         <Button
           type="button"

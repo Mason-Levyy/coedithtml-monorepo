@@ -358,6 +358,7 @@ export function ArtifactViewer({
             />
             <ShareMenu
               feedback={feedback}
+              fileName={fileName}
               artifactUrl={src}
               shareLinks={shareLinks}
             />
