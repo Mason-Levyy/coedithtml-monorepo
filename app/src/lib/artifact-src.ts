@@ -1,3 +1,5 @@
+import { UNLOCK_QUERY_PARAM } from "@/lib/protocol";
+
 const REVISION_QUERY_PARAM = "r";
 const RESET_QUERY_PARAM = "reset";
 
@@ -17,10 +19,12 @@ export function artifactSrcFor(artifact: {
   );
 }
 
-// Removing an edit cannot un-apply it: `replayEdits` only ever moves forward,
-// and the replaced wording is gone from the DOM. The stored bytes were never
-// touched, so a reload of the frame is the reset — the surviving edits replay
-// onto the original text in order.
+export function withoutUnlockGrant(src: string): string {
+  const url = new URL(src);
+  url.searchParams.delete(UNLOCK_QUERY_PARAM);
+  return url.toString();
+}
+
 export function frameSrcFor(src: string, reset: number): string {
   return reset === 0 ? src : withParam(src, RESET_QUERY_PARAM, String(reset));
 }
