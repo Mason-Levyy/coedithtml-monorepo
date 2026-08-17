@@ -30,7 +30,6 @@ import { handleStartTutorial } from "./tutorial";
 import { handleUnlockArtifact } from "./unlock";
 import { handleUpload } from "./upload";
 
-const MCP_PATH = "/mcp";
 const TUTORIAL_PATH = "/tutorial";
 const MY_ARTIFACTS_PATH = "/api/my-artifacts";
 const MY_ARTIFACT_PATH = /^\/api\/my-artifacts\/([^/]+)$/;
