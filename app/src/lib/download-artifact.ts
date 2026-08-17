@@ -3,9 +3,9 @@ export const DOWNLOAD_CHOICES = ["edits", "everything", "feedback"] as const;
 export type DownloadChoice = (typeof DOWNLOAD_CHOICES)[number];
 
 export const DOWNLOAD_LABEL: Record<DownloadChoice, string> = {
-  edits: "The file with edits",
-  everything: "The file with edits and comments",
-  feedback: "Feedback as markdown",
+  edits: "File",
+  everything: "File + notes",
+  feedback: "Feedback",
 };
 
 export const DOWNLOAD_NOTE: Record<DownloadChoice, string> = {

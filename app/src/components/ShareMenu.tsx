@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DownloadControls } from "@/components/DownloadControls";
 import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
+import { Select } from "@/components/ui/select";
 import { copyLabel, useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import {
   AI_TOOL_LABEL,
@@ -17,13 +18,10 @@ import {
   type LinkPermission,
 } from "@/lib/link-permission";
 
-const NOTHING_TO_COPY = "No changes to send yet.";
+const NOTHING_TO_SEND = "No changes to send yet.";
 
 const SENDS_THE_CHANGES =
-  "Opens a new chat with the comments, notes, and edits people left, and asks for exactly those changes.";
-
-const SENDS_THE_LINK =
-  "Opens a new chat and asks for exactly the changes people left. With Coedit connected there, the new version publishes straight back to this link.";
+  "Opens a new chat asking for exactly these changes. With Coedit connected there, the rewrite publishes back to this link.";
 
 const LAST_TOOL_KEY = "coedit:ai-tool";
 
@@ -129,20 +127,13 @@ export function ShareMenu({
     >
       <div className="flex items-center gap-2">
         {available.length > 1 && (
-          <select
-            aria-label="Link permission"
+          <Select
+            label="Link permission"
             value={permission}
-            onChange={(event) =>
-              setPermission(event.target.value as LinkPermission)
-            }
-            className="h-8 border border-line bg-paper-2 px-1.5 font-mono text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            {available.map((kind) => (
-              <option key={kind} value={kind}>
-                {PERMISSION_LABEL[kind]}
-              </option>
-            ))}
-          </select>
+            options={available}
+            labelFor={PERMISSION_LABEL}
+            onChange={setPermission}
+          />
         )}
         <Button
           type="button"
@@ -155,27 +146,17 @@ export function ShareMenu({
           {copyLabel(link.state)}
         </Button>
       </div>
+
       {canEdit && (
-        <div className="mt-1 flex flex-col gap-1.5 border-t border-line pt-2">
-          <label
-            htmlFor="ai-tool"
-            className="font-mono text-[10px] tracking-wide text-muted-foreground uppercase"
-          >
-            Make changes with
-          </label>
+        <div className="mt-2 flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <select
-              id="ai-tool"
+            <Select
+              label="AI tool"
               value={tool}
-              onChange={(event) => setTool(event.target.value as AiTool)}
-              className="h-8 border border-line bg-paper-2 px-1.5 font-mono text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            >
-              {AI_TOOLS.map((option) => (
-                <option key={option} value={option}>
-                  {AI_TOOL_LABEL[option]}
-                </option>
-              ))}
-            </select>
+              options={AI_TOOLS}
+              labelFor={AI_TOOL_LABEL}
+              onChange={setTool}
+            />
             <Button
               type="button"
               variant="outline"
@@ -186,30 +167,18 @@ export function ShareMenu({
             >
               {handedOff
                 ? "Copied — paste it in"
-                : copyLabel(notes.state, `Open ${AI_TOOL_LABEL[tool]}`)}
+                : copyLabel(notes.state, "Send changes")}
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            {!hasFeedback && NOTHING_TO_COPY}
-            {hasFeedback &&
-              (editToken === null ? SENDS_THE_CHANGES : SENDS_THE_LINK)}
+            {hasFeedback ? SENDS_THE_CHANGES : NOTHING_TO_SEND}
           </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="justify-start"
-            disabled={!hasFeedback}
-            onClick={() => notes.copy(feedback)}
-          >
-            {copyLabel(notes.state, "Copy the changes instead")}
-          </Button>
         </div>
       )}
 
       <DownloadControls
         artifactUrl={artifactUrl}
-        className="mt-1 border-t border-line pt-2"
+        className="mt-2 border-t border-line pt-2"
       />
     </Popover>
   );
