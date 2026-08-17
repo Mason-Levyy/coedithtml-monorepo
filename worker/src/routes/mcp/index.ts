@@ -19,7 +19,11 @@ import {
   unsupportedVersion,
 } from "./jsonrpc";
 import { toolListing, toolNamed } from "./tools";
-import { MODERN_PROTOCOL_VERSION, isModernVersion } from "./versions";
+import {
+  MODERN_PROTOCOL_VERSION,
+  isModernVersion,
+  legacyVersionFor,
+} from "./versions";
 
 const LIST_TTL_MS = 3_600_000;
 const CAPABILITIES = { tools: { listChanged: false } };
@@ -106,6 +110,34 @@ async function dispatchMethod(
   return methodNotFound(message.id, message.method);
 }
 
+async function handleLegacy(
+  message: JsonRpcMessage,
+  request: Request,
+  env: WorkerEnv,
+): Promise<Response> {
+  if (message.method === "initialize") {
+    return rpcResult(message.id, {
+      protocolVersion: legacyVersionFor(message.params?.protocolVersion),
+      capabilities: CAPABILITIES,
+      serverInfo: SERVER_INFO,
+    });
+  }
+  if (message.method === "notifications/initialized") {
+    return new Response(null, { status: 202 });
+  }
+  if (message.method === "ping") {
+    return rpcResult(message.id, {});
+  }
+  if (message.method === "tools/list") {
+    return rpcResult(message.id, { tools: toolListing() });
+  }
+  if (message.method === "tools/call") {
+    const called = await callTool(message, request, env);
+    return called instanceof Response ? called : rpcResult(message.id, called);
+  }
+  return methodNotFound(message.id, message.method);
+}
+
 export function mcpEnabled(env: WorkerEnv): boolean {
   return env.MCP_ENABLED === "true";
 }
@@ -125,11 +157,11 @@ export async function handleMcpRequest(
   const message = read.message;
 
   const declaredVersion = protocolVersionIn(message);
-  if (declaredVersion === null || !isModernVersion(declaredVersion)) {
-    return unsupportedVersion(
-      message.id,
-      declaredVersion ?? request.headers.get("mcp-protocol-version") ?? "",
-    );
+  if (declaredVersion === null) {
+    return handleLegacy(message, request, env);
+  }
+  if (!isModernVersion(declaredVersion)) {
+    return unsupportedVersion(message.id, declaredVersion);
   }
 
   const mismatch = headerMismatchIn(request, message, declaredVersion);
