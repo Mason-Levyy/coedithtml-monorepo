@@ -46,37 +46,37 @@ Content-Type: multipart/form-data
 
 ---
 
-## Supported Identity & Authorization Flows
+## How Authorization Works
 
-coeditHTML supports multiple standard authentication and discovery profiles:
+There is no authorization server, no OAuth flow, and no scopes to request. The
+token **is** the permission, and you get one by uploading a file.
 
-1. **Anonymous / Zero-Barrier Flow**
-   - **Identity Type**: `anonymous`
-   - **Credential Type**: `bearer_token`
-   - **Endpoint**: `https://app.coedithtml.com/api/artifacts`
-   - **Mechanism**: Immediate upload without credentials. Returns capability tokens for subsequent operations.
+1. **Anonymous upload**
+   - `POST https://app.coedithtml.com/api/artifacts` with no credentials.
+   - The response carries the three capability tokens below. Whoever holds a
+     token has exactly what that token allows, on exactly one artifact.
 
-2. **Identity Assertion Flow**
-   - **Identity Type**: `identity_assertion`
-   - **Supported Assertions**:
-     - `urn:ietf:params:oauth:token-type:id-jag`
-     - `verified_email`
-   - **Claim URI**: `https://app.coedithtml.com/api/artifacts`
+2. **Using a token**
+   - Pass it in the URL path, as `/{token}`. There is no `Authorization` header
+     to set and no bearer scheme to negotiate.
 
-3. **Session Cookie Flow (Browser & Agent)**
-   - The initial upload response sets an `owner` session cookie. Clients presenting this cookie can list all their active artifacts via `GET https://app.coedithtml.com/api/my-artifacts`.
+3. **Session cookie (browsers)**
+   - The upload response sets an owner cookie so a browser can list its own
+     artifacts at `GET /api/my-artifacts`. Server-to-server clients do not get
+     one and do not need one — they keep their tokens instead.
 
 ---
 
-## Scopes & Permissions
+## What Each Token May Do
 
-| Scope | Description | Required Capability |
+| Token | May do | May not do |
 | :--- | :--- | :--- |
-| `artifacts:create` | Upload and publish a new HTML artifact | None (Open access) |
-| `artifacts:read` | Inspect metadata and view rendered HTML | `viewToken`, `suggestToken`, or `editToken` |
-| `artifacts:edit` | Modify text, add comments, and upload revisions | `editToken` (or `suggestToken` for comments) |
-| `artifacts:settings` | Update passwords and rotate share links | `editToken` |
-| `artifacts:delete` | Revoke a share token or delete an artifact | `editToken` or owner session |
+| `viewToken` | Read the artifact, read its feedback, download it | Write anything |
+| `suggestToken` | Everything above, plus comments and sticky notes | Change the artifact's text |
+| `editToken` | Everything above, plus edit text in place, upload revisions, set a password, rotate or revoke links | — |
+
+A token record only ever names siblings at or below its own level, so a view
+link cannot learn that an edit link exists.
 
 ---
 

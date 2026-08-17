@@ -29,7 +29,6 @@ export const DISCOVERY_LINK_HEADER = [
   '</openapi.json>; rel="service-desc"; type="application/openapi+json"',
   '</llms.txt>; rel="service-doc"',
   '</auth.md>; rel="describedby"',
-  '</.well-known/oauth-protected-resource>; rel="oauth-protected-resource"',
 ].join(", ");
 
 export function appSecurityHeaders(sandboxOrigin: string): Headers {
