@@ -1,4 +1,9 @@
-import { getArtifact, type GetArtifactResult } from "@/lib/artifact-store";
+import type { ArtifactMetadata } from "@/lib/artifact-metadata";
+import {
+  getObject,
+  objectKeyFor,
+  type GetArtifactResult,
+} from "@/lib/artifact-store";
 
 // Every view was a fresh R2 read, and a document sent to a room full of people
 // is the same bytes read a hundred times over.
@@ -10,10 +15,6 @@ import { getArtifact, type GetArtifactResult } from "@/lib/artifact-store";
 // response, because revocation has to mean revoked now.
 const CACHE_SECONDS = 300;
 
-function cacheKeyFor(artifactId: string, revision: string): string {
-  return `https://artifact-bytes.invalid/${artifactId}/${revision}`;
-}
-
 function edgeCache(): Cache | null {
   return typeof caches === "undefined" ? null : caches.default;
 }
@@ -22,9 +23,14 @@ export async function readArtifactBytes(
   store: R2Bucket,
   artifactId: string,
   revision: string,
+  metadata: Pick<ArtifactMetadata, "blobs" | "ownerId">,
 ): Promise<GetArtifactResult> {
   const cache = edgeCache();
-  const key = cacheKeyFor(artifactId, revision);
+  // Keyed on the object, so two artifacts sharing bytes share one cache entry
+  // as well -- and so a revision that moved into the blob space is not read
+  // back out of an entry filled from where it used to live.
+  const objectKey = objectKeyFor(artifactId, revision, metadata);
+  const key = `https://artifact-bytes.invalid/${objectKey}`;
 
   if (cache !== null) {
     try {
@@ -37,7 +43,7 @@ export async function readArtifactBytes(
     }
   }
 
-  const result = await getArtifact(store, artifactId, revision);
+  const result = await getObject(store, objectKey);
   if (cache !== null && result.ok && result.bytes !== null) {
     try {
       await cache.put(

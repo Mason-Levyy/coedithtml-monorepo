@@ -20,10 +20,21 @@ export function fakeArtifactStore(): Record<string, unknown> {
 export function stubArtifactStore(
   stored: { artifactId: string; revision: string; bytes: ArrayBuffer }[],
 ): R2Bucket {
-  const entries = new Map(
-    stored.map(({ artifactId, revision, bytes }) => [
-      artifactObjectKey(artifactId, revision),
+  return stubBlobStore(
+    stored.map(({ artifactId, revision, bytes }) => ({
+      key: artifactObjectKey(artifactId, revision),
       bytes,
+    })),
+  );
+}
+
+export function stubBlobStore(
+  stored: { key: string; bytes?: ArrayBuffer; body?: string }[],
+): R2Bucket {
+  const entries = new Map(
+    stored.map(({ key, bytes, body }) => [
+      key,
+      bytes ?? (new TextEncoder().encode(body ?? "").buffer as ArrayBuffer),
     ]),
   );
   return {
@@ -311,6 +322,7 @@ export function fakeRateLimiter(): Record<string, unknown> {
 
 export function fakeUsageLedger(): Record<string, unknown> {
   const held = new Map<string, { bytes: number; artifacts: number }>();
+  const refs = new Map<string, { bytes: number; artifacts: string[] }>();
   return {
     idFromName: (name: string) => ({ toString: () => name }),
     get: (id: { toString(): string }) => ({
@@ -319,6 +331,12 @@ export function fakeUsageLedger(): Record<string, unknown> {
         const path = new URL(url);
         const usage = held.get(key) ?? { bytes: 0, artifacts: 0 };
         const bytes = Number(path.searchParams.get("bytes"));
+        const digest = `${key}:${path.searchParams.get("digest") ?? ""}`;
+        const artifactId = path.searchParams.get("artifact") ?? "";
+        const fits = (next: { bytes: number; artifacts: number }) =>
+          next.bytes <= Number(path.searchParams.get("maxBytes")) &&
+          next.artifacts <= Number(path.searchParams.get("maxArtifacts"));
+
         if (path.pathname === "/read") {
           return Promise.resolve(Response.json(usage));
         }
@@ -329,19 +347,57 @@ export function fakeUsageLedger(): Record<string, unknown> {
           });
           return Promise.resolve(Response.json(held.get(key)));
         }
+        if (path.pathname === "/attach") {
+          const existing = refs.get(digest);
+          const next = {
+            bytes: usage.bytes + (existing === undefined ? bytes : 0),
+            artifacts: usage.artifacts + 1,
+          };
+          if (!fits(next)) {
+            return Promise.resolve(
+              Response.json({ allowed: false, store: false }),
+            );
+          }
+          const entry = existing ?? { bytes, artifacts: [] };
+          if (!entry.artifacts.includes(artifactId)) {
+            entry.artifacts.push(artifactId);
+          }
+          refs.set(digest, entry);
+          held.set(key, next);
+          return Promise.resolve(
+            Response.json({ allowed: true, store: existing === undefined }),
+          );
+        }
+        if (path.pathname === "/detach") {
+          const existing = refs.get(digest);
+          if (existing === undefined) {
+            return Promise.resolve(Response.json({ lastReference: false }));
+          }
+          const remaining = existing.artifacts.filter(
+            (name) => name !== artifactId,
+          );
+          const last = remaining.length === 0;
+          held.set(key, {
+            bytes: Math.max(0, usage.bytes - (last ? existing.bytes : 0)),
+            artifacts: Math.max(0, usage.artifacts - 1),
+          });
+          if (last) {
+            refs.delete(digest);
+          } else {
+            refs.set(digest, { ...existing, artifacts: remaining });
+          }
+          return Promise.resolve(Response.json({ lastReference: last }));
+        }
+
         const next = {
           bytes: usage.bytes + bytes,
           artifacts: usage.artifacts + 1,
         };
-        const allowed =
-          next.bytes <= Number(path.searchParams.get("maxBytes")) &&
-          next.artifacts <= Number(path.searchParams.get("maxArtifacts"));
-        if (allowed) {
-          held.set(key, next);
+        if (!fits(next)) {
+          return Promise.resolve(Response.json({ allowed: false, usage }));
         }
-        return Promise.resolve(
-          Response.json({ allowed, usage: allowed ? next : usage }),
-        );
+        held.set(key, next);
+        return Promise.resolve(Response.json({ allowed: true, usage: next }));
       },
     }),
   };
@@ -372,13 +428,17 @@ export function countingUsageLedger(): CountingUsageLedger {
     get: () => ({
       fetch: (url: string) => {
         const { pathname } = new URL(url);
-        if (pathname === "/release") {
+        if (pathname === "/release" || pathname === "/detach") {
           counts.releases += 1;
-          return Promise.resolve(Response.json({ bytes: 0, artifacts: 0 }));
+          return Promise.resolve(Response.json({ lastReference: true }));
         }
         counts.holds += 1;
         return Promise.resolve(
-          Response.json({ allowed: true, usage: { bytes: 0, artifacts: 1 } }),
+          Response.json({
+            allowed: true,
+            store: true,
+            usage: { bytes: 0, artifacts: 1 },
+          }),
         );
       },
     }),
