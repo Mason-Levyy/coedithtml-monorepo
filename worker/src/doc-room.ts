@@ -26,6 +26,7 @@ import {
   ROOM_OVERLAY_PATH,
   ROOM_REVISION_HEADER,
   ROOM_SEED_PATH,
+  ROOM_WIPE_PATH,
 } from "@/lib/room-headers";
 
 const MAX_CONNECTIONS = 64;
@@ -76,6 +77,9 @@ export class DocRoom extends DurableObject<Env> {
     }
     if (pathname === ROOM_SEED_PATH) {
       return this.seedOnce(request);
+    }
+    if (pathname === ROOM_WIPE_PATH) {
+      return this.wipe();
     }
     if (request.headers.get("upgrade") !== "websocket") {
       return new Response("Expected a websocket upgrade.", { status: 426 });
@@ -176,6 +180,22 @@ export class DocRoom extends DurableObject<Env> {
     this.broadcast(
       presenceMessage(readersAmong(this.ctx.getWebSockets(), socket)),
     );
+  }
+
+  // Deleting an artifact used to leave its room behind: every comment, every
+  // sticky, every edit, held for ever in a document nobody can reach. The
+  // sockets go first, because a connection outliving its document would sit
+  // there writing into storage that has just been cleared.
+  private async wipe(): Promise<Response> {
+    for (const socket of this.ctx.getWebSockets()) {
+      try {
+        socket.close(1001, "This file was deleted");
+      } catch (cause) {
+        console.error("Could not close a room connection", cause);
+      }
+    }
+    await this.ctx.storage.deleteAll();
+    return new Response(null, { status: 204 });
   }
 
   private async seedOnce(request: Request): Promise<Response> {
