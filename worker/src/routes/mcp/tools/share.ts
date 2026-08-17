@@ -1,8 +1,6 @@
 ﻿import { z } from "zod";
 import type { WorkerEnv } from "@/lib/env";
 import { TOKEN_KINDS, type TokenKind } from "@/lib/room-capabilities";
-import { MCP_MAX_ARTIFACT_BYTES, chargeMcpUpload } from "../ceilings";
-import { callApp, jsonOf } from "../dispatch";
 import {
   errorResult,
   textResult,
@@ -10,6 +8,7 @@ import {
   type ToolResult,
 } from "../tool";
 import { resolveWorkspace } from "../workspace-key";
+import { postArtifact } from "./post-artifact";
 
 const argumentsSchema = z.object({
   html: z.string().min(1),
@@ -63,15 +62,6 @@ const INPUT_SCHEMA = {
   required: ["html", "fileName"],
 } as const;
 
-function bodyFor(html: string, fileName: string, password?: string): FormData {
-  const form = new FormData();
-  form.append("file", new File([html], fileName, { type: "text/html" }));
-  if (password !== undefined && password.length > 0) {
-    form.append("password", password);
-  }
-  return form;
-}
-
 async function run(
   args: Record<string, unknown>,
   context: { request: Request; env: WorkerEnv },
@@ -84,48 +74,37 @@ async function run(
   }
   const { html, fileName, permission, password, workspaceKey } = parsed.data;
 
-  if (new TextEncoder().encode(html).byteLength > MCP_MAX_ARTIFACT_BYTES) {
-    return errorResult(
-      "That file is over 1MB, which is more than this connector will carry. Large inlined images are usually the cause; link them instead and share it again.",
-    );
-  }
-
   const secret = context.env.MCP_SIGNING_SECRET;
   if (secret === undefined) {
     console.error("MCP_SIGNING_SECRET is not set");
     return errorResult("Coedit is not configured to accept this yet.");
   }
 
-  const refused = await chargeMcpUpload(context.request, context.env);
-  if (refused !== null) {
-    return errorResult(refused);
-  }
-
   const workspace = await resolveWorkspace(workspaceKey, secret);
-  const uploaded = await callApp(context.env, {
-    path: "/api/artifacts",
-    method: "POST",
-    ownerId: workspace.ownerId,
-    rateLimitKey: workspace.workspaceKey,
-    body: bodyFor(html, fileName, password),
-  });
-
-  const body = jsonOf(uploaded);
-  if (uploaded.status !== 201 || body === null) {
-    const reason = body?.error;
-    return errorResult(
-      typeof reason === "string"
-        ? reason
-        : "Coedit would not accept that file. It must be one complete HTML document that runs without a build step.",
-    );
+  const uploaded = await postArtifact(
+    {
+      html,
+      fileName,
+      path: "/api/artifacts",
+      ownerId: workspace.ownerId,
+      rateLimitKey: workspace.workspaceKey,
+      expect: 201,
+      refusal:
+        "Coedit would not accept that file. It must be one complete HTML document that runs without a build step.",
+      ...(password === undefined ? {} : { password }),
+    },
+    context,
+  );
+  if (!uploaded.ok) {
+    return errorResult(uploaded.message);
   }
 
   return textResult(
     JSON.stringify(
       {
-        shareUrl: body[URL_FIELD[permission]],
+        shareUrl: uploaded.body[URL_FIELD[permission]],
         permission,
-        editToken: body.editToken,
+        editToken: uploaded.body.editToken,
         workspaceKey: workspace.workspaceKey,
         note: "Send people the shareUrl. Keep the editToken and workspaceKey in this conversation; they are not for sharing.",
       },

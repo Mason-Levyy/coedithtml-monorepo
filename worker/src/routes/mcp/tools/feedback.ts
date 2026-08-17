@@ -50,11 +50,15 @@ async function run(
     return errorResult(refused);
   }
 
-  const described = await callApp(context.env, {
-    path: `/api/artifacts/${token}`,
-    method: "GET",
-    rateLimitKey: token,
-  });
+  const [described, review] = await Promise.all([
+    callApp(context.env, {
+      path: `/api/artifacts/${token}`,
+      method: "GET",
+      rateLimitKey: token,
+    }),
+    callSandbox(context.env, `/${token}?download=feedback`),
+  ]);
+
   const artifact = jsonOf(described);
   if (described.status !== 200 || artifact === null) {
     return errorResult(
@@ -67,7 +71,6 @@ async function run(
     );
   }
 
-  const review = await callSandbox(context.env, `/${token}?download=feedback`);
   if (review.status !== 200) {
     return errorResult("Coedit could not read the feedback. Try again.");
   }
