@@ -10,7 +10,9 @@ import {
   type OverlayEntry,
   type RoomToClientMessage,
 } from "@coedithtml/protocol";
+import { readerWithinLimits } from "@/lib/entry-limits";
 import { createEntryStore } from "@/lib/entry-store-sqlite";
+import { fullBudget, spendMessage } from "@/lib/message-budget";
 import {
   applyClientMessage,
   entryIdIn,
@@ -27,6 +29,10 @@ import {
 } from "@/lib/room-headers";
 
 const MAX_CONNECTIONS = 64;
+
+// Comfortably past the largest legitimate message -- one entry with a 4000
+// character body -- and far short of anything worth parsing as an attack.
+const MAX_MESSAGE_BYTES = 32 * 1024;
 
 function decodeClientMessage(
   raw: string,
@@ -90,7 +96,11 @@ export class DocRoom extends DurableObject<Env> {
     }
 
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ reader: null, ...capabilities });
+    server.serializeAttachment({
+      reader: null,
+      ...capabilities,
+      budget: fullBudget(Date.now()),
+    });
     this.sendTo(
       server,
       snapshotMessage({
@@ -103,7 +113,16 @@ export class DocRoom extends DurableObject<Env> {
   }
 
   override webSocketMessage(socket: WebSocket, raw: string | ArrayBuffer) {
-    if (typeof raw !== "string") {
+    const now = Date.now();
+    const attachment = attachmentOf(socket, now);
+    const spend = spendMessage(attachment.budget, now);
+    socket.serializeAttachment({ ...attachment, budget: spend.budget });
+    if (!spend.allowed) {
+      this.sendTo(socket, rejectedMessage("too-fast"));
+      return;
+    }
+
+    if (typeof raw !== "string" || raw.length > MAX_MESSAGE_BYTES) {
       this.sendTo(socket, rejectedMessage("malformed"));
       return;
     }
@@ -113,9 +132,17 @@ export class DocRoom extends DurableObject<Env> {
       return;
     }
 
-    const attachment = attachmentOf(socket);
     if (message.type === "hello") {
-      socket.serializeAttachment({ ...attachment, reader: message.reader });
+      const named = readerWithinLimits(message.reader) ? message.reader : null;
+      if (named === null) {
+        this.sendTo(socket, rejectedMessage("too-long"));
+        return;
+      }
+      socket.serializeAttachment({
+        ...attachment,
+        budget: spend.budget,
+        reader: named,
+      });
       this.broadcast(presenceMessage(readersAmong(this.ctx.getWebSockets())));
       return;
     }
