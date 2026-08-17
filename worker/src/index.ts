@@ -1,6 +1,7 @@
 import { parseWorkerEnv } from "@/lib/env";
 import { classifyRequestOrigin, redirectTargetFor } from "@/lib/origins";
 import { handleAppRequest } from "@/routes/app";
+import { routeMcp } from "@/routes/mcp";
 import { handleSandboxRequest } from "@/routes/sandbox";
 import { sweepArtifacts } from "@/sweep";
 
@@ -27,7 +28,9 @@ export default {
       case "sandbox":
         return handleSandboxRequest(request, parsed.env);
       case "app":
-        return handleAppRequest(request, parsed.env);
+        return (
+          routeMcp(request, parsed.env) ?? handleAppRequest(request, parsed.env)
+        );
       case "unknown":
         return new Response("Not found", { status: 404 });
     }

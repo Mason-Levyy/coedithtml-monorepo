@@ -1,10 +1,18 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { FAKE_APP_HOST, testWorkerEnv } from "@/lib/fakes";
 import { PROTOCOL_VERSION_META } from "@/lib/schemas/mcp";
-import { handleAppRequest } from "../app";
+import { routeMcp } from "./index";
 import { MODERN_PROTOCOL_VERSION } from "./versions";
 
 type Body = Record<string, unknown>;
+
+function mcp(request: Request, env = testWorkerEnv()): Promise<Response> {
+  const routed = routeMcp(request, env);
+  if (routed === null) {
+    throw new Error("the MCP route did not claim this request");
+  }
+  return routed;
+}
 
 function post(body: Body, headers: Record<string, string> = {}): Request {
   return new Request(`https://${FAKE_APP_HOST}/mcp`, {
@@ -37,13 +45,13 @@ function legacy(method: string, params: Body = {}): Request {
 }
 
 async function send(request: Request, env = testWorkerEnv()): Promise<Body> {
-  const response = await handleAppRequest(request, env);
+  const response = await mcp(request, env);
   return { status: response.status, ...((await response.json()) as Body) };
 }
 
 describe("the MCP endpoint", () => {
   it("is not there at all when it is switched off", async () => {
-    const response = await handleAppRequest(
+    const response = await mcp(
       modern("server/discover"),
       testWorkerEnv({ MCP_ENABLED: "false" }),
     );
@@ -52,7 +60,7 @@ describe("the MCP endpoint", () => {
   });
 
   it("refuses the GET a pre-2026 client would open a stream with", async () => {
-    const response = await handleAppRequest(
+    const response = await mcp(
       new Request(`https://${FAKE_APP_HOST}/mcp`),
       testWorkerEnv(),
     );
@@ -150,7 +158,7 @@ describe("the MCP endpoint", () => {
   });
 
   it("accepts the notification that follows a handshake", async () => {
-    const response = await handleAppRequest(
+    const response = await mcp(
       post({ jsonrpc: "2.0", method: "notifications/initialized" }),
       testWorkerEnv(),
     );
@@ -187,7 +195,7 @@ describe("the MCP endpoint", () => {
   });
 
   it("refuses a body that is not JSON at all", async () => {
-    const response = await handleAppRequest(
+    const response = await mcp(
       new Request(`https://${FAKE_APP_HOST}/mcp`, {
         method: "POST",
         headers: { "content-type": "application/json" },
