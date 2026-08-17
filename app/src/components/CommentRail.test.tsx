@@ -458,7 +458,7 @@ describe("the comment rail", () => {
 
     it("renders what the room is actually holding", async () => {
       renderViewer();
-      openRoomWith([comment()]);
+      openRoomWith([comment()], true, true);
 
       const written = copyFeedback();
 
@@ -470,7 +470,7 @@ describe("the comment rail", () => {
 
     it("separates threads the runtime reported as orphaned", async () => {
       renderViewer();
-      openRoomWith([comment()]);
+      openRoomWith([comment()], true, true);
       reportPlaced({ orphaned: ["c1"] });
 
       const written = copyFeedback();
@@ -481,7 +481,7 @@ describe("the comment rail", () => {
 
     it("cannot be copied when the room is empty", () => {
       renderViewer();
-      openRoomWith([]);
+      openRoomWith([], true, true);
 
       fireEvent.click(screen.getByRole("button", { name: "Share" }));
 

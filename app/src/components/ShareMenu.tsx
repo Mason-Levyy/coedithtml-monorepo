@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DownloadControls } from "@/components/DownloadControls";
 import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import { copyLabel, useCopyToClipboard } from "@/hooks/useCopyToClipboard";
@@ -10,13 +11,6 @@ import {
   type AiTool,
 } from "@/lib/ai-handoff";
 import { withoutUnlockGrant } from "@/lib/artifact-src";
-import {
-  DOWNLOAD_CHOICES,
-  DOWNLOAD_LABEL,
-  DOWNLOAD_NOTE,
-  downloadUrlFor,
-  type DownloadChoice,
-} from "@/lib/download-artifact";
 import {
   editTokenIn,
   LINK_PERMISSIONS,
@@ -48,6 +42,7 @@ type ShareMenuProps = {
   feedback: string;
   fileName: string;
   artifactUrl: string;
+  canEdit: boolean;
   shareLinks: Partial<Record<LinkPermission, string>>;
 };
 
@@ -55,10 +50,10 @@ export function ShareMenu({
   feedback,
   fileName,
   artifactUrl,
+  canEdit,
   shareLinks,
 }: ShareMenuProps) {
   const [open, setOpen] = useState(false);
-  const [choice, setChoice] = useState<DownloadChoice>("edits");
   const [tool, setTool] = useState<AiTool>(rememberedTool);
   const [handedOff, setHandedOff] = useState(false);
   const link = useCopyToClipboard();
@@ -160,90 +155,62 @@ export function ShareMenu({
           {copyLabel(link.state)}
         </Button>
       </div>
-      <div className="mt-1 flex flex-col gap-1.5 border-t border-line pt-2">
-        <label
-          htmlFor="ai-tool"
-          className="font-mono text-[10px] tracking-wide text-muted-foreground uppercase"
-        >
-          Make changes with
-        </label>
-        <div className="flex items-center gap-2">
-          <select
-            id="ai-tool"
-            value={tool}
-            onChange={(event) => setTool(event.target.value as AiTool)}
-            className="h-8 border border-line bg-paper-2 px-1.5 font-mono text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      {canEdit && (
+        <div className="mt-1 flex flex-col gap-1.5 border-t border-line pt-2">
+          <label
+            htmlFor="ai-tool"
+            className="font-mono text-[10px] tracking-wide text-muted-foreground uppercase"
           >
-            {AI_TOOLS.map((option) => (
-              <option key={option} value={option}>
-                {AI_TOOL_LABEL[option]}
-              </option>
-            ))}
-          </select>
+            Make changes with
+          </label>
+          <div className="flex items-center gap-2">
+            <select
+              id="ai-tool"
+              value={tool}
+              onChange={(event) => setTool(event.target.value as AiTool)}
+              className="h-8 border border-line bg-paper-2 px-1.5 font-mono text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              {AI_TOOLS.map((option) => (
+                <option key={option} value={option}>
+                  {AI_TOOL_LABEL[option]}
+                </option>
+              ))}
+            </select>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="flex-1 justify-start"
+              disabled={!hasFeedback}
+              onClick={handOff}
+            >
+              {handedOff
+                ? "Copied — paste it in"
+                : copyLabel(notes.state, `Open ${AI_TOOL_LABEL[tool]}`)}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {!hasFeedback && NOTHING_TO_COPY}
+            {hasFeedback &&
+              (editToken === null ? SENDS_THE_CHANGES : SENDS_THE_LINK)}
+          </p>
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="flex-1 justify-start"
+            className="justify-start"
             disabled={!hasFeedback}
-            onClick={handOff}
+            onClick={() => notes.copy(feedback)}
           >
-            {handedOff
-              ? "Copied — paste it in"
-              : copyLabel(notes.state, `Open ${AI_TOOL_LABEL[tool]}`)}
+            {copyLabel(notes.state, "Copy the changes instead")}
           </Button>
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          {!hasFeedback && NOTHING_TO_COPY}
-          {hasFeedback &&
-            (editToken === null ? SENDS_THE_CHANGES : SENDS_THE_LINK)}
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="justify-start"
-          disabled={!hasFeedback}
-          onClick={() => notes.copy(feedback)}
-        >
-          {copyLabel(notes.state, "Copy the changes instead")}
-        </Button>
-      </div>
+      )}
 
-      <div className="mt-1 flex flex-col gap-1.5 border-t border-line pt-2">
-        <label
-          htmlFor="download-choice"
-          className="font-mono text-[10px] tracking-wide text-muted-foreground uppercase"
-        >
-          Download
-        </label>
-        <select
-          id="download-choice"
-          value={choice}
-          onChange={(event) => setChoice(event.target.value as DownloadChoice)}
-          className="border border-line bg-paper-2 px-2 py-1.5 font-mono text-xs text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          {DOWNLOAD_CHOICES.map((option) => (
-            <option key={option} value={option}>
-              {DOWNLOAD_LABEL[option]}
-            </option>
-          ))}
-        </select>
-        <p className="text-[11px] text-muted-foreground">
-          {DOWNLOAD_NOTE[choice]}
-        </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="justify-start"
-          onClick={() => {
-            window.location.href = downloadUrlFor(artifactUrl, choice);
-          }}
-        >
-          Download
-        </Button>
-      </div>
+      <DownloadControls
+        artifactUrl={artifactUrl}
+        className="mt-1 border-t border-line pt-2"
+      />
     </Popover>
   );
 }
