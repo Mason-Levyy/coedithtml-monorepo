@@ -2,7 +2,6 @@ import {
   acceptUpload,
   chargeUploadAttempt,
   declaredBodyTooLarge,
-  storeRevision,
   type AcceptedUpload,
 } from "@/lib/accept-upload";
 import {
@@ -10,7 +9,8 @@ import {
   withoutCoeditPayload,
 } from "@/lib/artifact-reimport";
 import { putArtifactMetadata } from "@/lib/artifact-metadata";
-import { revisionOf } from "@/lib/content-hash";
+import { putObject } from "@/lib/artifact-store";
+import { blobDigestOf, revisionOf } from "@/lib/content-hash";
 import type { WorkerEnv } from "@/lib/env";
 import { addOwnerArtifact } from "@/lib/owner-artifacts";
 import { resolveOwnerId, withOwnerCookie } from "@/lib/owner-cookie";
@@ -20,16 +20,16 @@ import { rejectionResponse } from "@/lib/upload-rejection";
 import { seedRoomWithEntries } from "@/lib/room-seed";
 import { mintShareTokens, type ShareTokens } from "@/lib/share-tokens";
 import { viewerUrl } from "@/lib/share-links";
-import { newArtifactId } from "@/lib/storage-keys";
+import { blobObjectKey, newArtifactId } from "@/lib/storage-keys";
 import {
   GLOBAL_LEDGER,
   GLOBAL_MAX_ARTIFACTS,
   GLOBAL_MAX_BYTES,
+  attachBlob,
+  detachBlob,
   holdSpace,
-  ownerLedger,
   OWNER_MAX_ARTIFACTS,
   OWNER_MAX_BYTES,
-  releaseClaim,
   releaseSpace,
 } from "@/lib/usage";
 
@@ -44,18 +44,28 @@ async function storeUpload(
   env: WorkerEnv,
   artifactId: string,
   upload: AcceptedUpload,
-  owner: { ownerId: string; uploadedAt: string },
+  owner: {
+    ownerId: string;
+    uploadedAt: string;
+    digest: string;
+    fresh: boolean;
+  },
   tokens?: ShareTokens,
 ): Promise<StoredUpload> {
   const revision = await revisionOf(upload.bytes);
-  const failedToStore = await storeRevision(
-    env,
-    artifactId,
-    revision,
-    upload.bytes,
-  );
-  if (failedToStore) {
-    return { ok: false, response: failedToStore };
+  // Bytes this owner already has are already correct, byte for byte -- the key
+  // is their full content digest. Writing them again would cost storage to
+  // produce a file identical to the one beside it.
+  if (owner.fresh) {
+    const written = await putObject(
+      env.ARTIFACT_STORE,
+      blobObjectKey(owner.ownerId, owner.digest),
+      upload.bytes,
+    );
+    if (!written.ok) {
+      console.error("Failed to store artifact", written.cause);
+      return { ok: false, response: jsonError(SAVE_FAILED, 500) };
+    }
   }
 
   const passwordHash =
@@ -72,6 +82,7 @@ async function storeUpload(
       uploadedAt: owner.uploadedAt,
       revision,
       previousRevisions: [],
+      blobs: { [revision]: owner.digest },
       ownerId: owner.ownerId,
       published: !upload.draft,
       ...(passwordHash === undefined ? {} : { passwordHash }),
@@ -85,48 +96,53 @@ async function storeUpload(
   return { ok: true, revision };
 }
 
-// The global ceiling is taken first, so a single owner cannot walk past it by
-// being under their own. Anything held and then not stored is given back before
-// the request ends -- a ceiling that only ever counts up stops being a ceiling
-// and becomes a countdown.
+const NO_ROOM_LEFT =
+  "Coedit is holding as much as it can right now. Try again later.";
+const OWNER_FULL =
+  "You are storing as much as one person can. Delete a file to make room.";
+
+type ClaimedSpace =
+  { ok: true; fresh: boolean } | { ok: false; response: Response };
+
+// The owner's ledger goes first because it is the one that knows whether these
+// bytes are new. Charging the product for a copy of a file it already holds
+// would make the global ceiling arrive early for everybody.
 async function claimSpace(
   env: WorkerEnv,
   ownerId: string,
+  artifactId: string,
   bytes: number,
-): Promise<Response | null> {
-  const global = await holdSpace(env.USAGE_LEDGER, GLOBAL_LEDGER, {
-    bytes,
-    maxBytes: GLOBAL_MAX_BYTES,
-    maxArtifacts: GLOBAL_MAX_ARTIFACTS,
-  });
-  if (!global.ok) {
-    console.error("Failed to read the global ceiling", global.cause);
-    return jsonError(SAVE_FAILED, 500);
-  }
-  if (!global.allowed) {
-    return jsonError(
-      "Coedit is holding as much as it can right now. Try again later.",
-      507,
-    );
-  }
-
-  const owner = await holdSpace(env.USAGE_LEDGER, ownerLedger(ownerId), {
+  digest: string,
+): Promise<ClaimedSpace> {
+  const owner = await attachBlob(env.USAGE_LEDGER, ownerId, {
+    digest,
+    artifactId,
     bytes,
     maxBytes: OWNER_MAX_BYTES,
     maxArtifacts: OWNER_MAX_ARTIFACTS,
   });
-  if (!owner.ok || !owner.allowed) {
-    await releaseSpace(env.USAGE_LEDGER, GLOBAL_LEDGER, bytes);
-    if (!owner.ok) {
-      console.error("Failed to read the owner quota", owner.cause);
-      return jsonError(SAVE_FAILED, 500);
-    }
-    return jsonError(
-      "You are storing as much as one person can. Delete a file to make room.",
-      507,
-    );
+  if (!owner.ok) {
+    console.error("Failed to read the owner quota", owner.cause);
+    return { ok: false, response: jsonError(SAVE_FAILED, 500) };
   }
-  return null;
+  if (!owner.allowed) {
+    return { ok: false, response: jsonError(OWNER_FULL, 507) };
+  }
+
+  const global = await holdSpace(env.USAGE_LEDGER, GLOBAL_LEDGER, {
+    bytes: owner.store ? bytes : 0,
+    maxBytes: GLOBAL_MAX_BYTES,
+    maxArtifacts: GLOBAL_MAX_ARTIFACTS,
+  });
+  if (!global.ok || !global.allowed) {
+    await detachBlob(env.USAGE_LEDGER, ownerId, digest, artifactId);
+    if (!global.ok) {
+      console.error("Failed to read the global ceiling", global.cause);
+      return { ok: false, response: jsonError(SAVE_FAILED, 500) };
+    }
+    return { ok: false, response: jsonError(NO_ROOM_LEFT, 507) };
+  }
+  return { ok: true, fresh: owner.store };
 }
 
 export async function handleUpload(
@@ -156,13 +172,20 @@ export async function handleUpload(
       ? accepted.upload
       : { ...accepted.upload, bytes: bytesOf(cleanedHtml) };
 
-  const room = await claimSpace(env, ownerId, upload.bytes.byteLength);
-  if (room !== null) {
-    return room;
-  }
-
   const artifactId = newArtifactId();
   const uploadedAt = new Date().toISOString();
+  const digest = await blobDigestOf(upload.bytes);
+
+  const room = await claimSpace(
+    env,
+    ownerId,
+    artifactId,
+    upload.bytes.byteLength,
+    digest,
+  );
+  if (!room.ok) {
+    return room.response;
+  }
 
   let tokens: ShareTokens | undefined;
   if (!upload.draft) {
@@ -177,11 +200,18 @@ export async function handleUpload(
     env,
     artifactId,
     upload,
-    { ownerId, uploadedAt },
+    { ownerId, uploadedAt, digest, fresh: room.fresh },
     tokens,
   );
   if (!stored.ok) {
-    await releaseClaim(env, ownerId, upload.bytes.byteLength);
+    await detachBlob(env.USAGE_LEDGER, ownerId, digest, artifactId);
+    if (room.fresh) {
+      await releaseSpace(
+        env.USAGE_LEDGER,
+        GLOBAL_LEDGER,
+        upload.bytes.byteLength,
+      );
+    }
     return stored.response;
   }
 

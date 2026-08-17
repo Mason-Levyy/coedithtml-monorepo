@@ -33,6 +33,7 @@ function envWith(
 function uploadRequest(
   files: { name: string; body: string }[],
   password?: string,
+  ownerId?: string,
 ): Request {
   const form = new FormData();
   for (const file of files) {
@@ -47,7 +48,17 @@ function uploadRequest(
   return new Request("https://app.test/api/artifacts", {
     method: "POST",
     body: form,
+    headers: ownerId === undefined ? {} : { cookie: ownerCookie(ownerId) },
   });
+}
+
+function ownerCookie(ownerId: string): string {
+  return `__Host-coedit_owner=${ownerId}`;
+}
+
+function ownerIn(response: Response): string {
+  const set = response.headers.get("set-cookie") ?? "";
+  return set.match(/__Host-coedit_owner=([0-9a-f]{32})/)?.[1] ?? "";
 }
 
 async function upload(
@@ -93,9 +104,11 @@ describe("handleUpload", () => {
     expect(store.puts).toHaveLength(1);
     const [put] = store.puts;
     expect(put && new TextDecoder().decode(put.bytes)).toBe(VALID_HTML);
-    expect(put?.key).toMatch(
-      new RegExp(`^artifacts/${body.artifactId}/[0-9a-f]{16}\\.html$`),
-    );
+    // Addressed by the full content digest, under the owner who uploaded it,
+    // so the same file uploaded twice is stored once. The artifact id is not
+    // in the key at all, which is what lets two artifacts share the bytes.
+    expect(put?.key).toMatch(/^blobs\/[0-9a-f]{32}\/[0-9a-f]{64}\.html$/);
+    expect(put?.key).not.toContain(body.artifactId ?? "");
   });
 
   it("stores metadata in KV alongside the R2 object", async () => {
@@ -190,6 +203,44 @@ describe("handleUpload", () => {
         edit: body.editToken,
       },
     });
+  });
+
+  it("stores the same file twice as one object with two artifacts", async () => {
+    const store = recordingArtifactStore();
+    const env = envWith(store.bucket);
+
+    const first = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      env,
+    );
+    const second = await handleUpload(
+      uploadRequest(
+        [{ name: "same.html", body: VALID_HTML }],
+        undefined,
+        ownerIn(first),
+      ),
+      env,
+    );
+
+    const bodies = [first, second].map((response) => response.status);
+    expect(bodies).toEqual([201, 201]);
+    expect(store.puts).toHaveLength(1);
+  });
+
+  it("stores it twice for two different people, who share nothing", async () => {
+    const store = recordingArtifactStore();
+    const env = envWith(store.bucket);
+
+    await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      env,
+    );
+    await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      env,
+    );
+
+    expect(store.puts).toHaveLength(2);
   });
 
   it("refuses an upload once there is no room left to hold it", async () => {

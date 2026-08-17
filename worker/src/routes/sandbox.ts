@@ -128,6 +128,7 @@ export async function handleSandboxRequest(
     env.ARTIFACT_STORE,
     artifactId,
     metadata.revision,
+    metadata,
   );
   if (!result.ok) {
     console.error("Failed to read artifact", result.cause);

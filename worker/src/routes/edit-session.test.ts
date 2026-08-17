@@ -11,7 +11,7 @@ import {
   testWorkerEnv,
 } from "@/lib/fakes";
 import { applyClientMessage } from "@/lib/overlay-log";
-import { artifactObjectKey } from "@/lib/storage-keys";
+import { objectKeyFor } from "@/lib/artifact-store";
 import { handleSandboxRequest } from "./sandbox";
 import { handleUpload } from "./upload";
 
@@ -120,6 +120,12 @@ async function bytesIn(store: R2Bucket, key: string): Promise<ArrayBuffer> {
   return object.arrayBuffer();
 }
 
+type StoredMetadata = {
+  revision: string;
+  blobs: Record<string, string>;
+  ownerId?: string;
+};
+
 function asText(bytes: ArrayBuffer): string {
   return new TextDecoder().decode(bytes);
 }
@@ -133,8 +139,8 @@ describe("the stored artifact across an editing session", () => {
     const { artifactId } = await uploadArtifact(env);
     const metadata = JSON.parse(
       (await kv.get(`artifacts/${artifactId}`)) ?? "{}",
-    ) as { revision: string };
-    const key = artifactObjectKey(artifactId, metadata.revision);
+    ) as StoredMetadata;
+    const key = objectKeyFor(artifactId, metadata.revision, metadata);
 
     const uploaded = await bytesIn(store, key);
     expect(asText(uploaded)).toBe(AWKWARD_HTML);
@@ -154,14 +160,17 @@ describe("the stored artifact across an editing session", () => {
     const { artifactId } = await uploadArtifact(env);
     const metadata = JSON.parse(
       (await kv.get(`artifacts/${artifactId}`)) ?? "{}",
-    ) as { revision: string };
+    ) as StoredMetadata;
 
     const log = runEditingSession();
     const kinds = log.list().map((entry) => entry.kind);
     expect(kinds).toEqual(["edit", "edit"]);
 
     const served = asText(
-      await bytesIn(store, artifactObjectKey(artifactId, metadata.revision)),
+      await bytesIn(
+        store,
+        objectKeyFor(artifactId, metadata.revision, metadata),
+      ),
     );
     expect(served).not.toContain("fell 4");
     expect(served).not.toContain("recovered");
