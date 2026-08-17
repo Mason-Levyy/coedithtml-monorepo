@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { JsonLd } from "@/components/JsonLd";
+import { TutorialLink } from "@/components/TutorialLink";
 
 const QUESTIONS = [
   {
@@ -49,12 +49,10 @@ export function Faq() {
     <section className="band band--wash" id="faq">
       <div className="shell">
         <div className="band-head">
-          <p className="eyebrow">FAQ</p>
           <h2>Frequently asked questions</h2>
           <p>
             Prefer a hands-on walkthrough?{" "}
-            <Link href="/tutorial/">Try our interactive 3-minute tutorial</Link>
-            .
+            <TutorialLink>Try our interactive 3-minute tutorial</TutorialLink>.
           </p>
         </div>
 

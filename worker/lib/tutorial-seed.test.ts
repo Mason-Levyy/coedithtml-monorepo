@@ -50,11 +50,15 @@ describe("tutorialEntries", () => {
     expect([...stamps].sort()).toStrictEqual(stamps);
   });
 
-  it("carries the three notes the tour asks the reader to act on", () => {
+  it("carries the notes the tour asks the reader to act on", () => {
     const bodies = entries.map((entry) => entry.body);
-    expect(bodies).toContain("Wow this looks great");
+    expect(bodies).toContain("Can you elaborate here?");
+    expect(bodies).toContain("This is my favorite part");
+    expect(bodies).toContain("I think it looks great!");
+    expect(bodies).toContain("FIX THIS!");
     expect(bodies).toContain("Can we change the order here?");
-    expect(bodies.some((body) => body.includes("pesky em dashes"))).toBe(true);
+    expect(bodies.some((body) => body.includes("em dashes"))).toBe(true);
+    expect(bodies).toContain("Try it for yourself!");
   });
 
   it("quotes text that appears exactly once in the deck", async () => {

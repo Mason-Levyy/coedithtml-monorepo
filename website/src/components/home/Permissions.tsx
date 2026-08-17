@@ -18,10 +18,9 @@ const LEVELS = [
 
 export function Permissions() {
   return (
-    <section className="band band--wash">
+    <section className="band">
       <div className="shell">
         <div className="band-head">
-          <p className="eyebrow">Granular access</p>
           <h2>Control how people interact with your file</h2>
           <p>
             Create unique links for viewing, commenting, or editing. You can

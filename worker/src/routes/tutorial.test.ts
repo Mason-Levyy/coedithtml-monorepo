@@ -76,7 +76,7 @@ describe("handleStartTutorial", () => {
 
     const entries = seed === undefined ? [] : await seededEntries(seed);
     expect(entries.map((entry) => entry.body)).toContain(
-      "Get rid of those pesky em dashes.",
+      "Get rid of these stupid em dashes!",
     );
   });
 
