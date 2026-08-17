@@ -34,6 +34,14 @@
       {
         "name": "DOC_ROOM",
         "class_name": "DocRoom"
+      },
+      {
+        "name": "RATE_LIMITER",
+        "class_name": "RateLimiter"
+      },
+      {
+        "name": "USAGE_LEDGER",
+        "class_name": "UsageLedger"
       }
     ]
   },
@@ -42,6 +50,10 @@
     {
       "tag": "v1",
       "new_sqlite_classes": ["DocRoom"]
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["RateLimiter", "UsageLedger"]
     }
   ],
 
@@ -89,6 +101,14 @@
           {
             "name": "DOC_ROOM",
             "class_name": "DocRoom"
+          },
+          {
+            "name": "RATE_LIMITER",
+            "class_name": "RateLimiter"
+          },
+          {
+            "name": "USAGE_LEDGER",
+            "class_name": "UsageLedger"
           }
         ]
       },

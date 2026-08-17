@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import type { StickyEntry } from "@coedithtml/protocol";
 import type { WorkerEnv } from "@/lib/env";
 import {
+  countingUsageLedger,
   FAKE_APP_HOST,
   fakeArtifactMetadata,
+  fullUsageLedger,
   liveKv,
   recordingArtifactMetadata,
   recordingArtifactStore,
   recordingDocRoom,
   testWorkerEnv,
+  unwritableArtifactStore,
 } from "@/lib/fakes";
 import { verifyArtifactPassword } from "@/lib/password";
 import { MAX_UPLOAD_BODY_BYTES } from "@/lib/schemas/artifact";
@@ -187,6 +190,34 @@ describe("handleUpload", () => {
         edit: body.editToken,
       },
     });
+  });
+
+  it("refuses an upload once there is no room left to hold it", async () => {
+    const store = recordingArtifactStore();
+    const response = await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      testWorkerEnv({
+        ARTIFACT_STORE: store.bucket,
+        USAGE_LEDGER: fullUsageLedger(),
+      }),
+    );
+
+    expect(response.status).toBe(507);
+    expect(store.puts).toHaveLength(0);
+  });
+
+  it("gives back the space it held when the file could not be stored", async () => {
+    const ledger = countingUsageLedger();
+    await handleUpload(
+      uploadRequest([{ name: "deck.html", body: VALID_HTML }]),
+      testWorkerEnv({
+        ARTIFACT_STORE: unwritableArtifactStore("R2 is down"),
+        USAGE_LEDGER: ledger.namespace,
+      }),
+    );
+
+    expect(ledger.holds).toBe(2);
+    expect(ledger.releases).toBe(2);
   });
 
   it("keeps the stronger tokens out of a weaker token's record entirely", async () => {

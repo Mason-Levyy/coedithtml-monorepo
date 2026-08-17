@@ -15,6 +15,7 @@ import { parseJsonBody } from "@/lib/request-body";
 import { jsonError, jsonResponse, SAVE_FAILED } from "@/lib/responses";
 import { TOKEN_FIELD, TOKEN_KINDS } from "@/lib/room-capabilities";
 import { passwordUpdateBodySchema } from "@/lib/schemas/artifact";
+import { releaseClaim } from "@/lib/usage";
 
 export async function handleUpdateArtifactSettings(
   artifactId: string,
@@ -103,6 +104,7 @@ export async function handleDeleteArtifact(
       artifactId,
     );
   }
+  await releaseClaim(env, metadata.ownerId, metadata.size);
 
   return jsonResponse({ deleted: true }, 200);
 }

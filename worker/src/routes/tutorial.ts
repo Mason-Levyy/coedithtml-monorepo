@@ -1,6 +1,6 @@
 import { TUTORIAL_QUERY_PARAM } from "@coedithtml/protocol";
 import type { WorkerEnv } from "@/lib/env";
-import { isWithinRateLimit, recordRateLimitedAttempt } from "@/lib/rate-limit";
+import { chargeAttempt } from "@/lib/rate-limit";
 import { clientIpOf } from "@/lib/request-ip";
 import { viewerUrl } from "@/lib/share-links";
 import { startTutorialSession } from "@/lib/tutorial-session";
@@ -31,28 +31,17 @@ async function chargeTutorialStart(
   request: Request,
   env: WorkerEnv,
 ): Promise<Response | null> {
-  const key = `tutorial-starts:${clientIpOf(request)}`;
-  const rateLimit = await isWithinRateLimit(
-    env.ARTIFACT_METADATA,
-    key,
-    TUTORIAL_LIMIT,
+  const charged = await chargeAttempt(
+    env.RATE_LIMITER,
+    `tutorial-starts:${clientIpOf(request)}`,
+    { limit: TUTORIAL_LIMIT, windowSeconds: TUTORIAL_WINDOW_SECONDS },
   );
-  if (!rateLimit.ok) {
-    console.error("Failed to check the tutorial rate limit", rateLimit.cause);
+  if (!charged.ok) {
+    console.error("Failed to charge a tutorial start", charged.cause);
     return plainText(UNAVAILABLE, 503);
   }
-  if (!rateLimit.allowed) {
+  if (!charged.allowed) {
     return plainText(TOO_MANY, 429);
-  }
-
-  const recorded = await recordRateLimitedAttempt(
-    env.ARTIFACT_METADATA,
-    key,
-    TUTORIAL_WINDOW_SECONDS,
-  );
-  if (!recorded.ok) {
-    console.error("Failed to record a tutorial start", recorded.cause);
-    return plainText(UNAVAILABLE, 503);
   }
   return null;
 }

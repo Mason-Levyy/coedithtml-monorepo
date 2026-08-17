@@ -220,6 +220,17 @@ export function failingArtifactStore(message: string): R2Bucket {
   } as unknown as R2Bucket;
 }
 
+export function unwritableArtifactStore(message: string): R2Bucket {
+  return {
+    get: () => Promise.resolve(null),
+    put: () => {
+      throw new Error(message);
+    },
+    head: () => Promise.resolve(null),
+    delete: () => Promise.resolve(undefined),
+  } as unknown as R2Bucket;
+}
+
 export function memoryEntryStore(seed: OverlayEntry[] = []): EntryStore {
   const entries = new Map(seed.map((entry) => [entry.id, entry]));
   return {
@@ -267,6 +278,122 @@ export function recordingDocRoom(): RecordingDocRoom {
   return { connects, namespace };
 }
 
+// A counter per key, in memory, with the same answers the real Durable Object
+// gives. Tests want to know that a route charges and refuses, not that a
+// Durable Object stores.
+export function fakeRateLimiter(): Record<string, unknown> {
+  const counts = new Map<string, number>();
+  return {
+    idFromName: (name: string) => ({ toString: () => name }),
+    get: (id: { toString(): string }) => ({
+      fetch: (url: string) => {
+        const key = id.toString();
+        const path = new URL(url);
+        if (path.pathname === "/refund") {
+          counts.set(key, Math.max(0, (counts.get(key) ?? 0) - 1));
+          return Promise.resolve(new Response(null, { status: 204 }));
+        }
+        const limit = Number(path.searchParams.get("limit"));
+        const seen = counts.get(key) ?? 0;
+        if (seen >= limit) {
+          return Promise.resolve(
+            Response.json({ allowed: false, retryAfterSeconds: 60 }),
+          );
+        }
+        counts.set(key, seen + 1);
+        return Promise.resolve(
+          Response.json({ allowed: true, retryAfterSeconds: 0 }),
+        );
+      },
+    }),
+  };
+}
+
+export function fakeUsageLedger(): Record<string, unknown> {
+  const held = new Map<string, { bytes: number; artifacts: number }>();
+  return {
+    idFromName: (name: string) => ({ toString: () => name }),
+    get: (id: { toString(): string }) => ({
+      fetch: (url: string) => {
+        const key = id.toString();
+        const path = new URL(url);
+        const usage = held.get(key) ?? { bytes: 0, artifacts: 0 };
+        const bytes = Number(path.searchParams.get("bytes"));
+        if (path.pathname === "/read") {
+          return Promise.resolve(Response.json(usage));
+        }
+        if (path.pathname === "/release") {
+          held.set(key, {
+            bytes: Math.max(0, usage.bytes - bytes),
+            artifacts: Math.max(0, usage.artifacts - 1),
+          });
+          return Promise.resolve(Response.json(held.get(key)));
+        }
+        const next = {
+          bytes: usage.bytes + bytes,
+          artifacts: usage.artifacts + 1,
+        };
+        const allowed =
+          next.bytes <= Number(path.searchParams.get("maxBytes")) &&
+          next.artifacts <= Number(path.searchParams.get("maxArtifacts"));
+        if (allowed) {
+          held.set(key, next);
+        }
+        return Promise.resolve(
+          Response.json({ allowed, usage: allowed ? next : usage }),
+        );
+      },
+    }),
+  };
+}
+
+export function fullUsageLedger(): Record<string, unknown> {
+  return {
+    idFromName: (name: string) => ({ toString: () => name }),
+    get: () => ({
+      fetch: () =>
+        Promise.resolve(
+          Response.json({ allowed: false, usage: { bytes: 0, artifacts: 0 } }),
+        ),
+    }),
+  };
+}
+
+export type CountingUsageLedger = {
+  holds: number;
+  releases: number;
+  namespace: DurableObjectNamespace;
+};
+
+export function countingUsageLedger(): CountingUsageLedger {
+  const counts = { holds: 0, releases: 0 };
+  const namespace = {
+    idFromName: (name: string) => ({ toString: () => name }),
+    get: () => ({
+      fetch: (url: string) => {
+        const { pathname } = new URL(url);
+        if (pathname === "/release") {
+          counts.releases += 1;
+          return Promise.resolve(Response.json({ bytes: 0, artifacts: 0 }));
+        }
+        counts.holds += 1;
+        return Promise.resolve(
+          Response.json({ allowed: true, usage: { bytes: 0, artifacts: 1 } }),
+        );
+      },
+    }),
+  } as unknown as DurableObjectNamespace;
+  return {
+    get holds() {
+      return counts.holds;
+    },
+    get releases() {
+      return counts.releases;
+    },
+    namespace,
+  };
+}
+
 export function fakeAssets(): Record<string, unknown> {
   return {
     fetch: () => Promise.resolve(new Response("", { status: 404 })),
@@ -309,6 +436,8 @@ export function fakeWorkerEnv(): Record<string, unknown> {
     ARTIFACT_METADATA: fakeArtifactMetadata(),
     ASSETS: fakeAssets(),
     DOC_ROOM: fakeDocRoom(),
+    RATE_LIMITER: fakeRateLimiter(),
+    USAGE_LEDGER: fakeUsageLedger(),
     APP_HOST: FAKE_APP_HOST,
     SANDBOX_HOST: FAKE_SANDBOX_HOST,
     REDIRECT_HOSTS: FAKE_REDIRECT_HOST,
