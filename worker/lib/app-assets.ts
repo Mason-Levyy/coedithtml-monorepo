@@ -12,6 +12,17 @@ const WITHHELD_FROM_APP_ORIGIN = [
   TUTORIAL_DECK_ASSET_PATH,
 ];
 const FILE_EXTENSION = /\.[a-z0-9]+$/i;
+const VIEWER_ROUTE = /^\/a\/[0-9a-f]{32}\/?$/;
+
+function withNoindex(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("x-robots-tag", "noindex");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
 
 async function fetchAsset(env: WorkerEnv, url: URL): Promise<Response | null> {
   try {
@@ -49,5 +60,10 @@ export async function serveAppAsset(
   }
 
   const document = await fetchAsset(env, new URL(SPA_DOCUMENT_PATH, url));
-  return secured(document ?? new Response("Not found", { status: 404 }));
+  if (!document) {
+    return secured(new Response("Not found", { status: 404 }));
+  }
+  return secured(
+    VIEWER_ROUTE.test(url.pathname) ? withNoindex(document) : document,
+  );
 }
