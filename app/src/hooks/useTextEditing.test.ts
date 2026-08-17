@@ -46,7 +46,7 @@ describe("useTextEditing", () => {
   it("writes a new edit for a span nobody has touched", () => {
     const { record, addEntry, patchEntry } = setup([]);
 
-    record(anchor("Revenue grew"), "Revenue fell");
+    record(anchor("Revenue grew"), "Revenue fell", "s1");
 
     expect(patchEntry).not.toHaveBeenCalled();
     expect(addEntry).toHaveBeenCalledTimes(1);
@@ -60,11 +60,12 @@ describe("useTextEditing", () => {
   it("moves the edit already on a span rather than stacking a second", () => {
     const { record, addEntry, patchEntry } = setup([existingEdit()]);
 
-    record(anchor("Revenue grew"), "Revenue held");
+    record(anchor("Revenue grew"), "Revenue held", "s1");
 
     expect(addEntry).not.toHaveBeenCalled();
     expect(patchEntry).toHaveBeenCalledWith("e1", {
       ifRev: 2,
+      anchor: anchor("Revenue grew"),
       body: "Revenue held",
     });
   });
@@ -72,7 +73,7 @@ describe("useTextEditing", () => {
   it("sends the revision it saw, so a racing writer is caught", () => {
     const { record, patchEntry } = setup([existingEdit({ rev: 7 })]);
 
-    record(anchor("Revenue grew"), "Revenue held");
+    record(anchor("Revenue grew"), "Revenue held", "s1");
 
     expect(patchEntry.mock.calls[0]?.[1]).toMatchObject({ ifRev: 7 });
   });
@@ -80,15 +81,38 @@ describe("useTextEditing", () => {
   it("treats the same words in a different place as a different span", () => {
     const { record, addEntry } = setup([existingEdit()]);
 
-    record(anchor("Revenue grew", "p[9]"), "Revenue held");
+    record(anchor("Revenue grew", "p[9]"), "Revenue held", "s1");
 
     expect(addEntry).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps one entry when a caret saves twice and widens its span", () => {
+    const { record, addEntry, patchEntry } = setup([existingEdit()]);
+
+    record(anchor("Revenue grew"), "Revenue held", "s1");
+    record(anchor("Revenue grew 18%"), "Revenue held", "s1");
+
+    expect(addEntry).not.toHaveBeenCalled();
+    expect(patchEntry).toHaveBeenCalledTimes(2);
+    expect(patchEntry.mock.calls[1]?.[0]).toBe("e1");
+    expect(patchEntry.mock.calls[1]?.[1]).toMatchObject({
+      anchor: anchor("Revenue grew 18%"),
+    });
+  });
+
+  it("treats a second caret visit to the same words as its own edit", () => {
+    const { record, patchEntry } = setup([existingEdit()]);
+
+    record(anchor("Revenue grew"), "Revenue held", "s1");
+    record(anchor("Revenue grew"), "Revenue rose", "s2");
+
+    expect(patchEntry.mock.calls.map((call) => call[0])).toEqual(["e1", "e1"]);
   });
 
   it("writes nothing at all from a link that may only suggest", () => {
     const { record, addEntry, patchEntry } = setup([], false);
 
-    record(anchor("Revenue grew"), "Revenue fell");
+    record(anchor("Revenue grew"), "Revenue fell", "s1");
 
     expect(addEntry).not.toHaveBeenCalled();
     expect(patchEntry).not.toHaveBeenCalled();
