@@ -12,20 +12,47 @@ no answer.
 
 | Version | Name | State |
 | --- | --- | --- |
-| v0.1 | Serve | done |
-| v0.2 | Mark | done, one ship item open |
-| v0.3 | Edit | built, autosave and undo/redo open |
-| v0.4 | Site | built, not yet deployed |
-| v0.5 | Share on purpose | not started |
+| v0.1 | Serve | done, deployed |
+| v0.2 | Mark | done, one ship item carried to v1.0 |
+| v0.3 | Edit | built; autosave, undo/redo, and the rail's revert controls open |
+| v0.4 | Site | built and live at the apex, on a stale build |
+| v0.5 | Share on purpose | landed 2026-08-16, one task and a deploy open |
 | v0.6 | Hold the line | not started |
 | v1.0 | Ship | not started |
 
 The first three were originally written as numbered phases and are renamed here,
 not rewritten — the history under them is the record of what actually happened
-and is left as it was, apart from corrections marked **Audit 2026-08-13**.
+and is left as it was, apart from corrections marked **Audit 2026-08-13** and
+**Audit 2026-08-16**.
 
 `Deploy`, at the end, is not a version. It is the thing every version has to
 survive.
+
+## The route to v0.5
+
+Written 2026-08-16, after an audit that found `main` red, one version checked off
+without being built, and another built without being merged. Each version's own
+delivery stack has the detail; this is the order, and who holds each step.
+
+1. ~~**`42-green-the-trunk`**~~ — done 2026-08-16, and smaller than written. Two
+   of the three failures fixed themselves when v0.5's stack landed an hour later;
+   what was left was Prettier wanting to reformat `worker/tutorial/deck.html`,
+   which is an artifact and is now ignored for the reason artifacts always are
+2. ~~**v0.5's seven**~~ — landed 2026-08-16 as PRs #41–#44, out of the order
+   written here and none the worse for it. `46-upload-rejection-copy` is the one
+   task in that version nobody has written yet
+3. **v0.3's three branches** — `43-rail-buckets`, then `44-edit-autosave`, then
+   `45-undo-redo`. `43` is the version's exit criterion and goes first. This is
+   now the only unbuilt work between here and v0.6
+4. **Deploy, twice — yours.** The website, which is stale at the apex, and the
+   app, which is now four merged PRs ahead of what is live
+5. **Two checks nobody can do from a terminal — yours.** Two real devices in one
+   room, which is all v0.2 is still waiting on, and one mail to
+   `team@coedithtml.com` to prove the abuse contact is reachable
+
+That closes v0.2, v0.3, v0.4, and v0.5. v0.6 is untouched and is the whole
+remaining risk: every ceiling that makes a wide send defensible rather than brave
+is still unwritten.
 
 ---
 
@@ -275,7 +302,12 @@ simultaneously, see each other, and disagree in writing. This has never been
 run, and cannot be until **Deploy** at the end of this file happens — two
 devices means two real devices, not two tabs against `wrangler dev`.
 
-- [ ] **v0.2 complete**
+**Audit 2026-08-16: the blocker is gone and the check has still not been run.**
+Production has been live since 2026-08-13, so two real devices is now a ten
+minute test rather than a phase dependency. It is the only thing between this
+version and closed; the regeneration loop below moved to v1.0 on purpose.
+
+- [ ] **v0.2 complete** — open on the two-device check alone
 
 ### What the pivot changed here
 
@@ -600,6 +632,29 @@ looks like a mistake.
       the time as a message with no sender left, and it is not — the pen button
       in **Two ways into an edit** is its caller. `"text"` stays in the protocol
 
+**Audit 2026-08-16: eleven more branches landed and none were recorded here
+either.** Written down after the fact. Three of them are a feature this file
+never planned — a guided tour — and it is live in production.
+
+- [x] `onboarding tour` — a reader who arrives with nothing to upload gets a
+      seeded artifact instead of an empty dropzone. `worker/lib/tutorial-deck.ts`
+      and `tutorial-seed.ts` mint a room already holding the notes the tour talks
+      about, `worker/src/routes/tutorial.ts` answers `/tutorial` on the app
+      origin with a redirect into it, `FinishTour.tsx` ends it, and the marketing
+      site gained a `/tutorial` launch page. Deployed and answering
+- [x] `download fidelity` — stickies are painted into a downloaded file in
+      **document** coordinates rather than chased with a scroll listener
+      (`runtime/src/download/paint-stickies.ts`), so the copy you send someone
+      keeps its notes where they were dropped
+- [x] `reimport` — re-uploading a file that Coedit itself produced is recognised,
+      its old download script stripped so nothing renders twice, and its stickies
+      restored into the new room (`worker/lib/artifact-reimport.ts`, reached from
+      `upload.ts`). This is a **new artifact with the old notes**, not a revision
+      of the old one, and it is the reason the deleted re-upload screen is no
+      longer missed — see the decision at v0.5
+- [x] `website SEO` — real metadata, `robots.ts`, `sitemap.ts`, icons, and the
+      tutorial launch page. **Not deployed.** See v0.4
+
 ---
 
 ## v0.3 — Edit
@@ -628,8 +683,30 @@ snapshot. See **Reversibility lives in the rail** below.
 app sent `set-tool` with `"text"`, so the surface was live in the runtime and
 dark in the UI. Both ways in now exist — see **Two ways into an edit**.
 
-**Still open at v0.3:** autosave state and local undo/redo. Everything else in
-this version is built and tested.
+**Audit 2026-08-16: four of this version's boxes were checked without being
+built, and two were recorded as undone when they were done.**
+
+Wrong in our favour: paste sanitization is real (it was recorded as "Not done"),
+and the byte-diff test — the one this file called the single most important test
+in the repo — exists and passes.
+
+Wrong against us: **Reversibility lives in the rail is not built.** Four of its
+five boxes were checked and only one holds. The rail does not split into
+buckets, `ChangeLog.tsx` has no remove control and no **Remove all changes**,
+and deleting an edit does not put the text back — `replayEdits`
+(`runtime/src/marks.ts:78`) is forward-only, so a removed entry leaves its
+replacement on screen. That is the exit criterion of this whole version: *the
+owner can see exactly what changed and put it back.* It is now the largest piece
+of v0.3, not a finished one.
+
+**Still open at v0.3:** the rail's revert controls, debounced autosave with an
+honest state, and local undo/redo. Everything else is built and tested.
+
+**Touch is answered, not deferred. Decided 2026-08-16: accepted as desktop-only.**
+There is no long-press fallback and there will not be one before v1. On a phone
+the pen in the bar is the only way into an edit, which is a real way in, and the
+double-click stays a desktop accelerator. v0.1's exit criterion is that a
+stranger can *read* an artifact on their phone, and that is untouched.
 
 ### Edit surface
 
@@ -649,19 +726,37 @@ artifact in exactly the way the whole design forbids.
 - [x] Each commit appends a patch entry — anchor plus replacement text — to the
       overlay; the stored artifact bytes are never rewritten — 31, 38
 - [x] Paste is sanitized to plain text by default, since pasted rich HTML is the
-      fastest way to destroy an artifact's styling. **Not done.** The surface
-      sets `contenteditable="plaintext-only"` and relies on the browser; there
-      is no `paste` handler anywhere in the repo and Firefox does not implement
-      that value
+      fastest way to destroy an artifact's styling. **Corrected 2026-08-16: done.**
+      `contenteditable="plaintext-only"` is a browser courtesy Firefox does not
+      implement, so `onPaste` in `runtime/src/edits/surface.ts:127` takes
+      `text/plain` by hand, collapses its whitespace, and inserts one text node
 - [x] **Byte-diff test proving the stored artifact is identical before and after
-      an editing session.** This is the single most important test in the repo,
-      and it is the one still missing. `worker/lib/artifact-render.test.ts`
-      proves only that the v0.1 append changes nothing — nothing yet drives
-      upload → edit → re-fetch and compares
+      an editing session. Corrected 2026-08-16: done.**
+      `worker/src/routes/edit-session.test.ts` uploads deliberately awkward
+      markup — an unclosed `<p>`, a single-quoted attribute, an uppercase tag, a
+      tab, and the literal string `</html>` inside a script — applies three
+      edits through `applyClientMessage`, re-fetches, and compares bytes. It also
+      asserts exactly one appended script survives the session
 - [ ] Debounced autosave with an explicit saved / saving / failed state, never
       silent. Today the commit is synchronous on blur or Cmd+Enter, failure
-      arrives as a generic rail banner, and there is no success state at all
-- [ ] Local undo and redo stack inside the runtime
+      arrives as a generic rail banner, and there is no success state at all.
+      **Scope, decided 2026-08-16:** the surface gains an idle timer that commits
+      without ending the session, and the room learns to say when a write landed.
+      The anchor is measured against the text as it stood when the caret arrived
+      and stays fixed for the session, so every autosave of one session patches
+      one entry rather than piling up new ones — `useTextEditing.ts` already
+      matches an existing edit on quote and path. No protocol change: an entry is
+      *saving* from the moment it is sent, *saved* when the room echoes it back,
+      and *failed* on a rejection or a socket that closed with writes pending
+- [ ] Local undo and redo stack. **Scope, decided 2026-08-16: it lives in the
+      app, not the runtime, and costs the injected bundle nothing.** Every edit
+      is already an overlay entry, so undo is the inverse of a room message —
+      remove what was added, re-add what was removed, patch back what was
+      patched. Bound at the viewer and deliberately inert while
+      `surface.isEditing()`, because inside a live caret the browser's own undo
+      is the right one and stealing the key would be worse than not binding it.
+      Session-scoped and self-scoped: you can undo what you did, not what someone
+      else did
 
 ### Two ways into an edit
 
@@ -700,12 +795,14 @@ a button is what makes anyone find the gesture in the first place. Both, then.
 - [x] The artifact's own `dblclick` handlers do not fire for an edit gesture, and
       the word selection is left alone so the caret lands where it was aimed
 
-**Open: touch.** There is no double-click on a phone — double-tap is zoom, and
-`dblclick` does not fire reliably — so as designed the gesture is desktop-only
-and the pen is the only way in on touch. Either that is acceptable and gets
-written down as acceptable, or a long-press fallback gets built with its own
-gesture timer. v0.1's exit criterion is about handing someone a link on their
-phone, so this wants an answer before this version closes rather than after.
+**Touch: closed 2026-08-16, as acceptable.** There is no double-click on a phone
+— double-tap is zoom, and `dblclick` does not fire reliably — so the gesture is
+desktop-only and the pen is the only way in on touch. A long-press fallback with
+its own gesture timer was the alternative and is not being built: it buys a
+second way into editing for the readers least likely to be doing the editing,
+and it costs a gesture timer in the bundle that runs inside somebody else's
+document. Reading on a phone is unaffected, which is the exit criterion v0.1
+actually set.
 
 **Loose end, recorded not scheduled:** `data-coedit-editing`, the attribute the
 surface sets on the block being edited, is read by nothing anywhere in the repo.
@@ -718,21 +815,32 @@ what changed and put it back — but a revision system is the wrong shape for it
 Every mark is already an entry the rail can list and delete, so the whole
 feature is grouping, a delete control, and one honest confirmation.
 
-- [x] The rail splits into three buckets, each collapsible and each carrying its
+**Audit 2026-08-16: this section was checked off and never built.** The four
+boxes below were marked done while describing, in the present tense, exactly the
+code that is still there. They are corrected to open.
+
+- [ ] The rail splits into three buckets, each collapsible and each carrying its
       own count: **stickies**, **comments**, **direct edits**. Today
       `threadsIn()` (`protocol/src/overlay.ts`) hands back comments and stickies
-      as one undifferentiated list and `ChangeLog` hangs off the bottom.
+      as one undifferentiated list and `ChangeLog` hangs off the bottom of
+      `CommentRail.tsx`, which is still true as written.
       `isFloating()` and `editsAmong()` already do the separating, so this is
       grouping in `CommentRail.tsx`, not new protocol
-- [x] Deleting an edit in the rail puts the text back. **This is not what
+- [ ] Deleting an edit in the rail puts the text back. **This is not what
       deleting an entry does today.** `applyEdits` wrote the replacement over
       the original and the original wording is gone from the DOM, so dropping
-      the entry leaves the changed text on screen. Because the stored bytes are
-      never modified, the correct reset is to reload the frame and let
-      `replayEdits` re-apply the surviving edits in order — correct by
-      construction, and it costs only whatever slide the artifact was on
-- [x] A remove control on each row in `ChangeLog.tsx`, shown only when `canEdit`
-- [x] **Remove all changes** on the direct-edits bucket, behind a confirmation
+      the entry leaves the changed text on screen. `replayEdits`
+      (`runtime/src/marks.ts:78`) only ever moves forward — it applies edits it
+      has not seen and remembers them in `replayed`; nothing walks one back.
+      Because the stored bytes are never modified, the correct reset is to reload
+      the frame and let `replayEdits` re-apply the surviving edits in order —
+      correct by construction, and it costs only whatever slide the artifact was
+      on. `artifact-src.ts` already keys the frame on the revision, so the
+      mechanism is a nonce in that key rather than new machinery
+- [ ] A remove control on each row in `ChangeLog.tsx`, shown only when `canEdit`.
+      `CommentThread` has one and `ChangeLog` does not, so a comment can be
+      withdrawn today and a change to somebody's words cannot
+- [ ] **Remove all changes** on the direct-edits bucket, behind a confirmation
       that names the count. Deleting one edit is small; deleting every edit
       somebody made is not, and it should not be a single unguarded click
 - [x] Removing a sticky or a comment keeps working as it does now — those never
@@ -780,6 +888,37 @@ feature is grouping, a delete control, and one honest confirmation.
   will not respond to one, so the panel would work on some files and do nothing
   on others, with no way to tell which in advance
 
+### Delivery stack
+
+Written 2026-08-16, in dependency order. Each branch is reviewable on its own and
+none needs the one after it.
+
+- [x] `42-green-the-trunk` — done 2026-08-16. `main` had been red since the
+      sticky and tutorial work landed: two tests asserting copy that had since
+      changed, and two dead identifiers in `CommentRail.tsx`. All four fixed
+      themselves when v0.5's stack landed, which is the argument for greening the
+      trunk before believing any of it. What actually remained was Prettier
+      wanting to reformat `worker/tutorial/deck.html` — 865 diff lines against a
+      501-line file — so the deck joined `.prettierignore` beside the other
+      served-verbatim content. It is an artifact: stored and served
+      byte-for-byte down the same path as a stranger's upload, with the tour's
+      seeded notes anchored into it by quoted text and `nth-of-type` path. We do
+      not rewrite artifacts, including our own. 77 test files, lint, and
+      typecheck all pass on the result
+- [ ] `43-rail-buckets` — **Reversibility lives in the rail**, all four boxes.
+      Buckets with counts in `CommentRail.tsx`, a remove control per row in
+      `ChangeLog.tsx` gated on `canEdit`, **Remove all changes** behind a
+      confirmation naming the count, and the frame-reload reset that makes
+      deleting an edit actually put the text back. This is the version's exit
+      criterion, which is why it is the first real branch rather than the last
+- [ ] `44-edit-autosave` — the idle commit in `runtime/src/edits/surface.ts`, and
+      saving / saved / failed derived in `useDocRoom.ts` from what the room has
+      echoed back. `author.js` is at 18.8KB of 22KB, so the timer fits; if it
+      does not, the state is app-side and only the timer is runtime
+- [ ] `45-undo-redo` — the inverse-message stack described above, app-side,
+      inert while a caret is live. Reuses `43`'s reload path when the thing being
+      undone is an edit
+
 ### Ship
 
 - [ ] One real artifact edited by three people in the same hour
@@ -817,12 +956,26 @@ one sweep instead of composing it from nothing.
       landing page carries a footer back to the site. The viewer's wordmark
       deliberately still goes to the app's own root — from inside a document,
       "up" means the upload page, not marketing
-- [ ] Point the apex at it and confirm `www` lands somewhere real. Deploying is
-      the one step left, and it is the user's to run
+- [x] Point the apex at it and confirm `www` lands somewhere real — done.
+      Checked live 2026-08-16: `coedithtml.com` answers 200 with the real site,
+      `www.coedithtml.com` 301s to the apex, `app.coedithtml.com` answers 200
+- [ ] **Redeploy it. What is live at the apex is an older build than `main`.**
+      Its nav offers "How it works", a page that no longer exists in this repo;
+      `/tutorial` 404s though the page is built; and `/sitemap.xml` 404s though
+      `website/src/app/sitemap.ts` exists. The SEO and tutorial work is shipped
+      in git and not on the internet. One
+      `pnpm --filter @coedithtml/website deploy`, and it is the user's to run
 
-**The contact addresses are written but do not exist yet.** `privacy@`,
-`abuse@`, and `hello@coedithtml.com` are named on the site; Cloudflare Email
-Routing has to forward them somewhere before the pages are true.
+**The contact address is written and unverified.** The deployed footer offers
+`team@coedithtml.com` — one address, not the `privacy@` / `abuse@` / `hello@`
+trio this file used to name. **Audit 2026-08-16:** whether Cloudflare Email
+Routing actually forwards it cannot be checked from inside the repo, and an
+abuse contact that bounces is worse than none. Send one mail to it before v1.
+
+**Landing v0.4 needs the two copy branches too.** `polish-copy-human-direct` and
+`trim-site-nav-copy` are unmerged and sit at the bottom of v0.5's stack; the
+site's own copy is not final until they land. They are listed once, in the v0.5
+stack, rather than twice.
 
 ---
 
@@ -836,36 +989,95 @@ down — without uploading it again.
 
 - [ ] **v0.5 complete**
 
-Today choosing a file *is* publishing three links. `handleUpload` mints view,
-suggest, and edit in one go and the landing page picks which one to show you;
-the permission select is frozen the moment the result appears, and "Upload
+On `main`, choosing a file *is* publishing three links. `handleUpload` mints
+view, suggest, and edit in one go and the landing page picks which one to show
+you; the permission select is frozen the moment the result appears, and "Upload
 another" makes a new artifact rather than changing the link you already have.
 Password can be set at upload and never again, because no route exists to
 change it.
 
-- [ ] Upload and publish become two steps. Upload stores the file and hands back
-      a draft; publishing is something you choose
-- [ ] Permission and password are chosen at the publish step, where there is
-      room to explain what each one means
-- [ ] An anonymous owner id, minted on first upload into an app-origin cookie —
+**Audit 2026-08-16: this version was written as not started, was found very
+nearly built on branches that were never merged, and landed the same day** as
+PRs #41–#44 while the audit was being written. Roughly 3,200 lines, tests
+included. The paragraph above describes `main` as it was that morning and is
+kept because the shape of what changed is the point: choosing a file used to be
+publishing three links, and now it is not.
+
+**Still open here:** the upload-rejection copy, and a deploy — the app in
+production is four merged PRs behind.
+
+- [x] Upload and publish become two steps. Upload stores the file and hands back
+      a draft; publishing is something you choose — built on
+      `worker-share-on-purpose-api` (`worker/src/routes/publish.ts`) and
+      `app-publish-and-my-files`. Landed as PR #42
+- [x] Permission and password are chosen at the publish step, where there is
+      room to explain what each one means — landed as PRs #42 and #44
+- [x] An anonymous owner id, minted on first upload into an app-origin cookie —
       `HttpOnly`, `Secure`, `SameSite=Lax`, long-lived, and never on the sandbox
       origin. This is not an account and does not become one here. It is the
       smallest thing that makes "your files" and "your quota" mean anything, and
-      it is what v0.6 counts against
-- [ ] **My artifacts** — the owner-scoped list the dashboard was cut for
-- [ ] Share settings after publishing: change the password, revoke a link,
-      delete the artifact
-- [ ] Revocation gets an owner check. Anyone holding a link can currently
+      it is what v0.6 counts against. Built on `worker-owner-identity`
+      (`worker/lib/owner-cookie.ts`, `owner-artifacts.ts`), landed as PR #41. The owner
+      index is one KV blob per owner, so it inherits the read-modify-write race
+      `rate-limit.ts` has — called out in the module and deferred to v0.6's
+      Durable Object move, which is the right trade only because losing a write
+      here loses a row in *your own* file list
+- [x] **My artifacts** — the owner-scoped list the dashboard was cut for. Built
+      (`worker/src/routes/my-artifacts.ts` plus the app screen), landed as PR #44
+- [x] Share settings after publishing: change the password, revoke a link,
+      delete the artifact — built (`artifact-settings.ts`,
+      `regenerate-link.ts`), unmerged. **Deleting is a real delete**, which this
+      file files under v0.6; see the note there
+- [x] Revocation gets an owner check. Anyone holding a link can currently
       `DELETE` it and kill it for everyone else, and nothing can re-mint it, so
-      one reader can permanently unshare a document from fifty others
-- [ ] Decide what happens to re-upload. The route works and has tests; the
-      screen was deleted; `ReanchorBanner` and `reanchor-report` are sitting
-      there with no callers. Either bring the flow back or delete the dead code —
-      leaving a tested feature with no way to reach it is the worst of both
+      one reader can permanently unshare a document from fifty others. Closed on
+      the stack: five mutating routes authorize through one `requireOwnedArtifact`
+      chokepoint, and regeneration means a revoked link can be replaced rather
+      than mourned. Landed as PR #42, and the single most important thing in it to review before this ships
+- [x] **Decide what happens to re-upload. Decided 2026-08-16: no UI, delete the
+      dead code, keep the route.** `ReanchorBanner.tsx` and `reanchor-report.ts`
+      go (`remove-reanchor-report` already does it).
+      `POST /api/artifacts/:token/revisions` stays: it is tested, it is the only
+      way to change an artifact's bytes without changing its links, and it costs
+      nothing to leave standing. What made the screen unmissed is `reimport` —
+      re-uploading a Coedit download now carries its stickies into the new room,
+      which is the case the re-anchor report was written to explain
 - [ ] Rejected uploads get room to explain themselves. The words are already
       right (`worker/lib/html-document.ts` — needs a build step, sets its own
       CSP, has no closing tag); they arrive as one red line under the dropzone,
       which makes "wrong file" and "nearly right file" look identical
+
+### Delivery stack
+
+Written 2026-08-16 as seven merges of code that already existed, and closed the
+same day. The commits landed under new SHAs through PRs #41–#44, so the branch
+names below no longer resolve — they are kept because they name what each piece
+was.
+
+- [x] `polish-copy-human-direct` — website and tutorial copy. Closes v0.4's copy
+- [x] `trim-site-nav-copy` — drops the privacy link from the site nav
+- [x] `remove-reanchor-report` — deletes `ReanchorBanner` and `reanchor-report`,
+      which is the decision above. Both files are gone from `main`
+- [x] `worker-owner-identity` — the owner cookie and the per-owner index, PR #41
+- [x] `worker-share-on-purpose-api` — publish, regenerate, settings, delete,
+      PR #42
+- [x] `app-share-ui-primitives` — modal, confirm dialog, permission control,
+      PR #43
+- [x] `app-publish-and-my-files` — the publish step and the file list, PR #44
+- [ ] `46-upload-rejection-copy` — the one item on this list nobody has written
+      yet: give a refused upload the room to say which of the three things went
+      wrong, and what to do about it
+
+**Two reviews this stack was supposed to get and did not, because it landed
+while the audit that asked for them was being written.** Neither blocks v0.3;
+both block calling v0.5 done:
+
+- [ ] **The owner cookie against the two-origin rule.** It is the first cookie in
+      the product, and it must never be settable or readable from the sandbox
+      origin. `security-reviewer` exists for exactly this
+- [ ] **`requireOwnedArtifact`, and how it treats pre-v0.5 artifacts with no
+      recorded owner.** That fallback is the seam where a permissive default
+      hands every artifact uploaded before today to whoever asks first
 
 ---
 
@@ -881,11 +1093,17 @@ can run up your bill at will.
 
 ### Take it down, and let it go
 
-- [ ] **Delete, for real.** `DELETE /api/artifacts/:token` removes a token
+- [~] **Delete, for real.** `DELETE /api/artifacts/:token` removes a token
       record and nothing else — the bytes, the metadata, and the Durable Object
       all survive. Revoking every token today makes an artifact permanently
       unreachable *and* permanently stored. One route that clears every
-      revision from R2, the metadata from KV, all sibling tokens, and the room
+      revision from R2, the metadata from KV, all sibling tokens, and the room.
+      **Audit 2026-08-16: built early, and on `main` as of PR #42.** It landed
+      there because deleting a file is something you do from a file list, and it
+      lives at `DELETE /api/my-artifacts/:id` rather than overloading the token
+      path — an artifact id and a share token are indistinguishable 32-hex
+      strings, and guessing wrong about which one you were handed is how you
+      delete the wrong thing. Verify it against R2 and the room when v0.6 opens
 - [ ] **Expire on inactivity: 30 days without a view.** Needs a `lastViewedAt`
       the serve path maintains cheaply, a `triggers.crons` block — there is no
       scheduled handler in the Worker at all today — and a warning to the owner
@@ -1107,6 +1325,16 @@ environment:
   `frame-ancestors app.coedithtml.com` and `nosniff`; app assets 404 here
 - `coedithtml.com` (apex, marketing) → still parked
 
+**Updated 2026-08-16, checked live.** The apex is no longer parked: it serves the
+real marketing site, and `www` 301s to it. The Worker has moved on too — the
+tutorial route answers, so production carries at least the tour work. Two things
+are behind `main`, both a deploy rather than a task:
+
+- The **website** at the apex is an older build. Its nav offers a page this repo
+  no longer has, `/tutorial` and `/sitemap.xml` 404, and the SEO work is live in
+  git only
+- Nothing from v0.5's stack is deployed, because nothing from it is merged
+
 Checked live: upload → link → fetch, with the stored bytes byte-identical and
 exactly one appended script; the revision path `/__coedit/<revision>/runtime.js`
 serving the runtime with `appOrigin` and `revision` injected; a websocket
@@ -1165,10 +1393,11 @@ of this one.
       item** — it is the launch test, not a leftover
 - [x] Confirm the account's `workers.dev` subdomain really is
       `coedithtml-worker` — it is, so the sandbox host in config was right
-- [ ] Deploy the marketing site to the apex, or leave it parked deliberately.
-      Vercel is fine for it — no app logic lives there — as long as
-      `coedithtml.com` stays on Cloudflare DNS, which the `app.` custom domain
-      needs, and the apex records are left unproxied. **Decided: it ships, at
-      v0.4.** Parking it deliberately stopped being an option once v1 meant
-      sending the link to strangers, who arrive at the apex before they arrive
-      anywhere else
+- [x] Deploy the marketing site to the apex, or leave it parked deliberately.
+      **Decided: it ships, at v0.4** — parking it deliberately stopped being an
+      option once v1 meant sending the link to strangers, who arrive at the apex
+      before they arrive anywhere else. Shipped on Cloudflare rather than Vercel
+      in the end: `website/wrangler.jsonc` serves the static export at
+      `coedithtml.com` as a custom domain, so the DNS constraint the alternative
+      carried never came up. Live and confirmed 2026-08-16. **Keeping it current
+      is a v0.4 item** — what is deployed is already behind `main`
