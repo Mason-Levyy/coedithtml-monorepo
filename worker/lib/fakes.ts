@@ -516,6 +516,7 @@ export function fakeWorkerEnv(): Record<string, unknown> {
     REDIRECT_HOSTS: FAKE_REDIRECT_HOST,
     REDIRECT_TARGET: FAKE_REDIRECT_TARGET,
     MCP_ENABLED: "true",
+    MCP_SIGNING_SECRET: "test-signing-secret-at-least-32-chars",
   };
 }
 

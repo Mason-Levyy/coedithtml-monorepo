@@ -120,27 +120,40 @@ function withoutMarkers(review: string): string {
   return review.split(REVIEW_OPEN).join("").split(REVIEW_CLOSE).join("");
 }
 
+export function wrapHandoff(handoff: {
+  review: string;
+  fileName: string;
+  artifactUrl?: string;
+}): string {
+  if (handoff.review.trim().length === 0) {
+    return "";
+  }
+
+  const closing =
+    handoff.artifactUrl === undefined
+      ? `Work from the copy of ${handoff.fileName} you already have, and share the updated file back when you are done so the reviewers can see it.`
+      : `The reviewed copy is at ${handoff.artifactUrl}. Fetch it and work from that, so you are changing the file the reviewers actually read. Share the updated ${handoff.fileName} back when you are done.`;
+
+  return `${[
+    ...HANDOFF_INSTRUCTIONS,
+    REVIEW_OPEN,
+    withoutMarkers(handoff.review).trim(),
+    REVIEW_CLOSE,
+    closing,
+  ].join("\n\n")}\n`;
+}
+
 export function feedbackHandoffPrompt(overlay: {
   fileName: string;
   entries: OverlayEntry[];
   orphaned: string[];
   artifactUrl?: string;
 }): string {
-  const review = overlayToMarkdown(overlay);
-  if (review.length === 0) {
-    return "";
-  }
-
-  const closing =
-    overlay.artifactUrl === undefined
-      ? `Work from the copy of ${overlay.fileName} you already have, and share the updated file back when you are done so the reviewers can see it.`
-      : `The reviewed copy is at ${overlay.artifactUrl}. Fetch it and work from that, so you are changing the file the reviewers actually read. Share the updated ${overlay.fileName} back when you are done.`;
-
-  return `${[
-    ...HANDOFF_INSTRUCTIONS,
-    REVIEW_OPEN,
-    withoutMarkers(review).trim(),
-    REVIEW_CLOSE,
-    closing,
-  ].join("\n\n")}\n`;
+  return wrapHandoff({
+    review: overlayToMarkdown(overlay),
+    fileName: overlay.fileName,
+    ...(overlay.artifactUrl === undefined
+      ? {}
+      : { artifactUrl: overlay.artifactUrl }),
+  });
 }
