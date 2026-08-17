@@ -1,4 +1,4 @@
-import type { WorkerEnv } from "@/lib/env";
+﻿import type { WorkerEnv } from "@/lib/env";
 import {
   callToolParamsSchema,
   jsonRpcMessageSchema,
@@ -18,7 +18,7 @@ import {
   rpcResult,
   unsupportedVersion,
 } from "./jsonrpc";
-import { toolListing, toolNamed } from "./tools";
+import { toolListing, toolNamed } from "./tools/index";
 import {
   MODERN_PROTOCOL_VERSION,
   isModernVersion,

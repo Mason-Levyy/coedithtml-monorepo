@@ -9,6 +9,7 @@ import {
   downloadFileName,
   downloadScript,
   feedbackSection,
+  NO_FEEDBACK_YET,
   type DownloadChoice,
 } from "@/lib/artifact-download";
 import { readArtifactBytes } from "@/lib/artifact-cache";
@@ -96,7 +97,7 @@ export async function handleArtifactDownload(options: {
       orphaned: [],
     });
     return attachment(
-      markdown.length > 0 ? markdown : "# No feedback yet\n",
+      markdown.length > 0 ? markdown : NO_FEEDBACK_YET,
       fileName,
       headers,
     );
