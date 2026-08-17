@@ -2,6 +2,7 @@ import { parseWorkerEnv } from "@/lib/env";
 import { classifyRequestOrigin, redirectTargetFor } from "@/lib/origins";
 import { handleAppRequest } from "@/routes/app";
 import { handleSandboxRequest } from "@/routes/sandbox";
+import { sweepArtifacts } from "@/sweep";
 
 export { DocRoom } from "@/doc-room";
 export { RateLimiter } from "@/rate-limiter";
@@ -30,5 +31,19 @@ export default {
       case "unknown":
         return new Response("Not found", { status: 404 });
     }
+  },
+
+  async scheduled(_event, env): Promise<void> {
+    const parsed = parseWorkerEnv(env);
+    if (!parsed.ok) {
+      console.error(
+        `Sweep skipped, invalid bindings: ${parsed.invalidBindings.join(", ")}`,
+      );
+      return;
+    }
+    const report = await sweepArtifacts(parsed.env);
+    console.log(
+      `Swept ${report.examined} artifacts: ${report.expired} expired, ${report.warned} warned`,
+    );
   },
 } satisfies ExportedHandler<Env>;

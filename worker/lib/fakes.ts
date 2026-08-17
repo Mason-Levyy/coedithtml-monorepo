@@ -150,7 +150,13 @@ export function liveKv(
       store.set(key, value);
       return Promise.resolve(undefined);
     },
-    list: () => Promise.resolve({ keys: [] }),
+    list: (options?: { prefix?: string; limit?: number }) => {
+      const matching = [...store.keys()]
+        .filter((key) => key.startsWith(options?.prefix ?? ""))
+        .slice(0, options?.limit ?? store.size)
+        .map((name) => ({ name }));
+      return Promise.resolve({ keys: matching, list_complete: true });
+    },
     delete: (key: string) => {
       store.delete(key);
       return Promise.resolve(undefined);
@@ -259,13 +265,20 @@ export function memoryEntryStore(seed: OverlayEntry[] = []): EntryStore {
 
 export const FAKE_ROOM_HEADER = "x-fake-room";
 
-function fakeRoomResponse(): Response {
+function fakeRoomResponse(request?: Request): Response {
+  // The sweep asks a room what it holds before taking the artifact away, so an
+  // empty overlay is what an empty room has to answer with.
+  if (request !== undefined && new URL(request.url).pathname === "/overlay") {
+    return Response.json({ version: 1, artifactRevision: "r1", entries: [] });
+  }
   return new Response(null, { headers: { [FAKE_ROOM_HEADER]: "connected" } });
 }
 
 export function fakeDocRoom(): Record<string, unknown> {
   return {
-    get: () => ({ fetch: () => Promise.resolve(fakeRoomResponse()) }),
+    get: () => ({
+      fetch: (request: Request) => Promise.resolve(fakeRoomResponse(request)),
+    }),
     idFromName: (name: string) => ({ toString: () => name }),
   };
 }
@@ -282,7 +295,7 @@ export function recordingDocRoom(): RecordingDocRoom {
     get: (id: { toString(): string }) => ({
       fetch: (request: Request) => {
         connects.push({ name: id.toString(), request });
-        return Promise.resolve(fakeRoomResponse());
+        return Promise.resolve(fakeRoomResponse(request));
       },
     }),
   } as unknown as DurableObjectNamespace;

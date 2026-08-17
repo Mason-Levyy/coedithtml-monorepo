@@ -9,6 +9,7 @@ import {
   downloadChoiceIn,
 } from "@/lib/artifact-download";
 import { readArtifactBytes } from "@/lib/artifact-cache";
+import { recordArtifactView } from "@/lib/artifact-views";
 import { handleArtifactDownload } from "@/routes/download";
 import type { WorkerEnv } from "@/lib/env";
 import { originFor } from "@/lib/origins";
@@ -137,6 +138,8 @@ export async function handleSandboxRequest(
   if (result.bytes === null) {
     return sandboxResponse("Not found", 404, headers);
   }
+
+  await recordArtifactView(env.ARTIFACT_METADATA, artifactId, metadata);
 
   return sandboxResponse(
     appendRuntimeScript(result.bytes, metadata.revision),
