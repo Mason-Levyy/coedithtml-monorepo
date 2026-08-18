@@ -40,7 +40,7 @@ const QUESTIONS = [
   {
     question: "What does it cost?",
     answer:
-      "coeditHTML is completely free to use. No credit card or account is required.",
+      "Free for individual use. No credit card or account is required. Rolling it out across a company or building it into a product needs an agreement first — get in touch.",
   },
 ];
 
