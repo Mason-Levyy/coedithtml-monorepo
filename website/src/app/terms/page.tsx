@@ -3,7 +3,7 @@ import { pageMetadata } from "@/lib/metadata";
 export const metadata = pageMetadata({
   title: "Terms of Service",
   description:
-    "Terms of Service governing the use of coeditHTML: content ownership, licensing, prohibited activities, and disclaimers.",
+    "Terms of Service governing the use of coeditHTML: content ownership, permitted individual use, organizational licensing, prohibited activities, and disclaimers.",
   path: "/terms/",
 });
 
@@ -14,7 +14,7 @@ export default function TermsPage() {
         <p className="eyebrow">legal agreement</p>
         <h1>Terms of Service</h1>
         <p className="lede">
-          <strong>Last updated August 14, 2026</strong>
+          <strong>Last updated August 17, 2026</strong>
         </p>
       </header>
 
@@ -85,8 +85,77 @@ export default function TermsPage() {
           are your &ldquo;Content.&rdquo;
         </p>
         <p>
-          The Site is provided free of charge. There are no accounts, no paid
-          plans, and no fees.
+          The Site is provided free of charge for individual use as described
+          under Permitted Use below. There are no accounts, no paid plans, and
+          no fees for that use. Organizational deployment requires a separate
+          written agreement with us, which may carry a fee.
+        </p>
+
+        <hr />
+
+        <h2>PERMITTED USE</h2>
+        <h3>Individual use is free</h3>
+        <p>
+          You may use the Site for your own work, personal or professional, at
+          no cost. This includes using it as an employee, contractor, or
+          freelancer in the course of your job, and sharing links with
+          colleagues, clients, and anyone else you choose.{" "}
+          <strong>
+            People who open a link you share are not using the Site on their own
+            behalf and never count toward any threshold in this section.
+          </strong>{" "}
+          Sharing links widely is the purpose of the Site and is never itself a
+          violation of these Terms.
+        </p>
+
+        <h3>Organizational deployment requires an agreement</h3>
+        <p>
+          An &ldquo;Organization&rdquo; means any company, firm, agency,
+          institution, or other entity, together with its parents, subsidiaries,
+          and affiliates. The following constitute{" "}
+          <strong>Organizational Deployment</strong> and require a separate
+          written agreement with us <strong>before</strong> you begin:
+        </p>
+        <ul>
+          <li>
+            Adopting, rolling out, standardizing on, mandating, or formally
+            recommending the Site as a tool for a team, department, or
+            Organization.
+          </li>
+          <li>
+            Use of the Site to upload or edit Artifacts by twenty-five (25) or
+            more people within a single Organization in any thirty (30) day
+            period, whether or not that use is coordinated.
+          </li>
+          <li>
+            Embedding or integrating the Site, its API, or its MCP endpoints
+            into a product, service, or internal system your Organization
+            builds, operates, resells, or provides to its own customers.
+          </li>
+          <li>
+            Relying on the Site as production infrastructure, or in any workflow
+            where its unavailability would cause your Organization material
+            harm.
+          </li>
+          <li>
+            Any use requiring a service level commitment, uptime guarantee,
+            security review response, vendor questionnaire, data processing
+            agreement, or similar contractual assurance.
+          </li>
+        </ul>
+        <p>
+          To arrange an agreement, contact support@coedithtml.com and describe
+          your intended use. Terms and pricing are set case by case and at our
+          sole discretion.{" "}
+          <strong>
+            Until a written agreement is signed, Organizational Deployment is
+            not licensed under these Terms, and we may block, rate-limit, or
+            disable it without notice.
+          </strong>
+        </p>
+        <p>
+          Nothing in this section creates an obligation on us to offer any
+          agreement, on any terms, to anyone.
         </p>
 
         <hr />
@@ -318,10 +387,63 @@ export default function TermsPage() {
             applicable open-source license.
           </li>
           <li>
+            Engage in Organizational Deployment without a written agreement, or
+            structure your use — across multiple links, addresses, or people —
+            to avoid the thresholds in the Permitted Use section.
+          </li>
+          <li>
             Use the Site in any manner inconsistent with applicable law or
             regulation.
           </li>
         </ul>
+
+        <h3>Fair use and abuse</h3>
+        <p>
+          Individual use is free but not unlimited. The following are abuse of
+          the Site regardless of who is doing them:
+        </p>
+        <ul>
+          <li>
+            Uploading in volume — bulk, scripted, or automated uploads, or
+            consuming storage or bandwidth grossly disproportionate to ordinary
+            individual use.
+          </li>
+          <li>
+            Evading rate limits, upload size limits, retention limits, or a
+            block we have applied, including by rotating IP addresses, links, or
+            identities.
+          </li>
+          <li>
+            Using Artifacts or Overlay Content to distribute spam, scams,
+            unsolicited advertising, or malicious links.
+          </li>
+          <li>
+            Harassing, threatening, or abusing other participants through
+            comments, edits, or self-declared names.
+          </li>
+          <li>
+            Deliberately degrading the Site&rsquo;s availability or performance
+            for other people.
+          </li>
+        </ul>
+        <p>
+          <strong>
+            If you abuse the Site, we may ban you — permanently, without notice,
+            without warning, and at our sole discretion.
+          </strong>{" "}
+          Because the Site has no accounts, a ban is enforced by every means
+          available to us, which may include disabling your links, deleting your
+          Artifacts and Overlay Content, blocking your IP address or address
+          range, and refusing future uploads.{" "}
+          <strong>
+            A ban may result in the immediate and permanent loss of Content you
+            have not kept your own copy of.
+          </strong>{" "}
+          We are not obligated to explain a ban, to restore access, or to return
+          any Content. If you believe a ban was applied in error, you may write
+          to support@coedithtml.com, and we will consider the matter, but we are
+          under no obligation to reverse it.
+        </p>
 
         <hr />
 
