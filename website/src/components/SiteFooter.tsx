@@ -24,6 +24,9 @@ export function SiteFooter() {
               <li>
                 <TutorialLink>Take the tutorial</TutorialLink>
               </li>
+              <li>
+                <Link href="/connect/">Connect your AI</Link>
+              </li>
             </ul>
           </div>
 
