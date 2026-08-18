@@ -33,11 +33,11 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Build (assembles worker/public, which the worker tests load)
+        run: pnpm build
+
       - name: Test
         run: pnpm test
-
-      - name: Build
-        run: pnpm build
 
       - name: Runtime bundle size budget
         run: pnpm --filter runtime run check-size
