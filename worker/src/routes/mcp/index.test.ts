@@ -89,6 +89,7 @@ describe("the MCP endpoint", () => {
       "coedit_share_artifact",
       "coedit_read_feedback",
       "coedit_update_artifact",
+      "coedit_get_upload_link",
     ]);
     expect(result.cacheScope).toBe("public");
     expect(typeof result.ttlMs).toBe("number");
@@ -179,7 +180,7 @@ describe("the MCP endpoint", () => {
   it("does not put the modern result fields in a legacy answer", async () => {
     const result = (await send(legacy("tools/list"))).result as Body;
 
-    expect(result.tools).toHaveLength(3);
+    expect(result.tools).toHaveLength(4);
     expect(result).not.toHaveProperty("resultType");
     expect(result).not.toHaveProperty("ttlMs");
   });

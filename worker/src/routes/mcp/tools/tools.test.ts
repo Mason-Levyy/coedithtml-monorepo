@@ -6,10 +6,12 @@ import {
   testWorkerEnv,
 } from "@/lib/fakes";
 import type { WorkerEnv } from "@/lib/env";
+import { handleReplaceArtifact } from "@/routes/revisions";
 import { MCP_MAX_ARTIFACT_BYTES } from "../ceilings";
 import { readFeedbackTool } from "./feedback";
 import { shareArtifactTool } from "./share";
 import { updateArtifactTool } from "./update";
+import { getUploadLinkTool } from "./upload-link";
 
 const ARTIFACT =
   "<!doctype html><html><body><p>Revenue grew 18%</p></body></html>";
@@ -174,5 +176,73 @@ describe("coedit_update_artifact", () => {
     );
 
     expect(result.isError).toBe(true);
+  });
+});
+
+describe("coedit_get_upload_link", () => {
+  it("hands back a direct URL keyed to the editToken", async () => {
+    const shared = await share();
+    const { editToken } = JSON.parse(shared.text) as { editToken: string };
+
+    const result = await getUploadLinkTool.run({ editToken }, shared.ctx);
+    const body = JSON.parse(textOf(result)) as Record<string, unknown>;
+
+    expect(result.isError).toBeUndefined();
+    expect(body.uploadUrl).toBe(
+      `https://${FAKE_APP_HOST}/api/artifacts/${editToken}/revisions`,
+    );
+    expect(body.fileField).toBe("file");
+  });
+
+  it("refuses a view token, because only an edit link may replace a file", async () => {
+    const shared = await share({ permission: "view" });
+    const { shareUrl } = JSON.parse(shared.text) as Record<string, string>;
+    const viewToken = (shareUrl ?? "").split("/").pop() ?? "";
+
+    const result = await getUploadLinkTool.run(
+      { editToken: viewToken },
+      shared.ctx,
+    );
+
+    expect(result.isError).toBe(true);
+  });
+
+  it("refuses a token for an artifact that is not there", async () => {
+    const result = await getUploadLinkTool.run(
+      { editToken: "a".repeat(32) },
+      context(),
+    );
+
+    expect(result.isError).toBe(true);
+  });
+
+  it("lets a file too big for coedit_update_artifact through the direct link", async () => {
+    const shared = await share();
+    const { editToken } = JSON.parse(shared.text) as { editToken: string };
+
+    const oversized = `<!doctype html><html><body>${"x".repeat(MCP_MAX_ARTIFACT_BYTES)}</body></html>`;
+    const refused = await updateArtifactTool.run(
+      { editToken, html: oversized, fileName: "deck.html" },
+      shared.ctx,
+    );
+    expect(refused.isError).toBe(true);
+
+    const link = await getUploadLinkTool.run({ editToken }, shared.ctx);
+    const { uploadUrl } = JSON.parse(textOf(link)) as { uploadUrl: string };
+
+    const form = new FormData();
+    form.append(
+      "file",
+      new File([oversized], "deck.html", { type: "text/html" }),
+    );
+    const response = await handleReplaceArtifact(
+      editToken,
+      new Request(uploadUrl, { method: "POST", body: form }),
+      shared.ctx.env,
+    );
+    const body = (await response.json()) as { replaced: boolean };
+
+    expect(response.status).toBe(200);
+    expect(body.replaced).toBe(true);
   });
 });

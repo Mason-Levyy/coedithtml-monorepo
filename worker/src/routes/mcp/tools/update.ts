@@ -1,7 +1,6 @@
 ﻿import { z } from "zod";
 import type { WorkerEnv } from "@/lib/env";
 import { addRevision } from "@/lib/add-revision";
-import { resolveArtifactByToken } from "@/lib/resolve-artifact";
 import { accessTokenSchema } from "@/lib/schemas/artifact";
 import {
   errorResult,
@@ -10,6 +9,7 @@ import {
   type ToolResult,
 } from "../tool";
 import { acceptArtifact } from "./accept-artifact";
+import { resolveEditableArtifact } from "./resolve-editable-artifact";
 
 const argumentsSchema = z.object({
   editToken: accessTokenSchema,
@@ -19,7 +19,7 @@ const argumentsSchema = z.object({
 
 const DESCRIPTION = `Publish a rewritten version of an artifact already on Coedit. The link people are holding keeps working and their comments stay attached, so nobody has to be sent a new URL.
 
-Needs the editToken from coedit_share_artifact. Send the whole revised file.
+Needs the editToken from coedit_share_artifact. Send the whole revised file. If it is too large to send this way -- inlined images are the usual cause -- call coedit_get_upload_link instead.
 
 This does not report which comments still line up with the new text. Call coedit_read_feedback afterwards to see what survived the rewrite.`;
 
@@ -54,19 +54,9 @@ async function run(
   }
   const { editToken, html, fileName } = parsed.data;
 
-  const resolved = await resolveArtifactByToken(
-    context.env.ARTIFACT_METADATA,
-    editToken,
-  );
+  const resolved = await resolveEditableArtifact(context.env, editToken);
   if (!resolved.ok) {
-    return errorResult(
-      "That link is gone or the token is wrong. Check it and try again.",
-    );
-  }
-  if (resolved.artifact.record.kind !== "edit") {
-    return errorResult(
-      "That link cannot replace the file. Only an edit link may.",
-    );
+    return errorResult(resolved.message);
   }
 
   const accepted = await acceptArtifact({ html, fileName }, context);

@@ -7,7 +7,7 @@ const encoder = new TextEncoder();
 
 const MAX_MEGABYTES = Math.round(MCP_MAX_ARTIFACT_BYTES / (1024 * 1024));
 
-const TOO_LARGE = `That file is over ${MAX_MEGABYTES}MB, which is more than this connector will carry. Large inlined images are usually the cause; link them instead and send it again.`;
+const TOO_LARGE = `That file is over ${MAX_MEGABYTES}MB, which is more than this connector will carry. Large inlined images are usually the cause. If this artifact is already on Coedit, call coedit_get_upload_link and POST the file there directly instead of retrying this call; otherwise link the images rather than inlining them and send it again.`;
 
 const REFUSED: Record<string, string> = {
   "needs-build-step":
