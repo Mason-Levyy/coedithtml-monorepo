@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { regionAnchor, type RegionAnchor, type TextAnchor } from "@coedithtml/protocol";
+import { regionAnchor, type TextAnchor } from "@coedithtml/protocol";
 import { anchorFromRange } from "../dom/anchor-dom";
 import { pathToElement } from "../dom/element-path";
-import { buildTextIndex, rangeForOffsets, type TextIndex } from "../dom/text-index";
+import { elementById } from "../dom/test-dom";
+import {
+  buildTextIndex,
+  rangeForOffsets,
+  type TextIndex,
+} from "../dom/text-index";
 import { isOnScreen, locateAnchor, rectsForAnchor } from "./geometry";
 
 const REVISION = "rev-1";
@@ -12,10 +17,7 @@ function render(html: string): TextIndex {
   return buildTextIndex(document.body);
 }
 
-function anchorOnQuote(
-  index: TextIndex,
-  quote: string,
-): TextAnchor {
+function anchorOnQuote(index: TextIndex, quote: string): TextAnchor {
   const start = index.text.indexOf(quote);
   const range = rangeForOffsets(index, start, start + quote.length);
   if (range === null) {
@@ -50,7 +52,7 @@ describe("geometry locateAnchor and rectsForAnchor", () => {
       </div>
     `);
 
-    const target = document.getElementById("target")!;
+    const target = elementById("target");
     vi.spyOn(target, "getBoundingClientRect").mockReturnValue({
       left: 50,
       top: 50,
@@ -63,13 +65,16 @@ describe("geometry locateAnchor and rectsForAnchor", () => {
       toJSON: () => ({}),
     });
 
-    const anchor: RegionAnchor = regionAnchor({
+    const anchor = regionAnchor({
       path: pathToElement(target),
       fractionX: 0.5,
       fractionY: 0.5,
       revision: REVISION,
       excerpt: "Content",
     });
+    if (anchor === null) {
+      throw new Error("could not build a region anchor for the target");
+    }
 
     const visibleLocated = locateAnchor(index, anchor);
     expect(visibleLocated).toEqual({
@@ -94,7 +99,7 @@ describe("geometry locateAnchor and rectsForAnchor", () => {
 
     // Ancestor with visibility: hidden
     target.style.opacity = "1";
-    document.getElementById("slide1")!.style.visibility = "hidden";
+    elementById("slide1").style.visibility = "hidden";
     expect(locateAnchor(index, anchor)).toEqual({
       at: null,
       why: "hidden",
@@ -108,7 +113,6 @@ describe("geometry locateAnchor and rectsForAnchor", () => {
       </div>
     `);
 
-    const para = document.getElementById("para")!;
     vi.spyOn(Range.prototype, "getBoundingClientRect").mockReturnValue({
       left: 100,
       top: 100,
@@ -145,7 +149,7 @@ describe("geometry locateAnchor and rectsForAnchor", () => {
     ]);
 
     // Inactive slide container with visibility: hidden
-    document.getElementById("slide")!.style.visibility = "hidden";
+    elementById("slide").style.visibility = "hidden";
 
     expect(locateAnchor(index, anchor)).toEqual({
       at: null,
