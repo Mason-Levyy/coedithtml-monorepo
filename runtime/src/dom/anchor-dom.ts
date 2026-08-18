@@ -8,6 +8,7 @@ import {
 import { OVERLAY_HOST_ATTRIBUTE } from "./constants";
 import { elementForPath, pathToElement, sharedPathDepth } from "./element-path";
 import { offsetsForRange, rangeForOffsets, type TextIndex } from "./text-index";
+import { isElementVisible } from "./visibility";
 
 export function elementOf(node: Node): Element | null {
   return node.nodeType === Node.ELEMENT_NODE
@@ -88,7 +89,8 @@ function clampFraction(value: number): number {
 function isAnchorable(candidate: Element): boolean {
   return (
     !candidate.hasAttribute(OVERLAY_HOST_ATTRIBUTE) &&
-    document.body.contains(candidate)
+    document.body.contains(candidate) &&
+    isElementVisible(candidate)
   );
 }
 

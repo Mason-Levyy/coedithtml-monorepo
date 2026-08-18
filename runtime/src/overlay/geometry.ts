@@ -1,7 +1,10 @@
 import type { Anchor } from "@coedithtml/protocol";
-import { rangeForTextAnchor } from "../dom/anchor-dom";
+import { elementOf, rangeForTextAnchor } from "../dom/anchor-dom";
 import { elementForPath } from "../dom/element-path";
 import type { TextIndex } from "../dom/text-index";
+import { isElementVisible } from "../dom/visibility";
+
+export { isElementVisible } from "../dom/visibility";
 
 export type Rect = { x: number; y: number; width: number; height: number };
 
@@ -22,6 +25,10 @@ export function rectsForAnchor(
   const range = rangeForTextAnchor(index, anchor);
   if (range === null) {
     return null;
+  }
+  const container = elementOf(range.commonAncestorContainer);
+  if (container !== null && !isElementVisible(container)) {
+    return [];
   }
   return Array.from(range.getClientRects())
     .filter((rect) => rect.width > 0 && rect.height > 0)
@@ -55,6 +62,9 @@ function locateRegion(anchor: Anchor & { kind: "region" }): Located {
   if (element === null) {
     return { at: null, why: "orphaned" };
   }
+  if (!isElementVisible(element)) {
+    return { at: null, why: "hidden" };
+  }
   const box = element.getBoundingClientRect();
   if (!isDrawn(box)) {
     return { at: null, why: "hidden" };
@@ -75,6 +85,10 @@ export function locateAnchor(index: TextIndex, anchor: Anchor): Located {
   const range = rangeForTextAnchor(index, anchor);
   if (range === null) {
     return { at: null, why: "orphaned" };
+  }
+  const container = elementOf(range.commonAncestorContainer);
+  if (container !== null && !isElementVisible(container)) {
+    return { at: null, why: "hidden" };
   }
   const box = range.getBoundingClientRect();
   if (!isDrawn(box)) {
