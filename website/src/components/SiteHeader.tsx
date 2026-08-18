@@ -10,6 +10,7 @@ export function SiteHeader() {
         <Wordmark />
         <nav>
           <TutorialLink>Tutorial</TutorialLink>
+          <Link href="/connect/">MCP Setup</Link>
           <Link href="/report/">Report a File</Link>
           <a className="btn btn--small" href={APP_URL}>
             Open the app

@@ -573,6 +573,153 @@ strong {
 .steps strong {
   display: block;
 }
+/* Connect page -------------------------------------------------------- */
+
+.connect,
+.page-head--wide {
+  max-width: 60rem;
+}
+
+.copy-field {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.6rem 1.1rem;
+  margin: 1.5rem 0 0.75rem;
+  padding: 1rem 1.1rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--paper-2);
+  box-shadow: 4px 4px 0 var(--line);
+}
+
+.copy-field--block {
+  align-items: start;
+}
+
+.copy-field__label {
+  grid-column: 1 / -1;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.copy-field__value {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.copy-field--block .copy-field__value {
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.copy-field__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.connect__reassure {
+  margin-bottom: 2.5rem;
+}
+
+.setup-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.25rem;
+  margin: 2rem 0 2.5rem;
+}
+
+.connect .setup-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper-2);
+}
+
+.connect .setup-card h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.25rem;
+}
+
+.connect .setup-card .note {
+  min-height: 2.4rem;
+}
+
+.setup-card__open {
+  margin: 0.9rem 0 0.2rem;
+  align-self: start;
+}
+
+.connect .setup-card .steps {
+  margin: 1.3rem 0 0;
+  list-style: none;
+}
+
+.connect .setup-card .steps li {
+  margin-bottom: 0.95rem;
+  padding-left: 2.4rem;
+  font-size: 0.92rem;
+}
+
+.connect .setup-card .steps li::before {
+  width: 1.7rem;
+  height: 1.7rem;
+  font-size: 0.75rem;
+}
+
+.connect .setup-card .steps li:last-child {
+  margin-bottom: 0;
+}
+
+.connect .setup-card__note {
+  margin: 1.3rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.connect .setup-card__updated {
+  margin: auto 0 0;
+  padding-top: 0.7rem;
+  align-self: end;
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+.tool-list {
+  margin: 1.5rem 0 2rem;
+  max-width: var(--measure);
+}
+
+.tool-list > div {
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--line);
+}
+
+.tool-list dt {
+  margin-bottom: 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.tool-list dd {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
