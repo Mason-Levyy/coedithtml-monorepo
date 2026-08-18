@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StickyEntry } from "@coedithtml/protocol";
+import { pathToElement } from "../dom/element-path";
 import { buildTextIndex, type TextIndex } from "../dom/text-index";
 import { createOverlayLayer, type OverlayLayer } from "./layer";
 import { createStickyView, type StickyView } from "./sticky-controller";
@@ -221,5 +222,34 @@ describe("the sticky view", () => {
 
     expect(element?.querySelector(".body")?.textContent).toBe("Rewritten");
     expect(element?.querySelectorAll(".handle").length).toBe(handles);
+  });
+
+  it("hides sticky on inactive slide when visibility is hidden and restores it when slide is active", () => {
+    document.body.innerHTML = `
+      <div id="deck">
+        <div id="slide1" class="slide active"><p id="p1">Slide 1 text</p></div>
+        <div id="slide2" class="slide" style="visibility: hidden;"><p id="p2">Slide 2 text</p></div>
+      </div>
+    `;
+    const p1 = document.getElementById("p1")!;
+    const p2 = document.getElementById("p2")!;
+    const deckIndex = buildTextIndex(document.body);
+    const sticky1 = sticky({ id: "s1", anchor: { kind: "region", path: pathToElement(p1), fractionX: 0.5, fractionY: 0.5, revision: "r1" } });
+    const sticky2 = sticky({ id: "s2", anchor: { kind: "region", path: pathToElement(p2), fractionX: 0.5, fractionY: 0.5, revision: "r1" } });
+
+    // On slide 1: s1 should be drawn, s2 should be hidden
+    const placement1 = view.reconcile(deckIndex, [sticky1, sticky2], null);
+    expect(placement1.hidden).toContain("s2");
+    expect(view.elementFor("s1")).not.toBeNull();
+    expect(view.elementFor("s2")).toBeNull();
+
+    // Switch to slide 2: slide 1 becomes hidden, slide 2 becomes visible
+    document.getElementById("slide1")!.style.visibility = "hidden";
+    document.getElementById("slide2")!.style.visibility = "visible";
+
+    const placement2 = view.reconcile(deckIndex, [sticky1, sticky2], null);
+    expect(placement2.hidden).toContain("s1");
+    expect(view.elementFor("s1")).toBeNull();
+    expect(view.elementFor("s2")).not.toBeNull();
   });
 });
