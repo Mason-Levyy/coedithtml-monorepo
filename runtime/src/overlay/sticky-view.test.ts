@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { StickyEntry } from "@coedithtml/protocol";
 import { pathToElement } from "../dom/element-path";
+import { elementById } from "../dom/test-dom";
 import { buildTextIndex, type TextIndex } from "../dom/text-index";
 import { createOverlayLayer, type OverlayLayer } from "./layer";
 import { createStickyView, type StickyView } from "./sticky-controller";
@@ -231,11 +232,29 @@ describe("the sticky view", () => {
         <div id="slide2" class="slide" style="visibility: hidden;"><p id="p2">Slide 2 text</p></div>
       </div>
     `;
-    const p1 = document.getElementById("p1")!;
-    const p2 = document.getElementById("p2")!;
+    const p1 = elementById("p1");
+    const p2 = elementById("p2");
     const deckIndex = buildTextIndex(document.body);
-    const sticky1 = sticky({ id: "s1", anchor: { kind: "region", path: pathToElement(p1), fractionX: 0.5, fractionY: 0.5, revision: "r1" } });
-    const sticky2 = sticky({ id: "s2", anchor: { kind: "region", path: pathToElement(p2), fractionX: 0.5, fractionY: 0.5, revision: "r1" } });
+    const sticky1 = sticky({
+      id: "s1",
+      anchor: {
+        kind: "region",
+        path: pathToElement(p1),
+        fractionX: 0.5,
+        fractionY: 0.5,
+        revision: "r1",
+      },
+    });
+    const sticky2 = sticky({
+      id: "s2",
+      anchor: {
+        kind: "region",
+        path: pathToElement(p2),
+        fractionX: 0.5,
+        fractionY: 0.5,
+        revision: "r1",
+      },
+    });
 
     // On slide 1: s1 should be drawn, s2 should be hidden
     const placement1 = view.reconcile(deckIndex, [sticky1, sticky2], null);
@@ -244,8 +263,8 @@ describe("the sticky view", () => {
     expect(view.elementFor("s2")).toBeNull();
 
     // Switch to slide 2: slide 1 becomes hidden, slide 2 becomes visible
-    document.getElementById("slide1")!.style.visibility = "hidden";
-    document.getElementById("slide2")!.style.visibility = "visible";
+    elementById("slide1").style.visibility = "hidden";
+    elementById("slide2").style.visibility = "visible";
 
     const placement2 = view.reconcile(deckIndex, [sticky1, sticky2], null);
     expect(placement2.hidden).toContain("s1");
