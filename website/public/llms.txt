@@ -27,6 +27,9 @@ Price: free while the product is early. No billing, no card.
 - [Tutorial](https://coedithtml.com/tutorial/): opens a private working copy of
   the app that walks through every feature. This is the explanation; there is
   no separate documentation page.
+- [Connect your AI](https://coedithtml.com/connect/): how a person adds the MCP
+  connector at https://app.coedithtml.com/mcp to Claude, ChatGPT, or Gemini, and
+  what the four coedit_ tools do once it is connected.
 - [Report a file](https://coedithtml.com/report/): abuse and DMCA contacts.
 - [Privacy](https://coedithtml.com/privacy/): what is collected and kept.
 - [Terms](https://coedithtml.com/terms/): terms of service.
@@ -37,6 +40,9 @@ Price: free while the product is early. No billing, no card.
 - [API Catalog (RFC 9727)](https://coedithtml.com/.well-known/api-catalog): machine-readable index of APIs.
 - [A2A Agent Card](https://coedithtml.com/.well-known/agent-card.json): Agent-to-Agent capabilities and skill definitions.
 - [OpenAPI 3.1 Spec](https://coedithtml.com/openapi.json): full REST API contract.
+- [MCP Server](https://app.coedithtml.com/mcp): streamable HTTP, no credentials.
+  Tools: coedit_share_artifact, coedit_read_feedback, coedit_update_artifact,
+  coedit_get_upload_link.
 
 ## Contact
 
