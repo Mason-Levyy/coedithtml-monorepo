@@ -1,12 +1,13 @@
-import type {
-  Anchor,
-  Author,
-  CommentEntry,
-  EditEntry,
-  MarkColor,
-  ReaderPresence,
-  ReplyEntry,
-  StickyEntry,
+import {
+  DEFAULT_STICKY_TEXT_SIZE,
+  type Anchor,
+  type Author,
+  type CommentEntry,
+  type EditEntry,
+  type MarkColor,
+  type ReaderPresence,
+  type ReplyEntry,
+  type StickyEntry,
 } from "@/lib/protocol";
 
 function authorFrom(reader: ReaderPresence): Author {
@@ -67,5 +68,6 @@ export function newSticky(
     width: draft.width !== undefined ? draft.width : 180,
     height: draft.height !== undefined ? draft.height : 140,
     tail: null,
+    textSize: DEFAULT_STICKY_TEXT_SIZE,
   };
 }

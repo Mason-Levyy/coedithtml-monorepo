@@ -34,6 +34,7 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
     width: 200,
     height: 100,
     tail: null,
+    textSize: "m",
     ...overrides,
   };
 }
@@ -151,6 +152,24 @@ describe("stickyGestures", () => {
     );
 
     expect(removed).toEqual(["s1"]);
+  });
+
+  it("steps the text up a size when the size tool is clicked", () => {
+    const element = view.elementFor("s1");
+    const sizeBtn = element?.querySelector<HTMLElement>('[data-tool="size"]');
+    expect(sizeBtn).not.toBeNull();
+
+    sizeBtn?.dispatchEvent(
+      new PointerEvent("pointerdown", {
+        pointerId: 1,
+        isPrimary: true,
+        button: 0,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    expect(patches).toEqual([{ textSize: "l" }]);
   });
 
   it("resets sizing when fit tool is clicked", () => {

@@ -5,6 +5,7 @@ import {
   type EntryPatch,
   type FitMode,
   type RuntimeToAppMessage,
+  type ShortcutAction,
   type TextAnchor,
   type ViewportRect,
 } from "@/lib/protocol";
@@ -91,6 +92,7 @@ function applyMessage(
     case "remove-mark":
     case "text-edited":
     case "tool-cancelled":
+    case "shortcut":
       return previous;
   }
 }
@@ -112,6 +114,7 @@ export function useArtifactBridge(options: {
   onRemoveMark: RemoveMark;
   onToolCancelled: () => void;
   onTextEdited: TextEdited;
+  onShortcut: (action: ShortcutAction) => void;
 }): ArtifactBridgeState {
   const { sandboxOrigin, src } = options;
   const [state, setState] = useState<ArtifactBridgeState>(NOTHING_REPORTED);
@@ -139,6 +142,10 @@ export function useArtifactBridge(options: {
       }
       if (message.type === "tool-cancelled") {
         acted.current.onToolCancelled();
+        return;
+      }
+      if (message.type === "shortcut") {
+        acted.current.onShortcut(message.action);
         return;
       }
       if (message.type === "text-edited") {

@@ -2,13 +2,16 @@ export type ViewportPoint = { x: number; y: number };
 
 const MAX_FRAME_HEIGHT = 10000;
 
-export function framePixelHeight(contentHeight: number): string {
+// A frame shorter than the artifact keeps a scrollbar of its own, and a wheel
+// inside a frame never scrolls the page behind it. Past the cap there is no
+// height that can hold the whole artifact, so the artifact keeps its own
+// scrollbar and the page has none.
+export function framePixelHeight(contentHeight: number): string | null {
   const floor = Math.max(window.innerHeight, 1);
-  const clamped = Math.min(
-    Math.max(contentHeight, floor),
-    Math.max(MAX_FRAME_HEIGHT, floor),
-  );
-  return `${clamped}px`;
+  if (contentHeight > Math.max(MAX_FRAME_HEIGHT, floor)) {
+    return null;
+  }
+  return `${Math.ceil(Math.max(contentHeight, floor))}px`;
 }
 
 export function pointOnPage(

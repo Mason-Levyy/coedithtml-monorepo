@@ -1,4 +1,9 @@
-import type { EntryPatch, StickyEntry, TailTip } from "@coedithtml/protocol";
+import {
+  nextStickyTextSize,
+  type EntryPatch,
+  type StickyEntry,
+  type TailTip,
+} from "@coedithtml/protocol";
 import type { TextIndex } from "../dom/text-index";
 import { beginGesture, type Gesture, type GestureUpdate } from "./gesture";
 import type { Point, Rect } from "./geometry";
@@ -14,6 +19,7 @@ import {
   updateStickyElement,
   type ResizeEdge,
   type StickyGeometry,
+  type StickyTool,
 } from "./sticky-element";
 import { defaultTip, isInside, resizeRect } from "./sticky-geometry";
 
@@ -179,6 +185,21 @@ export function startStickyGestures(options: {
     });
   }
 
+  function useTool(tool: StickyTool, markId: string): void {
+    if (tool === "remove") {
+      options.onRemove(markId);
+      return;
+    }
+    if (tool === "fit") {
+      options.onPatch(markId, { width: null, height: null });
+      return;
+    }
+    const mark = options.markById(markId);
+    if (mark !== null) {
+      options.onPatch(markId, { textSize: nextStickyTextSize(mark.textSize) });
+    }
+  }
+
   function overrideFor(
     box: Rect,
     tailTip: TailTip | null,
@@ -285,11 +306,7 @@ export function startStickyGestures(options: {
     if (tool !== null) {
       event.stopPropagation();
       event.preventDefault();
-      if (tool === "remove") {
-        options.onRemove(markId);
-      } else {
-        options.onPatch(markId, { width: null, height: null });
-      }
+      useTool(tool, markId);
       return;
     }
     const intent = intentOf(target);
@@ -322,8 +339,8 @@ export function startStickyGestures(options: {
     const startBox: Rect = {
       x: mark.offsetX,
       y: mark.offsetY,
-      width: mark.width ?? painted.width,
-      height: mark.height ?? painted.height,
+      width: painted.width,
+      height: painted.height,
     };
 
     const multiStart = new Map<string, { startX: number; startY: number }>();

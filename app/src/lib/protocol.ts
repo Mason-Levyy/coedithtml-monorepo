@@ -1,5 +1,6 @@
 export {
   DEFAULT_MARK_COLOR,
+  DEFAULT_STICKY_TEXT_SIZE,
   MARK_COLORS,
   MARK_EDGE,
   MARK_FILL,
@@ -47,6 +48,7 @@ export {
   type ReplyEntry,
   type RoomToClientMessage,
   type RuntimeToAppMessage,
+  type ShortcutAction,
   type StickyEntry,
   type TextAnchor,
   type ViewportRect,

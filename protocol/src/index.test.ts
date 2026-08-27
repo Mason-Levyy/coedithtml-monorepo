@@ -7,6 +7,7 @@ import {
   placedMessage,
   readyMessage,
   revealMarkMessage,
+  shortcutMessage,
 } from "./index";
 
 describe("parseRuntimeToAppMessage", () => {
@@ -40,6 +41,22 @@ describe("parseRuntimeToAppMessage", () => {
         version: BRIDGE_VERSION,
         type: "ready",
         title: 42,
+      }),
+    ).toBeNull();
+  });
+
+  it("round-trips a shortcut the artifact's own document caught", () => {
+    const message = shortcutMessage("toggle-sticky");
+
+    expect(parseRuntimeToAppMessage(message)).toEqual(message);
+  });
+
+  it("rejects a shortcut naming an action the app does not answer to", () => {
+    expect(
+      parseRuntimeToAppMessage({
+        version: BRIDGE_VERSION,
+        type: "shortcut",
+        action: "format-hard-drive",
       }),
     ).toBeNull();
   });
