@@ -26,11 +26,12 @@ const NO_TEXT_INDEX: TextIndex = { text: "", segments: [] };
 // positioning scrolls with the page for free.
 const SHEET =
   ".surface{position:absolute;top:0;left:0;pointer-events:none}" +
-  ".sticky{position:absolute;box-sizing:border-box;display:flex;min-width:120px;min-height:40px;max-width:220px;overflow:hidden;border-radius:8px;font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#17171a}" +
+  ".sticky{position:absolute;box-sizing:border-box;display:flex;min-width:120px;min-height:40px;max-width:220px;border-radius:8px;font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#17171a}" +
+  '.sticky[data-size="s"]{font-size:11px}.sticky[data-size="l"]{font-size:16px}.sticky[data-size="xl"]{font-size:20px}' +
   ".shape{position:absolute;inset:0;overflow:visible}" +
   ".shape path{stroke-width:1;stroke-linejoin:round;filter:drop-shadow(0 1px 2px rgba(0,0,0,.12))}" +
   ".content{position:relative;flex:1 1 auto;min-width:0;padding:9px 11px;white-space:pre-wrap;overflow-wrap:break-word}" +
-  ".author{display:block;margin-top:5px;font-size:11px;letter-spacing:.01em;opacity:.6}";
+  ".author{display:block;margin-top:5px;font-size:.85em;letter-spacing:.01em;opacity:.6}";
 
 function createHost(): HTMLElement | null {
   const parent = document.documentElement;
@@ -84,9 +85,10 @@ function paintStickyElement(
   element.style.top = `${at.y + window.scrollY + mark.offsetY}px`;
   element.style.width =
     mark.width === null ? "" : `${Math.round(mark.width)}px`;
-  element.style.height =
+  element.style.minHeight =
     mark.height === null ? "" : `${Math.round(mark.height)}px`;
   element.style.color = textOn(effectiveFill(mark));
+  element.dataset.size = mark.textSize;
 
   const box = element.getBoundingClientRect();
   const path = element.querySelector("path");

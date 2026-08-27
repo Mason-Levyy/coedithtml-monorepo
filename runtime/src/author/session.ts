@@ -4,6 +4,7 @@ import {
   placementMessage,
   removeMarkMessage,
   selectionMessage,
+  shortcutMessage,
   textEditedMessage,
   toolCancelledMessage,
 } from "@coedithtml/protocol";
@@ -111,6 +112,18 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
     selectionFrame = window.requestAnimationFrame(reportSelection);
   }
 
+  function onKeyDown(event: KeyboardEvent): void {
+    if (
+      !event.altKey ||
+      !(event.ctrlKey || event.metaKey) ||
+      (event.code !== "KeyO" && event.key.toLowerCase() !== "o")
+    ) {
+      return;
+    }
+    event.preventDefault();
+    host.send(shortcutMessage("toggle-sticky"));
+  }
+
   function onScroll(): void {
     const selection = document.getSelection();
     if (selection !== null && !selection.isCollapsed) {
@@ -120,6 +133,7 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
 
   document.addEventListener("selectionchange", scheduleSelection);
   window.addEventListener("scroll", onScroll, true);
+  window.addEventListener("keydown", onKeyDown, true);
 
   return {
     arm: (tool, color) => {
@@ -156,6 +170,7 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
       placing.stop();
       document.removeEventListener("selectionchange", scheduleSelection);
       window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("keydown", onKeyDown, true);
       window.cancelAnimationFrame(selectionFrame);
     },
   };

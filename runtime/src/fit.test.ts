@@ -15,6 +15,13 @@ function stubBodyScrollHeight(pixels: number): void {
   });
 }
 
+function stubClientHeight(pixels: number): void {
+  Object.defineProperty(document.documentElement, "clientHeight", {
+    configurable: true,
+    get: () => pixels,
+  });
+}
+
 function sentMessages(postMessage: ReturnType<typeof vi.fn>): unknown[] {
   return postMessage.mock.calls.map((call) => call[0]);
 }
@@ -48,6 +55,8 @@ describe("reportFit", () => {
     document.body.style.margin = "0";
     document.body.style.overflowY = "";
     document.documentElement.style.overflowY = "";
+    Reflect.deleteProperty(document.body, "scrollHeight");
+    Reflect.deleteProperty(document.documentElement, "clientHeight");
   });
 
   afterEach(() => {
@@ -100,6 +109,40 @@ describe("reportFit", () => {
         type: "fit",
         mode: "grows-to-content",
         contentHeight: 4216,
+      },
+    ]);
+  });
+
+  it("reports what the root holds once a frame cut to the body still scrolls", () => {
+    stubScrollHeight(4200);
+    stubBodyScrollHeight(900);
+    stubClientHeight(900);
+
+    startReporting();
+
+    expect(sentMessages(postMessage)).toEqual([
+      {
+        version: 1,
+        type: "fit",
+        mode: "grows-to-content",
+        contentHeight: 4200,
+      },
+    ]);
+  });
+
+  it("keeps trusting a body the frame has never been cut down to", () => {
+    stubScrollHeight(4200);
+    stubBodyScrollHeight(900);
+    stubClientHeight(600);
+
+    startReporting();
+
+    expect(sentMessages(postMessage)).toEqual([
+      {
+        version: 1,
+        type: "fit",
+        mode: "grows-to-content",
+        contentHeight: 900,
       },
     ]);
   });

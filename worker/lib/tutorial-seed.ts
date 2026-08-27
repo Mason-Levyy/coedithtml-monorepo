@@ -1,10 +1,11 @@
-import type {
-  Author,
-  CommentEntry,
-  MarkColor,
-  OverlayEntry,
-  StickyEntry,
-  TailTip,
+import {
+  DEFAULT_STICKY_TEXT_SIZE,
+  type Author,
+  type CommentEntry,
+  type MarkColor,
+  type OverlayEntry,
+  type StickyEntry,
+  type TailTip,
 } from "@coedithtml/protocol";
 
 const YANA: Author = {
@@ -224,6 +225,7 @@ function stickyFrom(
     width: seed.width,
     height: seed.height,
     tail: seed.tail,
+    textSize: DEFAULT_STICKY_TEXT_SIZE,
   };
 }
 

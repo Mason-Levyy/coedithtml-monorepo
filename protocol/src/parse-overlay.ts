@@ -2,8 +2,10 @@ import { normalizeHex } from "./colors";
 import { parseAnchor } from "./parse-anchor";
 import {
   clampStickySize,
+  DEFAULT_STICKY_TEXT_SIZE,
   MARK_COLORS,
   OVERLAY_VERSION,
+  STICKY_TEXT_SIZES,
   type Author,
   type CommentEntry,
   type EditEntry,
@@ -13,6 +15,7 @@ import {
   type OverlayEntry,
   type ReplyEntry,
   type StickyEntry,
+  type StickyTextSize,
   type TailTip,
 } from "./overlay";
 import {
@@ -30,6 +33,10 @@ export function isEntryStatus(value: unknown): value is EntryStatus {
 
 export function isMarkColor(value: unknown): value is MarkColor {
   return MARK_COLORS.some((color) => color === value);
+}
+
+export function isStickyTextSize(value: unknown): value is StickyTextSize {
+  return STICKY_TEXT_SIZES.some((size) => size === value);
 }
 
 function parseAuthor(value: unknown): Author | null {
@@ -138,6 +145,9 @@ function parseSticky(
     offsetY,
     ...clampStickySize({ width, height }),
     tail: parseTailTip(record.tail),
+    textSize: isStickyTextSize(record.textSize)
+      ? record.textSize
+      : DEFAULT_STICKY_TEXT_SIZE,
   };
 }
 

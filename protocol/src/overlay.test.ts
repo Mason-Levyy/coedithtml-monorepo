@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { anchorFromText, regionAnchor, type Anchor } from "./anchor";
 import {
+  DEFAULT_STICKY_TEXT_SIZE,
   MAX_STICKY_HEIGHT,
   MAX_STICKY_WIDTH,
   MIN_STICKY_HEIGHT,
   MIN_STICKY_WIDTH,
+  STICKY_TEXT_SIZES,
   emptyOverlay,
+  nextStickyTextSize,
   patchEntry,
   repliesTo,
   threadsIn,
@@ -96,6 +99,7 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
     width: null,
     height: null,
     tail: null,
+    textSize: "m",
     ...overrides,
   };
 }
@@ -391,6 +395,32 @@ describe("parseOverlayEntry", () => {
     delete withoutTail.tail;
 
     expect(parseOverlayEntry(withoutTail)).toEqual(sticky());
+  });
+
+  it("reads a sticky stored before text sizes existed at the default size", () => {
+    const older: Record<string, unknown> = { ...sticky() };
+    delete older.textSize;
+
+    expect(parseOverlayEntry(older)).toEqual(
+      sticky({ textSize: DEFAULT_STICKY_TEXT_SIZE }),
+    );
+  });
+
+  it("falls back to the default size rather than refusing a size it cannot read", () => {
+    expect(parseOverlayEntry({ ...sticky(), textSize: "gigantic" })).toEqual(
+      sticky({ textSize: DEFAULT_STICKY_TEXT_SIZE }),
+    );
+  });
+});
+
+describe("nextStickyTextSize", () => {
+  it("steps up through the sizes and wraps at the largest", () => {
+    expect(STICKY_TEXT_SIZES.map(nextStickyTextSize)).toEqual([
+      "m",
+      "l",
+      "xl",
+      "s",
+    ]);
   });
 });
 

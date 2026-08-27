@@ -54,6 +54,18 @@ export type RuntimeToolCancelledMessage = Versioned & {
   type: "tool-cancelled";
 };
 
+export const SHORTCUT_ACTIONS = ["toggle-sticky"] as const;
+
+export type ShortcutAction = (typeof SHORTCUT_ACTIONS)[number];
+
+// The artifact owns its own document, so a keystroke inside the frame never
+// reaches the app that draws the toolbar. The runtime forwards the ones the
+// toolbar answers to.
+export type RuntimeShortcutMessage = Versioned & {
+  type: "shortcut";
+  action: ShortcutAction;
+};
+
 export type RuntimePatchMarkMessage = Versioned & {
   type: "patch-mark";
   markId: string;
@@ -79,6 +91,7 @@ export type RuntimeToAppMessage =
   | RuntimePlacementMessage
   | RuntimePlacedMessage
   | RuntimeToolCancelledMessage
+  | RuntimeShortcutMessage
   | RuntimePatchMarkMessage
   | RuntimeRemoveMarkMessage;
 
@@ -185,6 +198,12 @@ export function placedMessage(placement: {
 
 export function revealMarkMessage(markId: string): AppRevealMarkMessage {
   return { version: BRIDGE_VERSION, type: "reveal-mark", markId };
+}
+
+export function shortcutMessage(
+  action: ShortcutAction,
+): RuntimeShortcutMessage {
+  return { version: BRIDGE_VERSION, type: "shortcut", action };
 }
 
 export function toolCancelledMessage(): RuntimeToolCancelledMessage {

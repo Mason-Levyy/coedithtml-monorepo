@@ -55,6 +55,7 @@ function sticky(): StickyEntry {
     width: null,
     height: null,
     tail: null,
+    textSize: "m",
   };
 }
 
