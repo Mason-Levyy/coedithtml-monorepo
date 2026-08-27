@@ -38,6 +38,16 @@ import {
 } from "@/lib/protocol";
 import { roomUrl } from "@/lib/room-url";
 
+// Option-O composes a character on macOS, so the physical key is the reliable
+// half of the combination and the character is only a fallback.
+function isStickyShortcut(event: KeyboardEvent): boolean {
+  return (
+    event.altKey &&
+    (event.metaKey || event.ctrlKey) &&
+    (event.code === "KeyO" || event.key.toLowerCase() === "o")
+  );
+}
+
 type ArtifactViewerProps = {
   token: string;
   src: string;
@@ -59,7 +69,11 @@ export function ArtifactViewer({
 }: ArtifactViewerProps) {
   void revision;
   const frame = useRef<HTMLIFrameElement>(null);
-  const stepping = useRef({ back: () => {}, forward: () => {} });
+  const commands = useRef({
+    undo: () => {},
+    redo: () => {},
+    sticky: () => {},
+  });
   const [resetCount, setResetCount] = useState(0);
   const frameSrc = useMemo(
     () => frameSrcFor(src, resetCount),
@@ -88,6 +102,7 @@ export function ArtifactViewer({
     onPatchMark: (markId, patch) => acted.current.patch(markId, patch),
     onRemoveMark: (markId) => acted.current.remove(markId),
     onToolCancelled: () => acted.current.cancelTool(),
+    onShortcut: () => commands.current.sticky(),
     onTextEdited: (anchor, replacement, sessionId) =>
       acted.current.textEdited(anchor, replacement, sessionId),
   });
@@ -143,24 +158,31 @@ export function ArtifactViewer({
   // document, so this listener is already silent while somebody is typing
   // there — which is right, because inside a live caret the browser's undo is
   // the one they mean. The same courtesy is owed to the rail's own fields.
+  // The runtime forwards the sticky shortcut for the frame's own half.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
+      if (!(event.metaKey || event.ctrlKey)) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (isStickyShortcut(event)) {
+        event.preventDefault();
+        commands.current.sticky();
+        return;
+      }
       const inField =
         event.target instanceof HTMLElement &&
         (event.target.isContentEditable ||
           ["INPUT", "TEXTAREA"].includes(event.target.tagName));
-      if (inField || !(event.metaKey || event.ctrlKey)) {
-        return;
-      }
-      if (event.key.toLowerCase() !== "z") {
+      if (inField || key !== "z") {
         return;
       }
       event.preventDefault();
       if (event.shiftKey) {
-        stepping.current.forward();
+        commands.current.redo();
         return;
       }
-      stepping.current.back();
+      commands.current.undo();
     }
 
     window.addEventListener("keydown", onKeyDown);
@@ -221,7 +243,7 @@ export function ArtifactViewer({
   const fit = bridge.fit;
   const frameHeight =
     fit && fit.mode === "grows-to-content"
-      ? framePixelHeight(fit.contentHeight)
+      ? (framePixelHeight(fit.contentHeight) ?? undefined)
       : undefined;
 
   const columnHeight = frameHeight ? "min-h-dvh" : "h-dvh";
@@ -293,7 +315,7 @@ export function ArtifactViewer({
     }
   }
 
-  stepping.current = { back: stepBack, forward: stepForward };
+  commands.current = { undo: stepBack, redo: stepForward, sticky: armSticky };
 
   function removeEveryEdit(): void {
     for (const edit of editsAmong(room.entries)) {
@@ -382,8 +404,10 @@ export function ArtifactViewer({
       </header>
 
       {/* Main content area under the header */}
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        <div className={frameHeight ? undefined : "min-h-0 flex-1"}>
+      <div className="relative flex min-h-0 flex-1">
+        <div
+          className={`min-w-0 flex-1 ${frameHeight ? "" : "flex min-h-0 flex-col"}`}
+        >
           <ArtifactFrame
             key={frameSrc}
             ref={frame}
@@ -402,9 +426,11 @@ export function ArtifactViewer({
             />
           )}
 
-        {/* Sidebar drawer — sits strictly below the top header on the right */}
+        {/* The rail takes a column of its own from md up, so the artifact is
+            narrowed rather than covered. Below that there is no width to
+            give away and it stays a drawer over the frame. */}
         {railOpen && (
-          <div className="fixed top-[45px] right-0 bottom-0 z-20 shadow-2xl">
+          <div className="fixed top-[45px] right-0 bottom-0 z-20 shadow-2xl md:sticky md:right-auto md:bottom-auto md:h-[calc(100dvh-45px)] md:flex-none">
             <CommentRail
               room={room}
               identity={identity}

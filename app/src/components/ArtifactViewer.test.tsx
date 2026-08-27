@@ -1,6 +1,6 @@
 import { act, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { renderWithQueryClient } from "@/lib/fakes";
+import { FakeWebSocket, renderWithQueryClient } from "@/lib/fakes";
 import { ArtifactViewer } from "./ArtifactViewer";
 
 const SANDBOX_ORIGIN = "https://sandbox.example.com";
@@ -57,6 +57,30 @@ function watchRuntimeMessages(): { type: unknown }[] {
     },
   });
   return posted;
+}
+
+function openWritableRoom(): void {
+  const socket = FakeWebSocket.last();
+  if (socket === undefined) {
+    throw new Error("the viewer never dialled a room");
+  }
+  act(() => {
+    socket.accept();
+  });
+  act(() => {
+    socket.deliver({
+      version: 1,
+      type: "snapshot",
+      overlay: { version: 1, artifactRevision: "r1", entries: [] },
+      readers: [],
+      canWrite: true,
+      canEdit: false,
+    });
+  });
+}
+
+function stickyPad(): HTMLElement {
+  return screen.getByRole("button", { name: "Add a sticky" });
 }
 
 function viewerColumnClasses(): string {
@@ -146,12 +170,13 @@ describe("ArtifactViewer", () => {
     expect(frameHeight()).toBe("100%");
   });
 
-  it("clamps a height that runs away", () => {
+  it("hands an artifact past the cap back its own scrollbar", () => {
     renderViewer();
 
     announceFit("grows-to-content", 10_000_000);
 
-    expect(frameHeight()).toBe("10000px");
+    expect(frameHeight()).toBe("100%");
+    expect(viewerColumnClasses()).not.toContain("min-h-dvh");
   });
 
   it("never collapses the frame on a degenerate height", () => {
@@ -160,6 +185,56 @@ describe("ArtifactViewer", () => {
     announceFit("grows-to-content", 0);
 
     expect(frameHeight()).toBe(`${window.innerHeight}px`);
+  });
+
+  it("arms the sticky pad from the keyboard", () => {
+    window.localStorage.setItem(
+      "coedit:reader",
+      JSON.stringify({
+        id: "reader-1",
+        displayName: "Mason",
+        color: "#e8c547",
+      }),
+    );
+    renderViewer();
+    openWritableRoom();
+
+    act(() => {
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "ø",
+          code: "KeyO",
+          ctrlKey: true,
+          altKey: true,
+        }),
+      );
+    });
+
+    expect(stickyPad().getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("arms the sticky pad when the artifact catches the shortcut instead", () => {
+    window.localStorage.setItem(
+      "coedit:reader",
+      JSON.stringify({
+        id: "reader-1",
+        displayName: "Mason",
+        color: "#e8c547",
+      }),
+    );
+    renderViewer();
+    openWritableRoom();
+
+    act(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          origin: SANDBOX_ORIGIN,
+          data: { version: 1, type: "shortcut", action: "toggle-sticky" },
+        }),
+      );
+    });
+
+    expect(stickyPad().getAttribute("aria-pressed")).toBe("true");
   });
 
   it("ignores a fit message from any other origin", () => {

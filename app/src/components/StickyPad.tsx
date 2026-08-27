@@ -34,7 +34,7 @@ export function StickyPad({ armed, color, onArm, onDrop }: StickyPadProps) {
         type="button"
         aria-label="Add a sticky"
         aria-pressed={armed}
-        title="Drag onto the artifact, or click and then click the page"
+        title="Drag onto the artifact, or click and then click the page (Ctrl/⌘+Alt+O)"
         onPointerDown={(event) => {
           event.currentTarget.setPointerCapture(event.pointerId);
           origin.current = { x: event.clientX, y: event.clientY };

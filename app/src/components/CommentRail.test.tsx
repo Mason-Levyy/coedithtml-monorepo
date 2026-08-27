@@ -123,6 +123,7 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
     width: null,
     height: null,
     tail: null,
+    textSize: "m",
     ...overrides,
   };
 }
@@ -508,6 +509,7 @@ describe("the comment rail", () => {
       expect(lastSentOfType("add-entry")?.entry).toMatchObject({
         kind: "sticky",
         tail: null,
+        textSize: "m",
         anchor: { kind: "region", path: "div[2]/canvas[1]" },
       });
     });

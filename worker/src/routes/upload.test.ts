@@ -503,6 +503,7 @@ describe("handleUpload re-importing a previously downloaded file", () => {
       width: null,
       height: null,
       tail: null,
+      textSize: "m",
       ...overrides,
     };
   }

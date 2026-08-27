@@ -41,6 +41,17 @@ export type ReplyEntry = EntryBase & { kind: "reply"; parentId: string };
 
 export type TailTip = { x: number; y: number };
 
+export const STICKY_TEXT_SIZES = ["s", "m", "l", "xl"] as const;
+
+export type StickyTextSize = (typeof STICKY_TEXT_SIZES)[number];
+
+export const DEFAULT_STICKY_TEXT_SIZE: StickyTextSize = "m";
+
+export function nextStickyTextSize(size: StickyTextSize): StickyTextSize {
+  const at = STICKY_TEXT_SIZES.indexOf(size);
+  return STICKY_TEXT_SIZES[(at + 1) % STICKY_TEXT_SIZES.length] ?? size;
+}
+
 export type StickyEntry = EntryBase & {
   kind: "sticky";
   parentId: null;
@@ -49,6 +60,7 @@ export type StickyEntry = EntryBase & {
   width: number | null;
   height: number | null;
   tail: TailTip | null;
+  textSize: StickyTextSize;
 };
 
 export const MIN_STICKY_WIDTH = 120;
@@ -136,6 +148,7 @@ export type EntryPatch = {
   width?: number | null;
   height?: number | null;
   tail?: TailTip | null;
+  textSize?: StickyTextSize;
 };
 
 function movesOrPoints(patch: EntryPatch): boolean {
@@ -144,7 +157,8 @@ function movesOrPoints(patch: EntryPatch): boolean {
     patch.offsetY !== undefined ||
     patch.width !== undefined ||
     patch.height !== undefined ||
-    patch.tail !== undefined
+    patch.tail !== undefined ||
+    patch.textSize !== undefined
   );
 }
 
@@ -181,6 +195,7 @@ export function patchEntry(
       offsetX: patch.offsetX ?? entry.offsetX,
       offsetY: patch.offsetY ?? entry.offsetY,
       tail: patch.tail === undefined ? entry.tail : patch.tail,
+      textSize: patch.textSize ?? entry.textSize,
     };
   }
   if (movesOrPoints(patch)) {

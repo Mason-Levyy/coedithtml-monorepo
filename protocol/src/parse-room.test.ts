@@ -46,6 +46,7 @@ const STICKY: StickyEntry = {
   width: null,
   height: null,
   tail: { x: 40, y: 120 },
+  textSize: "m",
 };
 
 function roundTrip<T>(message: T): unknown {
@@ -98,6 +99,22 @@ describe("parseClientToRoomMessage", () => {
 
     expect(parsed).toMatchObject({ patch: { color: "pink" } });
     expect(parsed && "tail" in (parsed as { patch: object }).patch).toBe(false);
+  });
+
+  it("carries a text size the reader picked, and refuses one it cannot read", () => {
+    expect(
+      parseClientToRoomMessage(
+        roundTrip(patchEntryMessage("s1", { textSize: "l" })),
+      ),
+    ).toMatchObject({ patch: { textSize: "l" } });
+    expect(
+      parseClientToRoomMessage({
+        version: 1,
+        type: "patch-entry",
+        id: "s1",
+        patch: { textSize: "huge" },
+      }),
+    ).toBeNull();
   });
 
   it("carries an anchor so an orphan can be put back", () => {
@@ -232,6 +249,18 @@ describe("patchEntry", () => {
       ...STICKY,
       tail: null,
     });
+  });
+
+  it("changes the text size of a sticky and nothing else", () => {
+    expect(patchEntry(STICKY, { textSize: "xl" })).toMatchObject({
+      textSize: "xl",
+      width: STICKY.width,
+      height: STICKY.height,
+    });
+  });
+
+  it("refuses a text size on an entry that has no box to size", () => {
+    expect(patchEntry(COMMENT, { textSize: "xl" })).toBeNull();
   });
 
   it("moves a sticky", () => {

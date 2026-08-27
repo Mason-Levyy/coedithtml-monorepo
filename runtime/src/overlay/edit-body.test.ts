@@ -33,6 +33,7 @@ function entry(body: string): StickyEntry {
     width: null,
     height: null,
     tail: null,
+    textSize: "m",
   };
 }
 

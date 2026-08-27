@@ -3,6 +3,7 @@ import { parseAnchor } from "./parse-anchor";
 import {
   isEntryStatus,
   isMarkColor,
+  isStickyTextSize,
   parseOptionalFill,
   parseOptionalSide,
   parseOverlayDocument,
@@ -144,6 +145,12 @@ export function parseEntryPatch(value: unknown): EntryPatch | null {
       return null;
     }
     patch.tail = parseTailTip(record.tail);
+  }
+  if (record.textSize !== undefined) {
+    if (!isStickyTextSize(record.textSize)) {
+      return null;
+    }
+    patch.textSize = record.textSize;
   }
   return patch;
 }

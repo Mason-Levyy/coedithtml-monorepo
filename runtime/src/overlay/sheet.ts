@@ -11,17 +11,19 @@ export const SHEET =
 .sticky { position: fixed; box-sizing: border-box; display: flex; min-width: 120px; min-height: 40px; max-width: 220px; border-radius: 8px; font: 13px/1.45 ${FONT}; color: #17171a; pointer-events: auto; cursor: pointer; scrollbar-width: none; -ms-overflow-style: none; }
 .sticky::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .sticky[style*="width"] { max-width: none; }
+.sticky[data-size="s"] { font-size: 11px; }
+.sticky[data-size="l"] { font-size: 16px; }
+.sticky[data-size="xl"] { font-size: 20px; }
 ` +
   `.shape { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
 .shape path { stroke-width: 1; stroke-linejoin: round; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.12)); }
-.content { position: relative; flex: 1 1 auto; min-width: 0; padding: 9px 28px 9px 11px; border-radius: inherit; white-space: pre-wrap; overflow-wrap: break-word; overflow: hidden; outline: none; scrollbar-width: none; -ms-overflow-style: none; }
+.content { position: relative; flex: 1 1 auto; min-width: 0; padding: 9px 11px; border-radius: inherit; white-space: pre-wrap; overflow-wrap: break-word; overflow: hidden; outline: none; scrollbar-width: none; -ms-overflow-style: none; }
 .content::-webkit-scrollbar { display: none; width: 0; height: 0; }
-.sticky.sized .content { padding-right: 48px; }
 .body { display: block; outline: none; border: none; box-shadow: none; scrollbar-width: none; }
 .body::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .body:focus, .body[contenteditable] { outline: none; border: none; box-shadow: none; }
 .body:empty::before { content: "Type a note"; opacity: 0.45; }
-.author { display: block; margin-top: 5px; font-size: 11px; letter-spacing: 0.01em; opacity: 0.6; }
+.author { display: block; margin-top: 5px; font-size: 0.85em; letter-spacing: 0.01em; opacity: 0.6; }
 .tools { display: none; }
 `;
 
@@ -50,12 +52,15 @@ export const EDITABLE_SHEET =
 .sticky.editing .content { overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
 .sticky.editing .content::-webkit-scrollbar { display: none; width: 0; height: 0; }
 ` +
-  `.tools { position: absolute; right: 4px; top: 4px; z-index: 10; display: flex; gap: 4px; opacity: 0; transition: opacity 90ms ease-out; pointer-events: none; }
+  `.content { padding-right: 50px; }
+.sticky.sized .content { padding-right: 72px; }
+.tools { position: absolute; right: 4px; top: 4px; z-index: 10; display: flex; gap: 4px; opacity: 0; transition: opacity 90ms ease-out; pointer-events: none; }
 .sticky:is(:hover, .selected) .tools { opacity: 1; pointer-events: auto; }
 .sticky.dragging .tools { opacity: 0; pointer-events: none; }
 .tool { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; padding: 0; border: none; border-radius: 50%; background: transparent; color: inherit; font: 12px/1 ${FONT}; cursor: pointer; opacity: 0.6; transition: transform 100ms ease, opacity 100ms ease, background-color 100ms ease; flex-shrink: 0; }
 .tool:hover { opacity: 1; transform: scale(1.15); background: rgba(0, 0, 0, 0.12); }
 .tool:active { transform: scale(0.92); }
+.tool[data-tool="size"] { font-size: 10px; font-weight: 600; }
 .tool[data-tool="remove"]:hover { color: inherit; }
 .sticky:not(.sized) .tool[data-tool="fit"] { display: none; }
 `;

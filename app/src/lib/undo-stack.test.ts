@@ -48,6 +48,7 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
     width: 200,
     height: 100,
     tail: null,
+    textSize: "m",
     ...overrides,
   };
 }
