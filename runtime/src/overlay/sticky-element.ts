@@ -30,16 +30,21 @@ export const TAIL_NODES = ["tip", "first", "second"] as const;
 
 export type TailNodeName = (typeof TAIL_NODES)[number];
 
-const STICKY_TOOLS = ["remove", "fit"] as const;
+const STICKY_TOOLS = ["size", "remove", "fit"] as const;
 
 export type StickyTool = (typeof STICKY_TOOLS)[number];
 
 const TOOL_LABEL: Record<StickyTool, string> = {
+  size: "Cycle the text size",
   remove: "Delete this note",
   fit: "Shrink to fit the text",
 };
 
-const TOOL_GLYPH: Record<StickyTool, string> = { remove: "✕", fit: "⤡" };
+const TOOL_GLYPH: Record<StickyTool, string> = {
+  size: "Aa",
+  remove: "✕",
+  fit: "⤡",
+};
 
 function toolElement(tool: StickyTool): HTMLElement {
   const button = document.createElement("button");
@@ -141,9 +146,10 @@ export function updateStickyElement(
   element.classList.toggle("low-room", top < TOOLS_HEADROOM);
   element.style.width =
     geometry.width === null ? "" : `${Math.round(geometry.width)}px`;
-  element.style.height =
+  element.style.minHeight =
     geometry.height === null ? "" : `${Math.round(geometry.height)}px`;
   element.style.color = textOn(effectiveFill(mark));
+  element.dataset.size = mark.textSize;
   element.classList.toggle(
     "sized",
     mark.width !== null || mark.height !== null,

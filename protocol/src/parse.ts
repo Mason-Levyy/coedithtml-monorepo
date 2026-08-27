@@ -17,12 +17,15 @@ import {
   selectionMessage,
   setCapabilitiesMessage,
   setToolMessage,
+  SHORTCUT_ACTIONS,
+  shortcutMessage,
   textEditedMessage,
   toolCancelledMessage,
   type AppToRuntimeMessage,
   type FitMode,
   type MarkTool,
   type RuntimeToAppMessage,
+  type ShortcutAction,
   type ViewportRect,
 } from "./messages";
 import type { OverlayEntry } from "./overlay";
@@ -35,6 +38,10 @@ const FIT_MODES: readonly FitMode[] = ["scrolls-itself", "grows-to-content"];
 
 function isFitMode(value: unknown): value is FitMode {
   return FIT_MODES.includes(value as FitMode);
+}
+
+function isShortcutAction(value: unknown): value is ShortcutAction {
+  return SHORTCUT_ACTIONS.some((action) => action === value);
 }
 
 function versionedRecord(value: unknown): Record<string, unknown> | null {
@@ -135,6 +142,12 @@ export function parseRuntimeToAppMessage(
 
   if (candidate.type === "tool-cancelled") {
     return toolCancelledMessage();
+  }
+
+  if (candidate.type === "shortcut") {
+    return isShortcutAction(candidate.action)
+      ? shortcutMessage(candidate.action)
+      : null;
   }
 
   if (candidate.type === "patch-mark") {

@@ -31,6 +31,7 @@ function sticky(overrides: Partial<StickyEntry> = {}): StickyEntry {
     width: null,
     height: null,
     tail: null,
+    textSize: "m",
     ...overrides,
   };
 }
@@ -213,6 +214,20 @@ describe("the sticky view", () => {
     expect(
       element?.querySelector<HTMLElement>('[data-node="first"]')?.style.display,
     ).toBe("");
+  });
+
+  it("holds the stored height as a floor the text can push past", () => {
+    view.reconcile(index, [sticky({ width: 200, height: 100 })], null);
+    const element = view.elementFor("s1");
+
+    expect(element?.style.minHeight).toBe("100px");
+    expect(element?.style.height).toBe("");
+  });
+
+  it("carries the text size the note was given", () => {
+    view.reconcile(index, [sticky({ textSize: "xl" })], null);
+
+    expect(view.elementFor("s1")?.dataset.size).toBe("xl");
   });
 
   it("writes the body without disturbing the handles", () => {
