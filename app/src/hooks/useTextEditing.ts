@@ -39,9 +39,6 @@ export function useTextEditing(options: {
         return;
       }
       const changes = editsAmong(entries);
-      // One caret visit owns one entry, however often it autosaves. Matching a
-      // later save by quoted text instead would fail the moment the span
-      // widened, and the second entry would quote words the first one replaced.
       const held = bySession.current.get(sessionId);
       const existing =
         changes.find((edit) => edit.id === held) ??

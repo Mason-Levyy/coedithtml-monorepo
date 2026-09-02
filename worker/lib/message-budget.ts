@@ -1,11 +1,3 @@
-// Every accepted message fans out to as many as 64 sockets, and nothing
-// counted them. `hello` is answered before the write check, so the least
-// privileged connection in the room -- a view-only link -- was the cheapest
-// way to make the room shout at everyone.
-//
-// A token bucket per socket: a burst is fine, a stream is not. It rides in the
-// socket's own attachment rather than a map on the instance, so hibernation
-// cannot hand a flooder a fresh budget by forgetting about them.
 export const MESSAGE_BURST = 40;
 export const MESSAGES_PER_SECOND = 10;
 

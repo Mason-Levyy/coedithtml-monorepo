@@ -11,19 +11,8 @@ import type { TextIndex } from "../dom/text-index";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
-// Stickies always carry a region anchor, never a text one, so the sticky
-// view never touches the text index to locate them — a stub is enough.
 const NO_TEXT_INDEX: TextIndex = { text: "", segments: [] };
 
-// A trimmed, read-only subset of runtime/src/overlay/sheet.ts: no drag
-// handles, resize nodes, or toolbar — this bundle only ever paints a
-// sticky once and repaints its position, it never lets you touch one.
-//
-// Positions are absolute, in document coordinates, not fixed to the
-// viewport. A fixed overlay needed a scroll listener to chase the reader
-// down the page, and that JS always landed a frame behind the native
-// scroll — the sticky visibly lagged and drifted off its anchor. Absolute
-// positioning scrolls with the page for free.
 const SHEET =
   ".surface{position:absolute;top:0;left:0;pointer-events:none}" +
   ".sticky{position:absolute;box-sizing:border-box;display:flex;min-width:120px;min-height:40px;max-width:220px;border-radius:8px;font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#17171a}" +

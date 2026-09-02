@@ -38,8 +38,6 @@ import {
 } from "@/lib/protocol";
 import { roomUrl } from "@/lib/room-url";
 
-// Option-O composes a character on macOS, so the physical key is the reliable
-// half of the combination and the character is only a fallback.
 function isStickyShortcut(event: KeyboardEvent): boolean {
   return (
     event.altKey &&
@@ -154,11 +152,6 @@ export function ArtifactViewer({
     }
   }, [bridge.activatedMarkId]);
 
-  // A caret inside the artifact keeps its keystrokes in the artifact's own
-  // document, so this listener is already silent while somebody is typing
-  // there — which is right, because inside a live caret the browser's undo is
-  // the one they mean. The same courtesy is owed to the rail's own fields.
-  // The runtime forwards the sticky shortcut for the frame's own half.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
       if (!(event.metaKey || event.ctrlKey)) {
@@ -345,7 +338,6 @@ export function ArtifactViewer({
 
   return (
     <div className={`flex flex-col ${columnHeight} bg-card relative`}>
-      {/* Full-width header spanning the entire top */}
       <header className="sticky top-0 z-30 w-full flex-none">
         <ViewerBar title={bridge.title ?? fileName} fileName={fileName}>
           <div className="flex items-center gap-2.5 sm:gap-3">
@@ -403,7 +395,6 @@ export function ArtifactViewer({
         </ViewerBar>
       </header>
 
-      {/* Main content area under the header */}
       <div className="relative flex min-h-0 flex-1">
         <div
           className={`min-w-0 flex-1 ${frameHeight ? "" : "flex min-h-0 flex-col"}`}
@@ -426,9 +417,6 @@ export function ArtifactViewer({
             />
           )}
 
-        {/* The rail takes a column of its own from md up, so the artifact is
-            narrowed rather than covered. Below that there is no width to
-            give away and it stays a drawer over the frame. */}
         {railOpen && (
           <div className="fixed top-[45px] right-0 bottom-0 z-20 shadow-2xl md:sticky md:right-auto md:bottom-auto md:h-[calc(100dvh-45px)] md:flex-none">
             <CommentRail

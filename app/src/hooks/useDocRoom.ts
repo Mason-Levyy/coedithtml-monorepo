@@ -37,9 +37,6 @@ export type DocRoom = RoomContents & {
   addEntry: (entry: OverlayEntry) => void;
   patchEntry: (id: string, patch: EntryPatch) => void;
   removeEntry: (id: string) => void;
-  // Both report whether the step they ran touched the artifact's own text, so
-  // the caller knows to reload the frame. Applied edits cannot be walked back
-  // in place: replayEdits only ever moves forward.
   undo: () => boolean;
   redo: () => boolean;
   dismissRejection: () => void;
@@ -87,8 +84,6 @@ export function useDocRoom(
       return;
     }
     setContents(EMPTY_ROOM);
-    // A new connection is a new session. Undoing across one would replay
-    // inverses against entries the room may no longer be holding.
     done.current = [];
     undone.current = [];
     setDepths({ done: 0, undone: 0 });
@@ -103,9 +98,6 @@ export function useDocRoom(
           socket.send(helloMessage(readerRef.current));
           return;
         }
-        // A socket that went away with writes still in flight took them with
-        // it. Saying "saved" here would be the one lie that costs somebody
-        // their words.
         setContents(writesAbandoned);
       },
     });

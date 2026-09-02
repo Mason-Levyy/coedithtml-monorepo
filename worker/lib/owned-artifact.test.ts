@@ -43,9 +43,6 @@ describe("who may manage an artifact", () => {
     expect(ownsArtifact(artifact(OWNER), requestFrom(null))).toBe(false);
   });
 
-  // The artifact id reaches anyone holding any link, view-only included, so a
-  // permissive reading of "no owner" was delete and password-change for
-  // strangers on every artifact that predates the cookie.
   it("gives an artifact with no recorded owner to nobody, not to everybody", () => {
     expect(ownsArtifact(artifact(undefined), requestFrom(OWNER))).toBe(false);
     expect(ownsArtifact(artifact(undefined), requestFrom(null))).toBe(false);

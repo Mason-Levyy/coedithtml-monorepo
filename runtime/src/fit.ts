@@ -28,15 +28,6 @@ function bodyHeight(): number {
   );
 }
 
-// The root element's scrollHeight can never come back smaller than the
-// viewport, and in a frame that grows to content the viewport is the height the
-// app set from the last report. Measuring the body instead breaks that circle:
-// a frame left taller than what it holds would otherwise stay that way forever.
-//
-// Content the body does not carry — anything positioned against the document
-// itself — is missing from that measurement, and a frame cut to it keeps a
-// sliver of scroll the reader's wheel falls into instead of the page. A body
-// caught short once is not asked again.
 function measureContent(bodyLies: boolean): { height: number; lies: boolean } {
   const root = document.documentElement;
   const measured = bodyHeight();

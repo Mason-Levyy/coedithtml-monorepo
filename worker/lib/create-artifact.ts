@@ -51,9 +51,6 @@ async function storeUpload(
   tokens?: ShareTokens,
 ): Promise<StoredUpload> {
   const revision = await revisionOf(upload.bytes);
-  // Bytes this owner already has are already correct, byte for byte -- the key
-  // is their full content digest. Writing them again would cost storage to
-  // produce a file identical to the one beside it.
   if (owner.fresh) {
     const written = await putObject(
       env.ARTIFACT_STORE,
@@ -97,9 +94,6 @@ async function storeUpload(
 type ClaimedSpace =
   { ok: true; fresh: boolean } | { ok: false; response: Response };
 
-// The owner's ledger goes first because it is the one that knows whether these
-// bytes are new. Charging the product for a copy of a file it already holds
-// would make the global ceiling arrive early for everybody.
 async function claimSpace(
   env: WorkerEnv,
   ownerId: string,

@@ -312,9 +312,6 @@ describe("handleSandboxRequest", () => {
       expect(response.status).toBe(401);
     });
 
-    // Two artifacts of one owner can share bytes, and must not share the gate
-    // in front of them. The gate is checked against artifact metadata before
-    // R2 is touched, and that order is the whole guarantee.
     it("gates each artifact separately when they share their bytes", async () => {
       const owner = "e".repeat(32);
       const digest = "f".repeat(64);

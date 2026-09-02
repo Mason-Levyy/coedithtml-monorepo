@@ -6,8 +6,6 @@ import {
   ROOM_WIPE_PATH,
 } from "@/lib/room-headers";
 
-// Deleting an artifact left its room standing: the comments, the stickies, and
-// the edits all survived a document nobody could reach any more.
 export async function wipeRoom(
   env: WorkerEnv,
   artifactId: string,
@@ -20,8 +18,6 @@ export async function wipeRoom(
   }
 }
 
-// Asked only about the handful of artifacts the sweep is already minded to
-// take, never about all of them.
 export async function roomIsEmpty(
   env: WorkerEnv,
   artifactId: string,

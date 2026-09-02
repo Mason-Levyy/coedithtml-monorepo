@@ -52,10 +52,6 @@ async function readRuntimeBundle(
   return response.ok ? response.text() : null;
 }
 
-// A header value is a ByteString, so any code point above U+00FF makes
-// Headers.set throw -- every download of a file named in Chinese, Japanese, or
-// with an emoji in it was a 500. RFC 6266 is the answer: an ASCII filename any
-// client can read, and the real one beside it, percent-encoded.
 export function contentDisposition(fileName: string): string {
   const ascii = fileName.replace(/[^\x20-\x7e]/gu, "_").replace(/["\\]/g, "");
   const encoded = encodeURIComponent(fileName).replace(

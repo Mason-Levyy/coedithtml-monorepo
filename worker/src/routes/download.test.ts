@@ -8,8 +8,6 @@ describe("naming a downloaded file", () => {
     );
   });
 
-  // Any code point above U+00FF makes Headers.set throw, so this used to be a
-  // 500 for every file named in Chinese, Japanese, or with an emoji.
   it("survives a name a header cannot hold", () => {
     const header = contentDisposition("第三四半期-edited.html");
 

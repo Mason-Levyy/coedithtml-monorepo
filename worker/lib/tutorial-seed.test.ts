@@ -70,8 +70,6 @@ describe("tutorialEntries", () => {
     }
   });
 
-  // The last step asks the reader to strike out every em dash on the page. A
-  // second one somewhere else would make that instruction a lie.
   it("leaves exactly one em-dashed sentence on the page", async () => {
     const text = await deckText();
     expect(occurrences(text, "—")).toBe(2);

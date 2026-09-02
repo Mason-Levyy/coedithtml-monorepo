@@ -124,8 +124,6 @@ export function MyArtifactsList({
                 <span className="text-xs text-muted-foreground font-mono">
                   Uploaded {formatDate(artifact.uploadedAt)}
                 </span>
-                {/* The only channel an anonymous owner has. Opening the file
-                    is what resets the clock, which is why the notice says so. */}
                 {artifact.expiresAt !== undefined && (
                   <span className="text-xs font-mono text-amber-700 dark:text-amber-400">
                     Nobody has opened this in a while. It goes on{" "}

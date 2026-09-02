@@ -32,8 +32,6 @@ export function useArmedTool(options: {
 
   const tool: MarkTool | null = armed?.tool ?? null;
 
-  // One tool at a time, because the runtime holds one. Arming the pen while
-  // the pad is armed would leave the pad lit in the bar with nothing behind it.
   useEffect(() => {
     if (ready) {
       send(setToolMessage(tool, tool === "sticky" ? color : null));

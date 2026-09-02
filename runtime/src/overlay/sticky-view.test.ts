@@ -271,13 +271,11 @@ describe("the sticky view", () => {
       },
     });
 
-    // On slide 1: s1 should be drawn, s2 should be hidden
     const placement1 = view.reconcile(deckIndex, [sticky1, sticky2], null);
     expect(placement1.hidden).toContain("s2");
     expect(view.elementFor("s1")).not.toBeNull();
     expect(view.elementFor("s2")).toBeNull();
 
-    // Switch to slide 2: slide 1 becomes hidden, slide 2 becomes visible
     elementById("slide1").style.visibility = "hidden";
     elementById("slide2").style.visibility = "visible";
 

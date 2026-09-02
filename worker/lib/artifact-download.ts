@@ -61,9 +61,6 @@ function threadHtml(entries: OverlayEntry[], thread: OverlayEntry): string {
   return `<li><h3>${headingFor(thread)}</h3>${spoken}</li>`;
 }
 
-// Text changes and sticky notes are not listed here. Edits are already in the
-// document above, applied, and stickies are painted onto the page itself —
-// printing either again as text says the same thing twice.
 export function feedbackSection(entries: OverlayEntry[]): string {
   const threads = threadsIn(entries).filter((entry) => !isFloating(entry));
   if (threads.length === 0) {

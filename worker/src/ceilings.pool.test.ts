@@ -31,8 +31,6 @@ describe("a rate limit that is one place", () => {
     ]);
   });
 
-  // The whole reason this stopped being KV. Twenty parallel uploads all read
-  // the same count and all passed a limit of twenty.
   it("counts requests that arrive together, not the count they all read", async () => {
     const verdicts = await Promise.all(
       Array.from({ length: 20 }, () => charge("parallel", 5)),
@@ -57,8 +55,6 @@ describe("a rate limit that is one place", () => {
     expect(refused.ok && refused.retryAfterSeconds).toBeGreaterThan(0);
   });
 
-  // The password gate charges every attempt and hands the correct one back, so
-  // reading a document five times cannot lock its reader out of it.
   it("gives an attempt back when the caller earned it", async () => {
     await charge("refundable", 1);
     await refundAttempt(env.RATE_LIMITER, "refundable");
@@ -164,8 +160,6 @@ describe("a ceiling that holds", () => {
     });
   });
 
-  // The rule the sweep and the dedup have to be designed against together:
-  // nothing may delete bytes another artifact is still serving.
   it("keeps the bytes while anything is still holding them", async () => {
     const shared = { digest: "d2", bytes: 100, ...ROOMY };
     await attachBlob(env.USAGE_LEDGER, "shared", {
