@@ -5,9 +5,6 @@ export type RateLimitCheck =
   | { ok: true; allowed: boolean; retryAfterSeconds: number }
   | { ok: false; cause: unknown };
 
-// One call, not two. The old pair — ask, then record — was two round trips
-// with a gap in the middle wide enough for every parallel upload to pass the
-// same check, which is most of why the KV version never limited anything.
 export async function chargeAttempt(
   limiter: Addressable,
   key: string,
@@ -32,8 +29,6 @@ export async function chargeAttempt(
   }
 }
 
-// Best effort: a reader who typed the right password must not be turned away
-// because the refund failed. The worst it costs is one attempt of their budget.
 export async function refundAttempt(
   limiter: Addressable,
   key: string,

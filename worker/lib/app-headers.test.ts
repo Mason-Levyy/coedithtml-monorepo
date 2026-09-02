@@ -17,8 +17,6 @@ describe("what the app origin says about itself", () => {
     expect(directives()).toContain(`frame-src ${SANDBOX}`);
   });
 
-  // The relationship is one-directional on purpose: whatever an artifact
-  // manages to do, it cannot put the app inside itself and read the result.
   it("may not be framed by anything, the sandbox included", () => {
     expect(directives()).toContain("frame-ancestors 'none'");
   });

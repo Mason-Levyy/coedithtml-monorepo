@@ -75,8 +75,6 @@ describe("what the room will store", () => {
     );
   });
 
-  // The whole point: a megabyte quote with an empty body used to pass every
-  // check, five hundred times over.
   it("refuses a quote nobody could have selected", () => {
     const anchor: TextAnchor = {
       ...TEXT_ANCHOR,

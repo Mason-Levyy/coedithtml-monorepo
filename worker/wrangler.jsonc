@@ -7,8 +7,6 @@
     "enabled": true
   },
 
-  // Hourly. The sweep takes a bounded bite each run, so the cadence is what
-  // decides how long an expired artifact lingers, not whether it goes.
   "triggers": {
     "crons": ["0 * * * *"]
   },

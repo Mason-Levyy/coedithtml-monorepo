@@ -1,10 +1,5 @@
 import type { OverlayEntry, ReaderPresence } from "@coedithtml/protocol";
 
-// Only `body` was ever capped, so a one-megabyte quote with an empty body
-// passed every check -- five hundred times over, in a room nothing reclaims.
-// These are the rest. They are deliberately far above anything the app can
-// produce: an anchor's context is capped where it is built, an id is a 32-hex
-// string, and a path is a handful of `tag[n]` segments.
 export const MAX_BODY_LENGTH = 4000;
 export const MAX_ID_LENGTH = 100;
 export const MAX_QUOTE_LENGTH = 2000;

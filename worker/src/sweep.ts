@@ -9,10 +9,6 @@ import { expiresAtOf, verdictFor } from "@/lib/expiry";
 import { updateOwnerArtifact } from "@/lib/owner-artifacts";
 import { roomIsEmpty } from "@/lib/room-seed";
 
-// A cron gets a wall-clock budget, not an unlimited one, so the sweep takes a
-// bounded bite and leaves the rest for the next run. Nothing here has to
-// finish in one pass; an artifact a day past its expiry is not a problem, and
-// a sweep that times out halfway through with no record of where it got to is.
 const ARTIFACTS_PER_RUN = 500;
 
 const ARTIFACT_PREFIX = "artifacts/";
@@ -91,9 +87,6 @@ export async function sweepArtifacts(
       report.expired += 1;
       continue;
     }
-    // Nobody ever opened it, but somebody may still have written on it -- the
-    // uploader marking up their own file in the first hour is the one case the
-    // view count cannot see. The room is asked only about these.
     if (verdict === "unused" && (await roomIsEmpty(env, artifactId))) {
       await eraseArtifact(env, artifactId, metadata);
       report.expired += 1;

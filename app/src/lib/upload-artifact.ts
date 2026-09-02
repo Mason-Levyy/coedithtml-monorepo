@@ -40,9 +40,6 @@ function isHtmlFile(file: File): boolean {
   return /\.html?$/i.test(file.name);
 }
 
-// The three things a browser can see without sending anything. The worker
-// checks all three again and is the authority; this exists so nobody pushes
-// five megabytes up the wire to be told the extension was wrong.
 export function validateArtifactFile(file: File): UploadRejection | null {
   if (!isHtmlFile(file)) {
     return {

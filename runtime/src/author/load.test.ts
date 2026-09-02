@@ -25,8 +25,6 @@ function register(): void {
 beforeEach(() => {
   asked = [];
   window.__coedit__ = { version: "test", config: { revision: "r1" } };
-  // happy-dom refuses to keep a script it cannot execute, so the element is
-  // caught on the way in rather than looked for afterwards.
   vi.spyOn(document.head, "appendChild").mockImplementation((node) => {
     if (node instanceof HTMLScriptElement) {
       asked.push(node);

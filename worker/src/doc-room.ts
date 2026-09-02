@@ -30,9 +30,6 @@ import {
 } from "@/lib/room-headers";
 
 const MAX_CONNECTIONS = 64;
-
-// Comfortably past the largest legitimate message -- one entry with a 4000
-// character body -- and far short of anything worth parsing as an attack.
 const MAX_MESSAGE_BYTES = 32 * 1024;
 
 function decodeClientMessage(
@@ -182,10 +179,6 @@ export class DocRoom extends DurableObject<Env> {
     );
   }
 
-  // Deleting an artifact used to leave its room behind: every comment, every
-  // sticky, every edit, held for ever in a document nobody can reach. The
-  // sockets go first, because a connection outliving its document would sit
-  // there writing into storage that has just been cleared.
   private async wipe(): Promise<Response> {
     for (const socket of this.ctx.getWebSockets()) {
       try {

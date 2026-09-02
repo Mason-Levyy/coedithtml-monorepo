@@ -8,10 +8,6 @@ const PAYLOAD_MARKER = "window.__coeditDownload__=";
 const SCRIPT_OPEN = `<script>${PAYLOAD_MARKER}`;
 const SCRIPT_CLOSE = "</script>";
 
-// downloadScript (artifact-download.ts) always writes the payload as
-// `${json};\n${bundle}`, and JSON.stringify never emits a raw newline byte
-// inside a string value — so the first ";\n" after the marker is always the
-// boundary we wrote, never something inside the JSON itself.
 function payloadJsonIn(html: string): string | null {
   const start = html.indexOf(PAYLOAD_MARKER);
   if (start === -1) {
@@ -22,9 +18,6 @@ function payloadJsonIn(html: string): string | null {
   return end === -1 ? null : html.slice(from, end);
 }
 
-// A file Coedit produced carries its own comments back with it. Detecting
-// them here lets a re-upload offer to restore them as live, editable
-// stickies instead of leaving them as the static painting the download drew.
 export function coeditStickiesIn(
   html: string,
   revision: string,
@@ -62,12 +55,6 @@ export function coeditStickiesIn(
   return stickies;
 }
 
-// The wrapper downloadScript writes (artifact-download.ts) both applies its
-// edits and paints its stickies the moment the file loads. Left in a
-// re-uploaded file, it would keep doing that inside Coedit's own live
-// viewer too — on top of the overlay this same data was just restored
-// into, drawing every sticky twice. Strip the wrapper once its data has
-// been read back out, leaving the artifact's own bytes untouched.
 export function withoutCoeditPayload(html: string): string {
   const openAt = html.indexOf(SCRIPT_OPEN);
   if (openAt === -1) {

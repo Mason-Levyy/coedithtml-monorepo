@@ -99,10 +99,6 @@ function coversPoint(element: Element, x: number, y: number): boolean {
   return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
 }
 
-// A highlight takes no pointer events, so the words underneath stay
-// selectable, double-clickable, and clickable by the artifact's own handlers.
-// The reader still gets to open the thread by clicking it, which means asking
-// the painted rectangles where the click landed rather than being told.
 function highlightUnder(
   layer: OverlayLayer,
   x: number,

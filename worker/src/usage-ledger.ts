@@ -1,20 +1,9 @@
 import { DurableObject } from "cloudflare:workers";
 
-// Bytes and artifacts held, counted somewhere they cannot be double-counted.
-// The same read-then-write that breaks a rate limiter breaks a running total,
-// and here the failure mode is a ceiling that quietly is not one.
-//
-// One instance for the whole product, one per owner. They are the same
-// question -- how much is being stored, and on whose behalf -- asked at two
-// scopes, so they are the same object under two names.
 export type Usage = { bytes: number; artifacts: number };
 
 export type UsageVerdict = { allowed: boolean; usage: Usage };
 
-// Whether the caller has to write the bytes, or whether this owner already had
-// them. Refcounting is not KV's job -- the same non-atomic read-then-write that
-// broke the rate limiter breaks a refcount, and here the failure mode is
-// deleting bytes somebody is still reading.
 export type AttachVerdict = { allowed: boolean; store: boolean };
 
 export type DetachVerdict = { lastReference: boolean };
@@ -69,8 +58,6 @@ export class UsageLedger extends DurableObject<Env> {
     return `blob:${digest}`;
   }
 
-  // Charging and referencing are one transaction because they are one fact:
-  // this owner now holds these bytes, whether or not they had to be written.
   private async attach(options: {
     digest: string;
     artifactId: string;
@@ -85,7 +72,6 @@ export class UsageLedger extends DurableObject<Env> {
     const key = this.refsKey(digest);
     const held = await this.ctx.storage.get<BlobRefs>(key);
     const usage = await this.read();
-    // Bytes already here cost nothing to keep, which is the entire point.
     const charge = held === undefined ? bytes : 0;
     const next: Usage = {
       bytes: usage.bytes + charge,

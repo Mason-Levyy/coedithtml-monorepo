@@ -104,9 +104,6 @@ describe("handleUpload", () => {
     expect(store.puts).toHaveLength(1);
     const [put] = store.puts;
     expect(put && new TextDecoder().decode(put.bytes)).toBe(VALID_HTML);
-    // Addressed by the full content digest, under the owner who uploaded it,
-    // so the same file uploaded twice is stored once. The artifact id is not
-    // in the key at all, which is what lets two artifacts share the bytes.
     expect(put?.key).toMatch(/^blobs\/[0-9a-f]{32}\/[0-9a-f]{64}\.html$/);
     expect(put?.key).not.toContain(body.artifactId ?? "");
   });
@@ -182,8 +179,6 @@ describe("handleUpload", () => {
     const editPut = tokenPuts.find(
       (put) => put.key === `tokens/${body.editToken}`,
     );
-    // Each record holds its own kind and everything weaker, and nothing
-    // stronger. A view token's record used to contain the edit token.
     expect(viewPut && JSON.parse(viewPut.value)).toEqual({
       artifactId: body.artifactId,
       kind: "view",

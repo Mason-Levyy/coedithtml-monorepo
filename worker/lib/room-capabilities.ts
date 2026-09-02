@@ -14,9 +14,6 @@ export function kindsAtOrBelow(kind: TokenKind): TokenKind[] {
   return TOKEN_KINDS.slice(0, TOKEN_KINDS.indexOf(kind) + 1);
 }
 
-// What a link of this kind is allowed to know about: itself and everything
-// weaker. An edit link may hand out the view link; a view link may not learn
-// the edit one exists.
 export function siblingsVisibleTo(
   kind: TokenKind,
   tokens: SiblingTokens,

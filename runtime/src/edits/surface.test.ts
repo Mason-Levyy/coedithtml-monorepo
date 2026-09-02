@@ -100,8 +100,6 @@ describe("the edit surface", () => {
     text.textContent = "Revenue fell 4% this quarter.";
     block.dispatchEvent(new FocusEvent("blur"));
 
-    // The percent sign survives the rewrite, so it belongs to neither side of
-    // the span. A wider quote would be a wider thing to re-anchor later.
     expect(commits).toMatchObject([
       { quote: "grew 18", replacement: "fell 4" },
     ]);
@@ -178,8 +176,6 @@ describe("the caret closing", () => {
 });
 
 describe("pasting into an edit", () => {
-  // A real browser leaves a caret behind focus(); jsdom does not, so the
-  // selection the paste handler reads has to be established here.
   function selectAllOf(block: HTMLElement): void {
     const range = document.createRange();
     range.selectNodeContents(block);
