@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { TutorialLink } from "@/components/TutorialLink";
 import { Wordmark } from "@/components/Wordmark";
-import { APP_URL } from "@/lib/links";
+import { APP_URL, GITHUB_URL } from "@/lib/links";
 
 export function SiteFooter() {
   return (
@@ -26,6 +26,11 @@ export function SiteFooter() {
               </li>
               <li>
                 <Link href="/connect/">Connect your AI</Link>
+              </li>
+              <li>
+                <a href={GITHUB_URL} target="_blank" rel="noreferrer">
+                  Source on GitHub
+                </a>
               </li>
             </ul>
           </div>
