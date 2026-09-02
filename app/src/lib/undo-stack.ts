@@ -11,9 +11,6 @@ export type Step = {
   touchesText: boolean;
 };
 
-// ifRev is deliberately dropped. It exists to catch two people typing over each
-// other in the same second; an undo is a deliberate act minutes later, and
-// refusing it as stale would tell the reader their own key did nothing.
 function inversePatch(
   before: OverlayEntry,
   patch: EntryPatch,

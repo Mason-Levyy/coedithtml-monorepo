@@ -94,8 +94,6 @@ describe("deciding what to keep", () => {
 });
 
 describe("which views count", () => {
-  // The uploader opening their own link to check it worked is not use, and
-  // counting it would keep every abandoned file alive for ever.
   it("does not count the uploader checking their own link", () => {
     const fresh = artifact({ uploadedAt: new Date(NOW).toISOString() });
 

@@ -410,8 +410,6 @@ describe("a live DocRoom", () => {
     });
   });
 
-  // hello is answered before the write check, so a view-only link was the
-  // cheapest way to make the room shout at all 64 sockets at once.
   it("stops the least privileged connection in the room flooding it", async () => {
     const reader = await connect("limits-room", "view");
     await reader.next();

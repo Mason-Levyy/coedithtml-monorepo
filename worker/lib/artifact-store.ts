@@ -1,11 +1,6 @@
 import type { ArtifactMetadata } from "./artifact-metadata";
 import { artifactObjectKey, blobObjectKey } from "./storage-keys";
 
-// Where one revision of one artifact actually lives. A revision listed in
-// `blobs` was stored under its full content digest and may be shared with
-// another artifact of the same owner; one that is not predates dedup and sits
-// where it was written. Every read goes through here so the two layouts stay a
-// lookup rather than a thing to remember.
 export function objectKeyFor(
   artifactId: string,
   revision: string,

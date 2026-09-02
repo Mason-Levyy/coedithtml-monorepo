@@ -1,11 +1,6 @@
 import { ownerIdSchema } from "./schemas/artifact";
 import { newOwnerId } from "./storage-keys";
 
-// The __Host- prefix is a promise the browser enforces rather than one we
-// make: no Domain attribute, Path=/, and Secure, all three checked before the
-// cookie is accepted at all. It means nothing on a related host -- the
-// marketing site at the apex, or anything else under the registrable domain --
-// can write a cookie that arrives here looking like ours.
 export const OWNER_COOKIE_NAME = "__Host-coedit_owner";
 export const OWNER_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 

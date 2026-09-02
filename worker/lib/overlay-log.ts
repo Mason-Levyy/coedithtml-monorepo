@@ -81,9 +81,6 @@ function patchStoredEntry(
   if (patched === null) {
     return rejected("malformed", id);
   }
-  // A patch can carry an anchor and a body of its own, so the result is what
-  // has to be measured -- checking the patch alone would let a quote through
-  // that the entry then keeps.
   if (!entryWithinLimits(patched)) {
     return rejected("too-long", id);
   }

@@ -54,8 +54,6 @@ describe("MyArtifactsList", () => {
     });
   });
 
-  // The sweep writes the date down; this is the only place an owner with no
-  // account and no email address will ever see it.
   it("tells the owner a file is about to be swept, and how to stop it", async () => {
     vi.stubGlobal(
       "fetch",

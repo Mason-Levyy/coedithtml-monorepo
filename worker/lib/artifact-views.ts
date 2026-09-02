@@ -4,10 +4,6 @@ import {
 } from "@/lib/artifact-metadata";
 import { isMeaningfulView, shouldRecordView } from "@/lib/expiry";
 
-// Recording a view must never be able to fail a read. The artifact is already
-// on its way to the reader by the time this runs, and a document that would not
-// load because we could not write down that it loaded is the wrong trade
-// entirely -- so this is best effort, awaited nowhere the reader is waiting.
 export async function recordArtifactView(
   kv: KVNamespace,
   artifactId: string,

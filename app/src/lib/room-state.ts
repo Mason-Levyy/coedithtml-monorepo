@@ -7,8 +7,6 @@ import {
   type RoomToClientMessage,
 } from "@/lib/protocol";
 
-// A write is in flight from the moment it is sent until the room echoes it
-// back. Anything else the reader is told about their work is a guess.
 export type SaveState = "idle" | "saving" | "saved" | "failed";
 
 export type RoomContents = {

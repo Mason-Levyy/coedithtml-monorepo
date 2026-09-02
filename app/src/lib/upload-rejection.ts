@@ -12,9 +12,6 @@ const rejectionBodySchema = z.object({
   remedy: z.string().nullable().optional(),
 });
 
-// The worker owns every word of this. A refusal explained in two places drifts
-// into two different explanations, and the one the reader sees is the one the
-// server never checked.
 export async function readRejection(
   response: Response,
   fallback: string,

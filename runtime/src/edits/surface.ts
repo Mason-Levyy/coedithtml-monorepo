@@ -76,10 +76,6 @@ export function startEditSurface(options: {
   let editing: Editing | null = null;
   let idle = 0;
 
-  // Committing does not end the session, so a caret can save several times
-  // over. The baseline it diffs against is the block as it stood when the
-  // caret arrived, never as it stood at the last save: the anchor has to keep
-  // quoting the author's original words or it resolves onto its own output.
   function commitNow(): void {
     if (editing === null) {
       return;
@@ -94,9 +90,6 @@ export function startEditSurface(options: {
       return;
     }
 
-    // The anchor quotes what is being replaced, so it is measured against the
-    // document as it stood before the caret touched it. Reading it back out of
-    // the edited DOM would quote the new words and orphan the entry on reload.
     const anchor = anchorFromText({
       text: documentBefore,
       start: offset + span.start,
@@ -145,8 +138,6 @@ export function startEditSurface(options: {
       close(false);
       return;
     }
-    // Enter is how a browser is invited to split a node or drop in a <br>.
-    // This surface changes words, never structure.
     if (event.key === "Enter") {
       event.preventDefault();
       if (event.metaKey || event.ctrlKey) {
@@ -161,9 +152,6 @@ export function startEditSurface(options: {
     close(true);
   }
 
-  // "plaintext-only" is a browser courtesy, not a guarantee — Firefox has no
-  // such value and falls back to accepting markup. Pasted HTML is the fastest
-  // way to wreck an artifact's styling, so the text is taken by hand.
   function onPaste(event: Event): void {
     if (!(event instanceof ClipboardEvent)) {
       return;
@@ -225,9 +213,6 @@ export function startEditSurface(options: {
     begin(block);
   }
 
-  // Double-click needs no mode, so it stays live whenever the link may edit.
-  // The default is left alone: the word the browser selects is what puts the
-  // caret where it was aimed.
   function onDoubleClick(event: Event): void {
     if (!options.canEdit() || editing !== null) {
       return;

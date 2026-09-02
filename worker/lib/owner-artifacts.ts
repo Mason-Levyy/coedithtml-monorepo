@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { ownerArtifactsKey } from "./storage-keys";
 
-// Read-modify-write against eventually-consistent KV: two concurrent calls for
-// the same owner (two tabs, a publish racing a settings change) can lose one
-// write. Same shape of bug as rate-limit.ts, called out for a Durable-Object
-// fix at v0.6 — not fixed here for the same reason.
-
 export const ownerArtifactItemSchema = z.object({
   artifactId: z.string().min(1),
   fileName: z.string().min(1),
@@ -13,8 +8,6 @@ export const ownerArtifactItemSchema = z.object({
   uploadedAt: z.string().datetime(),
   published: z.boolean().default(true),
   hasPassword: z.boolean().default(false),
-  // Set once the file is inside the warning window, so the owner is told
-  // before the sweep rather than after it.
   expiresAt: z.string().optional(),
   viewToken: z.string().optional(),
   suggestToken: z.string().optional(),

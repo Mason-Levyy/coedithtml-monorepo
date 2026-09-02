@@ -58,9 +58,6 @@ export const SHORTCUT_ACTIONS = ["toggle-sticky"] as const;
 
 export type ShortcutAction = (typeof SHORTCUT_ACTIONS)[number];
 
-// The artifact owns its own document, so a keystroke inside the frame never
-// reaches the app that draws the toolbar. The runtime forwards the ones the
-// toolbar answers to.
 export type RuntimeShortcutMessage = Versioned & {
   type: "shortcut";
   action: ShortcutAction;
@@ -76,9 +73,6 @@ export type RuntimeTextEditedMessage = Versioned & {
   type: "text-edited";
   anchor: TextAnchor;
   replacement: string;
-  // One caret visit, however many times it autosaves. Without it the app would
-  // match a repeat commit by quoted text, and a caret that widens its span
-  // between saves quotes words the first save already replaced.
   sessionId: string;
 };
 

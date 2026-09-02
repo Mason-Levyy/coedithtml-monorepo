@@ -82,14 +82,12 @@ describe("geometry locateAnchor and rectsForAnchor", () => {
       onScreen: true,
     });
 
-    // Inactive slide with visibility: hidden
     target.style.visibility = "hidden";
     expect(locateAnchor(index, anchor)).toEqual({
       at: null,
       why: "hidden",
     });
 
-    // Slide with opacity: 0
     target.style.visibility = "visible";
     target.style.opacity = "0";
     expect(locateAnchor(index, anchor)).toEqual({
@@ -97,7 +95,6 @@ describe("geometry locateAnchor and rectsForAnchor", () => {
       why: "hidden",
     });
 
-    // Ancestor with visibility: hidden
     target.style.opacity = "1";
     elementById("slide1").style.visibility = "hidden";
     expect(locateAnchor(index, anchor)).toEqual({
@@ -148,7 +145,6 @@ describe("geometry locateAnchor and rectsForAnchor", () => {
       { x: 100, y: 100, width: 80, height: 20 },
     ]);
 
-    // Inactive slide container with visibility: hidden
     elementById("slide").style.visibility = "hidden";
 
     expect(locateAnchor(index, anchor)).toEqual({

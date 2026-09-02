@@ -1,7 +1,4 @@
 const ALGORITHM = "pbkdf2";
-// Current OWASP guidance for PBKDF2-HMAC-SHA256. The iteration count is stored
-// in the hash, so a password set at the old count still verifies at the old
-// count -- raising this is not a migration, it is a floor for what is set next.
 const ITERATIONS = 600_000;
 const SALT_BYTES = 16;
 const KEY_BITS = 256;

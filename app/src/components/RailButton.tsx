@@ -19,7 +19,6 @@ export function RailButton({ open, unresolved, onToggle }: RailButtonProps) {
       onClick={onToggle}
     >
       <div className="relative flex items-center justify-center">
-        {/* Sidebar panel trigger icon */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="16"

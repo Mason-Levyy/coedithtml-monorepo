@@ -6,15 +6,9 @@ import type {
   UsageVerdict,
 } from "@/usage-ledger";
 
-// R2's free tier is 10GB. The point of a ceiling is that the limit is a policy
-// somebody chose rather than an invoice somebody receives, so it sits below
-// that with room to notice.
 export const GLOBAL_MAX_BYTES = 8 * 1024 * 1024 * 1024;
 export const GLOBAL_MAX_ARTIFACTS = 20_000;
 
-// What one anonymous person may keep. The IP ceiling stays as the backstop for
-// somebody who clears their cookie, but it is a backstop and not the defence:
-// an IP is shared by an office and changed by a phone.
 export const OWNER_MAX_BYTES = 200 * 1024 * 1024;
 export const OWNER_MAX_ARTIFACTS = 100;
 
@@ -58,9 +52,6 @@ export async function holdSpace(
   }
 }
 
-// Releasing is best effort on purpose. A delete that already removed the bytes
-// must not fail because the ledger was unreachable; the worst a lost release
-// costs is a ceiling that arrives sooner than it should.
 export async function releaseSpace(
   ledgers: Addressable,
   name: string,
@@ -77,8 +68,6 @@ export type AttachOutcome =
   | { ok: true; allowed: boolean; store: boolean }
   | { ok: false; cause: unknown };
 
-// Owner-scoped, so the digest never has to be checked against anybody else's
-// files and an uploader learns nothing about what strangers are storing.
 export async function attachBlob(
   ledgers: Addressable,
   ownerId: string,
@@ -113,8 +102,6 @@ export async function attachBlob(
   }
 }
 
-// True when this artifact was the last thing holding the bytes, which is the
-// only moment it is safe to delete them.
 export async function detachBlob(
   ledgers: Addressable,
   ownerId: string,

@@ -137,8 +137,6 @@ describe("writes arriving from another origin", () => {
     expect(response.status).toBe(403);
   });
 
-  // Multipart form data is sent without a preflight, which is what made this
-  // the one state-changing route any origin could fire.
   it("refuses a replacement upload posted from anywhere else", async () => {
     const response = await handleAppRequest(
       write("POST", `/api/artifacts/${"a".repeat(32)}/revisions`, FROM_SANDBOX),
