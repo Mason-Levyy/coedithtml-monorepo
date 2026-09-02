@@ -4,9 +4,6 @@ export type HtmlDocumentRejection =
 export type HtmlDocumentCheck =
   { ok: true } | { ok: false; reason: HtmlDocumentRejection };
 
-// An import statement lives on one line. Letting the gap between `import` and
-// `from` span the whole document meant every `import` in a five-megabyte file
-// re-scanned the rest of it looking for a `from` that was never coming.
 const BUILD_STEP_MARKERS = [
   /^\s*import\s[^\n]{0,500}?\sfrom\s+['"]/m,
   /^\s*export\s+default\s/m,
@@ -16,9 +13,6 @@ const BUILD_STEP_MARKERS = [
 const SCRIPT_OPEN = /<script\b/gi;
 const SCRIPT_CLOSE = "</script";
 
-// A regex spanning from `<script` to `</script>` re-scans to end-of-file for
-// every unterminated `<script` in the document, and an uploader chooses the
-// document. One pass with indexOf is linear whatever the input looks like.
 function withoutScriptContents(source: string): string {
   const lowered = source.toLowerCase();
   const kept: string[] = [];
@@ -49,10 +43,6 @@ const META_OPEN = "<meta";
 const CSP_HTTP_EQUIV =
   /http-equiv\s*=\s*["']?Content-Security-Policy["']?(?=[\s/>"'])/i;
 
-// Walking `>` to `>` visits each one once. Letting a regex look for the
-// attribute across an unbounded run of non-`>` restarted that search at every
-// `<meta` in the document, and a document full of unclosed meta tags is a
-// thing an uploader can hand us.
 function hasOwnCspMetaTag(source: string): boolean {
   const lowered = source.toLowerCase();
   let cursor = 0;

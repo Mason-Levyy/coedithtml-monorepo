@@ -1,15 +1,7 @@
-// The comment is the shape the runtime draws, not a lookalike: this is
-// bubblePath() from runtime/src/overlay/sticky-geometry.ts run over a 184x88
-// box with its tail tip at (-40, 62). The runtime measures its bubbles at
-// paint time; nothing here is measured, so the box is pinned in pixels to keep
-// the path honest. Re-run the geometry if either number moves.
 const COMMENT_BUBBLE =
   "M8,0L176,0A8,8 0 0 1 184,8L184,80A8,8 0 0 1 176,88L8,88A8,8 0 0 1 0,80" +
   "L0,67.55Q-20,61.69 -40,62Q-20,56.85 0,45.55L0,8A8,8 0 0 1 8,0Z";
 
-// A file somebody uploaded, with the markup this product leaves on top of it:
-// a highlighted sentence answered by a comment, a word swapped in place, and a
-// sticky note on the chart that has no text to select.
 export function ArtifactMock() {
   return (
     <div className="mock">

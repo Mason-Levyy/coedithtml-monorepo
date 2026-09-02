@@ -48,8 +48,6 @@ export function startMarks(): () => void {
 
   function paint(): void {
     try {
-      // An edit is not a mark. The changed words are its own evidence, and
-      // painting a highlight over them says a comment is waiting there.
       const painted = marks.filter((mark) => mark.kind !== "edit");
       const placement = paintMarks(layer, view, index, painted, override);
       const summary = JSON.stringify(placement);
@@ -80,8 +78,6 @@ export function startMarks(): () => void {
       return;
     }
     const arriving = editsAmong(marks).filter((edit) => !replayed.has(edit.id));
-    // An edit this reader just typed is already in the document. Replaying it
-    // when the room echoes it back would apply the same change twice.
     const wanted = arriving.filter((edit) => {
       const key = madeHereKey(edit.anchor, edit.body);
       if (!madeHere.has(key)) {
@@ -97,8 +93,6 @@ export function startMarks(): () => void {
     for (const id of applyEdits(document.body, wanted).applied) {
       replayed.add(id);
     }
-    // An edit moves the text every comment anchor is measured against, so
-    // the index is rebuilt before anything is resolved against it.
     index = buildTextIndex(document.body);
   }
 

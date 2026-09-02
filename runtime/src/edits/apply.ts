@@ -56,9 +56,6 @@ export function applyEdits(root: HTMLElement, edits: EditEntry[]): EditOutcome {
   const applied: string[] = [];
   const unplaced: string[] = [];
 
-  // One at a time, rebuilding between: an edit's anchor was written against
-  // the document as it stood after every earlier edit, so replaying them in
-  // that same order is what reproduces the text its author was looking at.
   for (const entry of edits) {
     if (applyOne(buildTextIndex(root), entry)) {
       applied.push(entry.id);

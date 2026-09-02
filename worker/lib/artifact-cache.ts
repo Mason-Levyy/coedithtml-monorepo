@@ -5,14 +5,6 @@ import {
   type GetArtifactResult,
 } from "@/lib/artifact-store";
 
-// Every view was a fresh R2 read, and a document sent to a room full of people
-// is the same bytes read a hundred times over.
-//
-// What is cached is the bytes, never the authorization. The key is the artifact
-// id and revision -- not the token -- so a revoked link is still resolved and a
-// password gate is still checked on every single request; only the trip to R2
-// is skipped. Nothing here changes what the browser is told to do with the
-// response, because revocation has to mean revoked now.
 const CACHE_SECONDS = 300;
 
 function edgeCache(): Cache | null {
@@ -26,9 +18,6 @@ export async function readArtifactBytes(
   metadata: Pick<ArtifactMetadata, "blobs" | "ownerId">,
 ): Promise<GetArtifactResult> {
   const cache = edgeCache();
-  // Keyed on the object, so two artifacts sharing bytes share one cache entry
-  // as well -- and so a revision that moved into the blob space is not read
-  // back out of an entry filled from where it used to live.
   const objectKey = objectKeyFor(artifactId, revision, metadata);
   const key = `https://artifact-bytes.invalid/${objectKey}`;
 

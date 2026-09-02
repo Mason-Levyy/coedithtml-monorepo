@@ -57,8 +57,6 @@ export async function handleUnlockArtifact(
   if (!valid) {
     return jsonError("Incorrect password.", 401);
   }
-  // Charged up front so parallel guesses cannot all pass the same check, and
-  // given back here so reading a document five times does not lock you out.
   await refundAttempt(env.RATE_LIMITER, attemptKey);
 
   const minted = await mintUnlockGrant(env.ARTIFACT_METADATA, artifactId);

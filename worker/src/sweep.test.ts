@@ -92,8 +92,6 @@ describe("sweeping what nobody kept", () => {
     expect(await kv.get(`tokens/${"v".repeat(32)}`)).toBe(null);
   });
 
-  // Revoking every token used to make an artifact permanently unreachable and
-  // permanently stored. The room was the loudest part of that.
   it("wipes the room of what it took, rather than leaving it standing", async () => {
     const room = recordingDocRoom();
     const { env } = await envHolding(

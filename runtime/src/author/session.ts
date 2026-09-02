@@ -54,9 +54,6 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
     onStateChange: (editing) => {
       host.holdIndex(editing);
       if (editing) {
-        // A double-click selects a word before it opens the caret, so the app
-        // is already offering to comment on it. Nothing else will retract that
-        // offer: reportSelection goes quiet for as long as this edit lasts.
         host.send(selectionMessage(null, null));
         return;
       }
@@ -137,8 +134,6 @@ export function startAuthoring(host: AuthoringHost): AuthoringSession {
 
   return {
     arm: (tool, color) => {
-      // The text tool arms the edit surface, never the place tool. Arming
-      // both would drop a sticky where the caret was meant to land.
       surface.arm(tool === "text");
       placing.arm(tool === "text" ? null : tool, color);
     },

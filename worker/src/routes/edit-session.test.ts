@@ -15,10 +15,6 @@ import { objectKeyFor } from "@/lib/artifact-store";
 import { handleSandboxRequest } from "./sandbox";
 import { handleUpload } from "./upload";
 
-// Deliberately awkward markup: an unclosed <p>, a single-quoted attribute, an
-// uppercase tag, a tab, a trailing newline, and the literal string "</html>"
-// sitting inside a script. Anything that parsed and re-serialised this file
-// would tidy at least one of them, and the diff would show it.
 const AWKWARD_HTML = [
   "<!DOCTYPE html>",
   "<html lang='en'>",
@@ -86,8 +82,6 @@ function edit(quote: string, body: string, id: string): EditEntry {
   };
 }
 
-// Everything a person can do to a document in one sitting: change two
-// passages, change one of them again, then undo it.
 function runEditingSession(seed: OverlayEntry[] = []) {
   const store = memoryEntryStore(seed);
   const session = { now: "2026-08-14T12:00:00.000Z", canEdit: true };

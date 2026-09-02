@@ -2,10 +2,6 @@ import { z } from "zod";
 import { TOKEN_KINDS } from "./room-capabilities";
 import { accessTokenKey } from "./storage-keys";
 
-// Every kind is optional because a record only ever carries the kinds at or
-// below its own. A view token's record used to contain the edit token, filtered
-// out on the way to the client -- one careless future handler away from being
-// a privilege escalation. Now the escalation is not in the record to filter.
 const siblingTokensSchema = z.object({
   view: z.string().optional(),
   suggest: z.string().optional(),

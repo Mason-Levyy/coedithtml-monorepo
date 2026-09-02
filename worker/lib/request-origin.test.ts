@@ -34,9 +34,6 @@ describe("refusing a write that came from somewhere else", () => {
     ).toBe(true);
   });
 
-  // A browser cannot be talked out of sending Origin on a cross-site write, so
-  // an absent one is not a browser -- and something that is not a browser has
-  // no ambient cookie to abuse in the first place.
   it("allows a request with no Origin at all", () => {
     expect(isCrossOriginWrite(post(null), CONFIG)).toBe(false);
   });

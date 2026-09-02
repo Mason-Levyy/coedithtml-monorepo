@@ -11,10 +11,6 @@ import { wipeRoom } from "@/lib/room-seed";
 import { blobObjectKey } from "@/lib/storage-keys";
 import { detachBlob, GLOBAL_LEDGER, releaseSpace } from "@/lib/usage";
 
-// Bytes go only when nothing else is holding them. The ledger is asked rather
-// than guessed at, because the failure mode of guessing is taking a document
-// out from under somebody who is still reading it -- which is exactly the rule
-// the sweep and the dedup had to be designed against together.
 async function releaseBlobs(
   env: WorkerEnv,
   metadata: ArtifactMetadata,
@@ -38,10 +34,6 @@ async function releaseBlobs(
   }
 }
 
-// One place, so the sweep and the delete button cannot come to disagree about
-// what deleting means. Revoking every token used to leave an artifact
-// permanently unreachable and permanently stored; this takes the bytes, the
-// metadata, the tokens, the owner's row, the ledger's count, and the room.
 export async function eraseArtifact(
   env: WorkerEnv,
   artifactId: string,

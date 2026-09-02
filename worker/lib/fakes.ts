@@ -266,8 +266,6 @@ export function memoryEntryStore(seed: OverlayEntry[] = []): EntryStore {
 export const FAKE_ROOM_HEADER = "x-fake-room";
 
 function fakeRoomResponse(request?: Request): Response {
-  // The sweep asks a room what it holds before taking the artifact away, so an
-  // empty overlay is what an empty room has to answer with.
   if (request !== undefined && new URL(request.url).pathname === "/overlay") {
     return Response.json({ version: 1, artifactRevision: "r1", entries: [] });
   }
@@ -302,9 +300,6 @@ export function recordingDocRoom(): RecordingDocRoom {
   return { connects, namespace };
 }
 
-// A counter per key, in memory, with the same answers the real Durable Object
-// gives. Tests want to know that a route charges and refuses, not that a
-// Durable Object stores.
 export function fakeRateLimiter(): Record<string, unknown> {
   const counts = new Map<string, number>();
   return {

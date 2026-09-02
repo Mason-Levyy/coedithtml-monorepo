@@ -105,9 +105,6 @@ export default function Deck() {
   });
 });
 
-// The uploader chooses the document, so every pattern here runs against five
-// megabytes of somebody else's text. These are the shapes that used to make
-// one of them re-scan the rest of the file for every position it started at.
 describe("a document written to make the checker work", () => {
   function withinASecond(source: string): number {
     const started = Date.now();

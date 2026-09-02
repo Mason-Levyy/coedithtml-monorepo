@@ -15,10 +15,6 @@ export type RejectionCopy = {
   remedy: string | null;
 };
 
-// A refusal has to answer two questions, and they are not the same question:
-// what is wrong with this file, and what do I do now. A file that is nearly
-// right gets a specific next step; a file that was never going to work says so
-// plainly rather than implying one more try would fix it.
 const COPY: Record<UploadRejectionReason, RejectionCopy> = {
   "needs-build-step": {
     headline: "This is source, not a page",
