@@ -5,10 +5,6 @@ Share, view, comment on, and edit HTML artifacts in the browser.
 - Website: [coedithtml.com](https://coedithtml.com)
 - App: [app.coedithtml.com](https://app.coedithtml.com)
 
-## Core Principle
-
-The server does not parse or modify uploaded HTML. It stores and serves original files, appending an editor script after `</html>`. Comments, edits, and presence data live in an overlay document keyed to DOM anchors.
-
 ## Architecture
 
 The project uses two origins:
