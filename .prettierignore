@@ -20,8 +20,3 @@ website/public/
 # anchor into it by quoted text and nth-of-type path, so reformatting it can
 # move or orphan them. We do not rewrite artifacts, including our own.
 worker/tutorial/
-
-# Pre-existing hand-formatted content, not touched by the workspace scaffold.
-CLAUDE.md
-planning/
-.claude/

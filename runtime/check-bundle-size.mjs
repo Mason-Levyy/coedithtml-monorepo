@@ -36,7 +36,7 @@ for (const { file, size, limit } of sizes) {
 const oversized = sizes.filter(({ size, limit }) => size > limit);
 if (oversized.length > 0) {
   console.error(
-    `\nruntime/ bundles exceed their minified budget (CLAUDE.md):\n${oversized
+    `\nruntime/ bundles exceed their minified budget (CONTRIBUTING.md):\n${oversized
       .map(
         ({ file, size, limit }) =>
           `  ${file}: ${(size / 1024).toFixed(1)}KB of ${(limit / 1024).toFixed(0)}KB`,

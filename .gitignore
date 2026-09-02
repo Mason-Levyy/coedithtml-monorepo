@@ -16,4 +16,8 @@ out/
 coverage/
 *.tsbuildinfo
 worker/worker-configuration.d.ts
-.claude/scheduled_tasks.lock
+
+# Internal working material. Kept out of the public repository.
+CLAUDE.md
+planning/
+.claude/
