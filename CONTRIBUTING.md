@@ -5,9 +5,9 @@ most of a review is checking a change against them.
 
 ## Before you start
 
-Open an issue first for anything larger than a bug fix. The
-[roadmap](planning/ROADMAP.md) says what is already planned and, more usefully,
-what has been deliberately cut and why.
+Open an issue first for anything larger than a bug fix. Plenty of obvious
+features have already been considered and cut on purpose, and an issue is the
+cheapest way to find out which yours is before you write it.
 
 ## Setup
 

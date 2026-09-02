@@ -16,6 +16,7 @@ labels: enhancement
      out of scope by design — see the README. Say here why yours does not, or
      why the rule should bend. -->
 
-**Have you checked the roadmap?**
+**Have you searched existing issues?**
 
-<!-- planning/ROADMAP.md lists what is planned and what was cut on purpose. -->
+<!-- Some of the obvious features have already been considered and cut on
+     purpose. If you find that discussion, link it. -->

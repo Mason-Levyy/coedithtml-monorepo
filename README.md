@@ -105,10 +105,10 @@ You will need a Cloudflare account with Workers, R2, KV, and Durable Objects.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow, and
-[CLAUDE.md](CLAUDE.md) for the code standards — it is written for AI coding
-agents but it is the honest description of how this codebase expects to be
-changed.
+Read [CONTRIBUTING.md](CONTRIBUTING.md). It has the setup, the checks CI
+runs, and the handful of load-bearing rules — never parse the artifact, two
+origins and no CORS, the injected runtime's budget and fail-open behaviour —
+that most of a review consists of checking against.
 
 Security issues go to [SECURITY.md](SECURITY.md), not the public tracker.
 
