@@ -1,13 +1,35 @@
-# coeditHTML
+<h1 align="center">coedit<b>HTML</b></h1>
 
-Share, view, comment on, and edit HTML artifacts in the browser.
+<p align="center">Share, view, comment on, and edit HTML artifacts in the browser.</p>
 
 - Website: [coedithtml.com](https://coedithtml.com)
 - App: [app.coedithtml.com](https://app.coedithtml.com)
 
-## Core Principle
+## How It Works
 
-The server does not parse or modify uploaded HTML. It stores and serves original files, appending an editor script after `</html>`. Comments, edits, and presence data live in an overlay document keyed to DOM anchors.
+### 1. Upload your file
+
+Drop in any self-contained HTML file up to 5MB, including embedded styles and scripts. No build steps or configuration required.
+
+![Drag and drop an HTML file onto the upload panel](website/public/gifs/first.gif)
+
+### 2. Choose permissions
+
+Set access to view, comment, or edit. You can also add an optional password to protect sensitive files.
+
+![Configure file permissions and optional password protection](website/public/gifs/second.gif)
+
+### 3. Share the link
+
+Collaborators open the live file directly in their browser. They can highlight text to comment, drop sticky notes anywhere, or edit copy in place.
+
+![Collaborate live in browser with highlights, comments, and sticky notes](website/public/gifs/third.gif)
+
+### 4. Collect feedback and edits
+
+Review all comments and edits in an organized sidebar. Copy everything as clean markdown or download the updated HTML file with changes applied.
+
+![Review feedback in sidebar and export markdown or updated HTML](website/public/gifs/forth.gif)
 
 ## Architecture
 
