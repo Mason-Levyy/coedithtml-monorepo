@@ -2,6 +2,9 @@
 
 <p align="center">Share, view, comment on, and edit HTML artifacts in the browser.</p>
 
+> [!NOTE]
+> **This project is no longer maintained.** The major AI labs now ship editable artifacts by default, and multiplayer editing has come to more and more tools across the industry, so the gap coEditHTML was built to fill has largely closed. It was a fun project and the code stays public for anyone who wants to read it, fork it, or borrow ideas from it. Issues and pull requests will not be actively reviewed.
+
 - Website: [coedithtml.com](https://coedithtml.com)
 - App: [app.coedithtml.com](https://app.coedithtml.com)
 
