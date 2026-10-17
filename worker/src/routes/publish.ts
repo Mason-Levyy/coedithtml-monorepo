@@ -8,6 +8,7 @@ import { jsonError, jsonResponse, SAVE_FAILED } from "@/lib/responses";
 import { passwordUpdateBodySchema } from "@/lib/schemas/artifact";
 import { viewerUrl } from "@/lib/share-links";
 import { mintShareTokens } from "@/lib/share-tokens";
+import { logUsage } from "@/lib/usage-log";
 
 export async function handlePublishArtifact(
   artifactId: string,
@@ -80,6 +81,7 @@ export async function handlePublishArtifact(
     );
   }
 
+  logUsage("artifact_published", request);
   return jsonResponse(
     {
       artifactId,
