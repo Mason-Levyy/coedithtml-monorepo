@@ -1,4 +1,5 @@
 ﻿import type { WorkerEnv } from "@/lib/env";
+import { logUsage } from "@/lib/usage-log";
 import {
   callToolParamsSchema,
   jsonRpcMessageSchema,
@@ -69,6 +70,7 @@ async function callTool(
       `Unknown tool: ${params.data.name}`,
     );
   }
+  logUsage("mcp_tool_called", request, { tool: tool.name });
   try {
     return { ...(await tool.run(params.data.arguments, { request, env })) };
   } catch (cause) {
