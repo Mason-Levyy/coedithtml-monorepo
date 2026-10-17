@@ -3,6 +3,7 @@ import { withAppSecurityHeaders } from "@/lib/app-headers";
 import { AUTHOR_ASSET_PATH, RUNTIME_ASSET_PATH } from "@/lib/artifact-render";
 import { originFor } from "@/lib/origins";
 import { TUTORIAL_DECK_ASSET_PATH } from "@/lib/tutorial-deck";
+import { logUsage } from "@/lib/usage-log";
 
 const SPA_DOCUMENT_PATH = "/index.html";
 
@@ -63,7 +64,7 @@ export async function serveAppAsset(
   if (!document) {
     return secured(new Response("Not found", { status: 404 }));
   }
-  return secured(
-    VIEWER_ROUTE.test(url.pathname) ? withNoindex(document) : document,
-  );
+  const isViewer = VIEWER_ROUTE.test(url.pathname);
+  logUsage("app_opened", request, { page: isViewer ? "viewer" : "landing" });
+  return secured(isViewer ? withNoindex(document) : document);
 }

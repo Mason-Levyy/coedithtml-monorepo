@@ -8,6 +8,7 @@ import type { WorkerEnv } from "@/lib/env";
 import { resolveOwnerId, withOwnerCookie } from "@/lib/owner-cookie";
 import { jsonResponse } from "@/lib/responses";
 import { rejectionResponse } from "@/lib/upload-rejection";
+import { logUsage } from "@/lib/usage-log";
 
 export async function handleUpload(
   request: Request,
@@ -38,5 +39,6 @@ export async function handleUpload(
     return created.response;
   }
 
+  logUsage("artifact_uploaded", request);
   return withOwnerCookie(jsonResponse(created.body, 201), ownerId, isNew);
 }
