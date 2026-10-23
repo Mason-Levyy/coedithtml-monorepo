@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Email **team@coedithtml.com**. Do not open a public issue.
+Email **support@coedithtml.com**. Do not open a public issue.
 
 Include what you can reproduce and the impact you believe it has. You will get
 an acknowledgement within three business days. Please give us a chance to ship a
