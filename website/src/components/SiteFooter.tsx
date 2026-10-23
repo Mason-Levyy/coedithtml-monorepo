@@ -54,7 +54,9 @@ export function SiteFooter() {
                 <Link href="/report/">Report a file</Link>
               </li>
               <li>
-                <a href="mailto:team@coedithtml.com">team@coedithtml.com</a>
+                <a href="mailto:support@coedithtml.com">
+                  support@coedithtml.com
+                </a>
               </li>
             </ul>
           </div>
