@@ -21,7 +21,7 @@ setting.
 
 ## Enforcement
 
-Report unacceptable behavior to **team@coedithtml.com**. All reports will be
+Report unacceptable behavior to **support@coedithtml.com**. All reports will be
 reviewed and investigated promptly and fairly, and the reporter's privacy and
 security will be respected.
 
