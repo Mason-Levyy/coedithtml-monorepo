@@ -1,7 +1,9 @@
 import { JsonLd } from "@/components/JsonLd";
-import { APP_URL, SITE_URL } from "@/lib/links";
+import { APP_URL, GITHUB_URL, LINKEDIN_URL, SITE_URL } from "@/lib/links";
 
 const PUBLISHER_ID = `${SITE_URL}/#publisher`;
+
+const SOCIAL_IMAGE = `${SITE_URL}/opengraph-image.png`;
 
 export function StructuredData() {
   return (
@@ -15,8 +17,13 @@ export function StructuredData() {
             name: "coeditHTML",
             url: SITE_URL,
             logo: `${SITE_URL}/icon.svg`,
-            founder: { "@type": "Person", name: "Mason Levy" },
+            founder: {
+              "@type": "Person",
+              name: "Mason Levy",
+              sameAs: [LINKEDIN_URL],
+            },
             email: "support@coedithtml.com",
+            sameAs: [GITHUB_URL],
           },
           {
             "@type": "WebSite",
@@ -30,7 +37,10 @@ export function StructuredData() {
             "@type": "SoftwareApplication",
             "@id": `${SITE_URL}/#app`,
             name: "coeditHTML",
+            alternateName: ["Coedit", "coedit HTML"],
             url: APP_URL,
+            image: SOCIAL_IMAGE,
+            sameAs: [GITHUB_URL],
             applicationCategory: "BusinessApplication",
             applicationSubCategory: "Document collaboration",
             operatingSystem: "Any web browser",

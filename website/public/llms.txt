@@ -18,14 +18,15 @@ with the edits applied.
 Limits: one self-contained HTML file per upload, up to 5MB. Project folders,
 JSX, and anything needing a build step are rejected at upload.
 
-Price: free while the product is early. No billing, no card.
+Price: free for individual use, with no account and no card. Rolling it out
+across a company or building it into a product needs an agreement first.
 
 ## Pages
 
 - [Home](https://coedithtml.com/): what the product does, who it is for, and
   answers to the questions people ask first.
-- [Tutorial](https://coedithtml.com/tutorial/): opens a private working copy of
-  the app that walks through every feature. This is the explanation; there is
+- [Tutorial](https://app.coedithtml.com/tutorial): opens a private working copy
+  of the app that walks through every feature. This is the explanation; there is
   no separate documentation page.
 - [Connect your AI](https://coedithtml.com/connect/): how a person adds the MCP
   connector at https://app.coedithtml.com/mcp to Claude, ChatGPT, or Gemini, and

@@ -4,6 +4,8 @@ export const APP_URL = "https://app.coedithtml.com";
 
 export const GITHUB_URL = "https://github.com/Mason-Levyy/coedithtml-monorepo";
 
+export const LINKEDIN_URL = "https://www.linkedin.com/in/masonalevy/";
+
 export const TOUR_URL = `${APP_URL}/tutorial`;
 
 export const MCP_URL = `${APP_URL}/mcp`;
