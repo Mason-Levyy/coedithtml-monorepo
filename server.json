@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.Mason-Levyy/coedit",
+  "title": "coeditHTML",
+  "description": "Share an HTML file as a link people can comment on and edit, then read their feedback back.",
+  "version": "1.0.0",
+  "websiteUrl": "https://coedithtml.com/connect/",
+  "repository": {
+    "url": "https://github.com/Mason-Levyy/coedithtml-monorepo",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://app.coedithtml.com/mcp"
+    }
+  ]
+}
