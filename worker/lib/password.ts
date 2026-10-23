@@ -1,5 +1,6 @@
 const ALGORITHM = "pbkdf2";
-const ITERATIONS = 600_000;
+// Workers WebCrypto refuses PBKDF2 above 100,000 iterations with NotSupportedError.
+const ITERATIONS = 100_000;
 const SALT_BYTES = 16;
 const KEY_BITS = 256;
 
@@ -81,7 +82,7 @@ export async function verifyArtifactPassword(
     return false;
   }
   const rounds = Number(iterations);
-  if (!Number.isInteger(rounds) || rounds < 1) {
+  if (!Number.isInteger(rounds) || rounds < 1 || rounds > ITERATIONS) {
     return false;
   }
   const salt = fromHex(saltHex);
