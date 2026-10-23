@@ -1,3 +1,5 @@
-/how-it-works /tutorial/ 301
-/how-it-works/ /tutorial/ 301
-/how-it-works/* /tutorial/ 301
+/tutorial https://app.coedithtml.com/tutorial 301
+/tutorial/ https://app.coedithtml.com/tutorial 301
+/how-it-works https://app.coedithtml.com/tutorial 301
+/how-it-works/ https://app.coedithtml.com/tutorial 301
+/how-it-works/* https://app.coedithtml.com/tutorial 301
