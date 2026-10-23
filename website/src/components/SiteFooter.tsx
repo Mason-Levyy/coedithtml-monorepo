@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { TutorialLink } from "@/components/TutorialLink";
 import { Wordmark } from "@/components/Wordmark";
-import { APP_URL, GITHUB_URL } from "@/lib/links";
+import { APP_URL, GITHUB_URL, LINKEDIN_URL } from "@/lib/links";
 
 export function SiteFooter() {
   return (
@@ -62,7 +62,7 @@ export function SiteFooter() {
 
         <p className="site-footer__base">
           © 2026 coeditHTML. All rights reserved. Built by{" "}
-          <a href="https://www.linkedin.com/in/masonalevy/">Mason Levy</a>.
+          <a href={LINKEDIN_URL}>Mason Levy</a>.
         </p>
       </div>
     </footer>

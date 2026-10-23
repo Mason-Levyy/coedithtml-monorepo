@@ -2,8 +2,12 @@
 
 <p align="center">Share, view, comment on, and edit HTML artifacts in the browser.</p>
 
+coeditHTML turns one self-contained HTML file into a link that other people can view, comment on, and edit in their browser, with no account or install. It is built for the HTML files AI tools like Claude, ChatGPT, and Gemini produce: decks, dashboards, reports, and prototypes. Free for individual use.
+
 - Website: [coedithtml.com](https://coedithtml.com)
 - App: [app.coedithtml.com](https://app.coedithtml.com)
+- Tutorial: [app.coedithtml.com/tutorial](https://app.coedithtml.com/tutorial)
+- Connect your AI (MCP): [coedithtml.com/connect](https://coedithtml.com/connect/), server URL `https://app.coedithtml.com/mcp`
 
 ## How It Works
 
