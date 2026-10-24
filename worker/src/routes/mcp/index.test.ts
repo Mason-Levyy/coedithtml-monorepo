@@ -144,6 +144,21 @@ describe("the MCP endpoint", () => {
     expect(body.error).toMatchObject({ code: -32601 });
   });
 
+  it("tells a legacy client about a missing method without a 404 it would read as a dead session", async () => {
+    const body = await send(legacy("prompts/list"));
+
+    expect(body.status).toBe(200);
+    expect(body.error).toMatchObject({ code: -32601 });
+  });
+
+  it("accepts a legacy notification it has no handler for", async () => {
+    const response = await mcp(
+      post({ jsonrpc: "2.0", method: "notifications/cancelled" }),
+    );
+
+    expect(response.status).toBe(202);
+  });
+
   it("shakes hands with a client that still opens with initialize", async () => {
     const body = await send(
       legacy("initialize", { protocolVersion: "2025-06-18" }),

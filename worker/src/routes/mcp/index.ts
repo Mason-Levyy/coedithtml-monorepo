@@ -12,6 +12,7 @@ import {
   INTERNAL_ERROR,
   INVALID_PARAMS,
   INVALID_REQUEST,
+  METHOD_NOT_FOUND,
   PARSE_ERROR,
   SERVER_INFO,
   methodNotFound,
@@ -137,7 +138,21 @@ async function handleLegacy(
     const called = await callTool(message, request, env);
     return called instanceof Response ? called : rpcResult(message.id, called);
   }
-  return methodNotFound(message.id, message.method);
+  return legacyMethodNotFound(message);
+}
+
+// Pre-2026 streamable HTTP clients read an HTTP 404 as "session terminated",
+// so a legacy client hears about a missing method in the JSON-RPC body alone.
+function legacyMethodNotFound(message: JsonRpcMessage): Response {
+  if (message.id === undefined) {
+    return new Response(null, { status: 202 });
+  }
+  return rpcError(
+    message.id,
+    METHOD_NOT_FOUND,
+    `Method not found: ${message.method}`,
+    { status: 200 },
+  );
 }
 
 export const MCP_PATH = "/mcp";
