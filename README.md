@@ -94,8 +94,10 @@ Requirements: Cloudflare account with Workers, R2, KV, and Durable Objects.
 1. Create an R2 bucket and KV namespace, then update their IDs in `worker/wrangler.jsonc`.
 2. Configure `APP_HOST` and `SANDBOX_HOST` to two different origins.
 3. Set secrets: `wrangler secret put MCP_SIGNING_SECRET --env production`.
-4. Deploy the worker: `pnpm deploy`.
+4. Deploy the worker: `pnpm run deploy`. (Bare `pnpm deploy` is pnpm's own command, not this script.)
 5. Deploy the marketing site: `pnpm --filter @coedithtml/website run deploy`.
+
+Pushes to `main` run both deploys automatically through `.github/workflows/deploy.yml`, after the CI checks pass. It needs two repository secrets: `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`.
 
 ## Contributing
 
